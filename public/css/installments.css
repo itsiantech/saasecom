@@ -1,0 +1,138 @@
+/* ==========================================================================
+   Admin — wholesale installment orders
+   ========================================================================== */
+
+.inst-tabs {
+  display: flex;
+  gap: 8px;
+  margin: 22px 0 16px;
+  flex-wrap: wrap;
+}
+
+.inst-tab {
+  padding: 9px 18px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+
+.inst-tab:hover { color: var(--text); border-color: var(--gold); }
+
+.inst-tab.active {
+  color: var(--gold);
+  border-color: var(--gold);
+  background: var(--gold-soft);
+}
+
+.inst-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.inst-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.2s, border-color 0.2s, background 0.2s, opacity 0.2s;
+}
+
+.inst-btn:hover { border-color: var(--gold); color: var(--gold); }
+.inst-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.inst-btn.ok { color: var(--ok); border-color: rgba(127, 199, 154, 0.4); }
+.inst-btn.ok:hover { background: rgba(127, 199, 154, 0.1); border-color: var(--ok); }
+.inst-btn.danger { color: var(--danger); border-color: rgba(224, 112, 92, 0.4); }
+.inst-btn.danger:hover { background: rgba(224, 112, 92, 0.08); border-color: var(--danger); }
+.inst-btn.armed {
+  color: var(--gold);
+  border-color: var(--gold);
+  background: var(--gold-soft);
+}
+
+.inst-link-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--gold);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.inst-link-btn:hover { opacity: 0.8; }
+
+.inst-detail-body { padding: 4px 24px 24px; }
+
+.inst-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.inst-detail-grid > div {
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.inst-detail-grid span {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 5px;
+}
+
+.inst-detail-grid strong {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.inst-detail-grid p {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.inst-subhead {
+  margin: 24px 0 10px;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: "Inter", sans-serif;
+}
+
+#view-installment-orders td { vertical-align: top; }
+
+html[data-theme="light"] .inst-detail-grid > div { background: rgba(40, 30, 10, 0.02); }
+
+@media (max-width: 720px) {
+  .inst-detail-body { padding: 4px 16px 18px; }
+  .inst-detail-grid { grid-template-columns: 1fr 1fr; }
+  .inst-tabs { margin-top: 16px; }
+}
+
+@media (max-width: 480px) {
+  .inst-detail-grid { grid-template-columns: 1fr; }
+  .inst-tab { padding: 8px 14px; font-size: 12px; }
+}

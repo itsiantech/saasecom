@@ -1,0 +1,222 @@
+/* ==========================================================================
+   Customers admin — registered buyers table, detail/edit/note modals
+   ========================================================================== */
+
+.cust-toolbar {
+  display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center;
+  margin-bottom: 14px;
+}
+.cust-total { font-size: 13px; color: var(--muted); }
+.cust-total b { color: var(--text); }
+.cust-sort {
+  font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--muted); border: 1px solid var(--line-soft);
+  border-radius: 999px; padding: 5px 10px; white-space: nowrap;
+}
+.cust-search { margin-left: auto; }
+
+/* ------------------------------------------------------------------ table */
+.cust-table { min-width: 1380px; }
+.cust-table td { font-size: 13px; }
+.cust-table th .cust-sort-arrow { color: var(--gold); font-size: 12px; }
+
+.cust-name { display: flex; align-items: center; gap: 10px; min-width: 150px; }
+.cust-name b { display: block; font-size: 13.5px; font-weight: 600; }
+.cust-name small { color: var(--muted); font-size: 11.5px; }
+.cust-avatar {
+  width: 34px; height: 34px; border-radius: 50%; flex: none;
+  display: grid; place-items: center;
+  background: var(--gold-soft); border: 1px solid var(--line);
+  color: var(--gold); font-size: 12px; font-weight: 700; letter-spacing: 0.03em;
+}
+
+.cust-line { color: var(--text); }
+.cust-email { overflow-wrap: anywhere; }
+.cust-orders b { color: var(--text); }
+.cust-cancelled { color: var(--danger); font-size: 11.5px; margin-top: 2px; }
+.cust-nocancel { color: var(--muted); font-size: 11.5px; margin-top: 2px; }
+.cust-spend { color: var(--gold); font-weight: 600; white-space: nowrap; }
+.cust-postal { font-weight: 600; letter-spacing: 0.03em; }
+.cust-note-text {
+  max-width: 170px; color: var(--muted); font-size: 12.5px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.cust-note-count { font-size: 11px; color: var(--gold); margin-top: 2px; }
+.cust-muted { color: var(--muted); font-size: 12.5px; }
+
+.cust-status {
+  display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+  padding: 4px 9px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--gold-soft);
+  color: var(--gold); font-size: 10px; font-weight: 600;
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
+.cust-status i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+.cust-empty-hint { max-width: 520px; margin: 8px auto 0; font-size: 13px; line-height: 1.6; }
+.cust-empty-actions { margin-top: 16px; }
+
+/* ------------------------------------------------------------------ modal */
+.cust-detail-modal { max-width: 820px; }
+.cust-edit-modal { max-width: 620px; }
+.cust-small-modal { max-width: 460px; }
+.cust-modal { padding: 24px; }
+
+.cust-modal-head { display: flex; align-items: flex-start; gap: 14px; }
+.cust-modal-head .cust-avatar { width: 46px; height: 46px; font-size: 15px; }
+.cust-modal-head h3 { font-size: 22px; font-weight: 600; line-height: 1.2; }
+.cust-modal-sub { color: var(--muted); font-size: 12.5px; margin-top: 4px; }
+.cust-close {
+  margin-left: auto; width: 32px; height: 32px; flex: none;
+  border-radius: 50%; border: 1px solid var(--line-soft);
+  background: none; color: var(--muted); font-size: 19px; line-height: 1;
+}
+.cust-close:hover { color: var(--text); border-color: var(--gold); }
+
+.cust-stats {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px; margin: 18px 0;
+}
+.cust-stat {
+  border: 1px solid var(--line-soft); border-radius: 12px;
+  padding: 11px 12px; background: rgba(255, 255, 255, 0.02);
+}
+.cust-stat span {
+  display: block; margin-bottom: 4px;
+  font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted);
+}
+.cust-stat b { font-size: 16px; font-weight: 600; }
+.cust-stat b.gold { color: var(--gold); }
+.cust-stat b.danger { color: var(--danger); }
+
+.cust-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px 18px;
+  padding: 14px 0; border-top: 1px solid var(--line-soft); border-bottom: 1px solid var(--line-soft);
+}
+.cust-field span {
+  display: block; margin-bottom: 2px;
+  font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted);
+}
+.cust-field b { font-size: 13px; font-weight: 500; overflow-wrap: anywhere; }
+.cust-field.full { grid-column: 1 / -1; }
+
+.cust-section { margin-top: 18px; }
+.cust-section h4 {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+  font-size: 11.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted);
+}
+.cust-section h4 span { color: var(--gold); }
+
+.cust-note-list { display: grid; gap: 8px; max-height: 220px; overflow: auto; margin-bottom: 10px; }
+.cust-note {
+  border: 1px solid var(--line-soft); border-left: 2px solid var(--gold);
+  border-radius: 8px; padding: 9px 11px; background: rgba(255, 255, 255, 0.02);
+}
+.cust-note p { font-size: 13px; line-height: 1.55; overflow-wrap: anywhere; }
+.cust-note span { display: block; color: var(--muted); font-size: 11px; margin-top: 5px; }
+
+.cust-note-form { display: flex; gap: 8px; align-items: flex-start; }
+.cust-note-form textarea {
+  flex: 1; min-height: 44px; max-height: 130px; resize: vertical;
+  width: 100%; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--line-soft);
+  border-radius: 9px; padding: 10px 11px; color: var(--text); font-size: 13px; outline: none;
+}
+.cust-note-form textarea:focus { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-soft); }
+.cust-note-form .btn-gold { flex: none; padding: 11px 16px; }
+
+.cust-order-list { display: grid; gap: 8px; max-height: 260px; overflow: auto; }
+.cust-order-row {
+  width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 10px 12px; text-align: left; color: var(--text);
+  border: 1px solid var(--line-soft); border-radius: 10px; background: rgba(255, 255, 255, 0.02);
+  transition: border-color 0.2s;
+}
+.cust-order-row:hover { border-color: var(--gold); }
+.cust-order-row small { display: block; color: var(--muted); font-size: 11.5px; margin-top: 2px; }
+.cust-order-side { text-align: right; white-space: nowrap; }
+.cust-order-side > b { display: block; margin-top: 3px; font-size: 13px; color: var(--gold); }
+.cust-order-status {
+  display: inline-block; padding: 3px 8px; border-radius: 999px;
+  border: 1px solid var(--line-soft); color: var(--muted);
+  font-size: 9.5px; letter-spacing: 0.05em; text-transform: uppercase;
+}
+.cust-order-status.st-cancelled { color: var(--danger); border-color: var(--danger); }
+.cust-order-status.st-completed,
+.cust-order-status.st-delivered { color: #7fbf7f; border-color: rgba(127, 191, 127, 0.45); }
+.cust-order-status.st-pending,
+.cust-order-status.st-processing,
+.cust-order-status.st-on_the_way,
+.cust-order-status.st-in_courier,
+.cust-order-status.st-confirmed,
+.cust-order-status.st-shipped { color: var(--gold); border-color: var(--line); }
+
+.cust-modal-actions {
+  display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px;
+  padding-top: 16px; border-top: 1px solid var(--line-soft);
+}
+.cust-modal-actions .btn-ghost { padding: 9px 14px; }
+.cust-modal-actions .cust-danger { color: var(--danger); border-color: rgba(224, 112, 92, 0.35); }
+.cust-modal-actions .cust-danger:hover { border-color: var(--danger); background: rgba(224, 112, 92, 0.08); }
+
+/* ------------------------------------------------------------------- form */
+.cust-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+.cust-form-grid label { display: flex; flex-direction: column; gap: 5px; }
+.cust-form-grid label span { font-size: 11.5px; color: var(--muted); }
+.cust-form-grid input {
+  width: 100%; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--line-soft);
+  border-radius: 9px; padding: 9px 11px; color: var(--text); font-size: 13px; outline: none;
+}
+.cust-form-grid input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-soft); }
+.cust-form-grid .full { grid-column: 1 / -1; }
+.cust-form-grid .pc-pop-actions { margin-top: 6px; }
+.cust-form-error { min-height: 16px; color: var(--danger); font-size: 12.5px; }
+
+html[data-theme="light"] .cust-stat,
+html[data-theme="light"] .cust-note,
+html[data-theme="light"] .cust-order-row { background: var(--panel-2); }
+
+/* -------------------------------------------------------------- responsive */
+@media (max-width: 900px) {
+  .cust-table-wrap { overflow: visible; border: 0; border-radius: 0; background: none; }
+  .cust-table { min-width: 0; display: block; }
+  .cust-table thead { display: none; }
+  .cust-table tbody { display: grid; gap: 12px; }
+  .cust-table tr {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 14px; padding: 15px;
+    border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel);
+  }
+  .cust-table td {
+    display: block; padding: 0; border: 0; font-size: 12.5px;
+  }
+  .cust-table td::before {
+    content: attr(data-label); display: block; margin-bottom: 3px;
+    font-size: 9px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--muted);
+  }
+  .cust-table td[data-col="name"],
+  .cust-table td[data-col="address"],
+  .cust-table td[data-col="note"],
+  .cust-table td[data-col="actions"] { grid-column: 1 / -1; }
+  .cust-table td[data-col="name"]::before,
+  .cust-table td[data-col="actions"]::before { display: none; }
+  .cust-table td[data-col="address"] .cust-line { overflow-wrap: anywhere; }
+  .cust-table td[data-col="actions"] {
+    display: flex; justify-content: flex-end; gap: 8px;
+    margin-top: 2px; padding-top: 10px; border-top: 1px solid var(--line-soft);
+  }
+  .cust-note-text { max-width: none; white-space: normal; }
+  .cust-search { margin-left: 0; width: 100%; }
+  .cust-search input { width: 100%; }
+
+  .cust-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 640px) {
+  .cust-modal { padding: 18px; }
+  .cust-grid,
+  .cust-form-grid { grid-template-columns: 1fr; }
+  .cust-note-form { flex-direction: column; }
+  .cust-note-form .btn-gold { width: 100%; }
+  .cust-modal-actions .btn-ghost { flex: 1; }
+  .cust-order-row { align-items: flex-start; }
+}

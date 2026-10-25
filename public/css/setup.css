@@ -1,0 +1,106 @@
+.setup-wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+.setup-head { text-align: center; }
+
+.brand-mark.small {
+  width: 48px;
+  height: 48px;
+  font-size: 22px;
+  margin: 0 auto 18px;
+}
+
+.plan-list {
+  display: grid;
+  gap: 12px;
+}
+
+.plan-skeleton {
+  color: var(--muted);
+  font-size: 14px;
+  text-align: center;
+  padding: 18px 0;
+}
+
+.plan-card {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  width: 100%;
+  text-align: left;
+  padding: 16px 18px;
+  border: 1px solid var(--line-soft);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  transition: border-color 0.2s, background 0.2s, transform 0.2s;
+}
+
+.plan-card:hover { border-color: var(--gold); transform: translateY(-1px); }
+
+.plan-card.active {
+  border-color: var(--gold);
+  background: var(--gold-soft);
+}
+
+.plan-card .radio {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--muted);
+  margin-top: 2px;
+  position: relative;
+  transition: border-color 0.2s;
+}
+
+.plan-card.active .radio { border-color: var(--gold); }
+
+.plan-card.active .radio::after {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  background: var(--gold);
+}
+
+.plan-card .p-body { flex: 1; }
+
+.plan-card .p-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.plan-card .p-name { font-family: "Playfair Display", serif; font-size: 18px; font-weight: 600; }
+
+.plan-card .p-price { color: var(--gold); font-weight: 600; font-size: 15px; white-space: nowrap; }
+.plan-card .p-price small { color: var(--muted); font-weight: 400; font-size: 11px; }
+
+.plan-card .p-limits {
+  margin-top: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.plan-card .chip {
+  font-size: 11px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--muted);
+}
+
+.plan-card .chip.on { color: var(--ok); background: rgba(127, 199, 154, 0.1); }
+
+@media (max-width: 900px) {
+  .setup-wrap { align-items: flex-start; padding-top: 56px; }
+}

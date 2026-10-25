@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LUXE — নতুন দোকান খুলুন</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/auth.css" />
+  <link rel="stylesheet" href="/css/setup.css" />
+</head>
+<body class="auth-body">
+  <main class="setup-wrap">
+    <section class="card">
+      <div class="setup-head">
+        <div class="brand-mark small">L</div>
+        <h2>নতুন দোকান খুলুন</h2>
+        <p class="sub" id="whoLine">আপনার প্ল্যান বেছে দোকান চালু করুন</p>
+      </div>
+
+      <form id="setupForm" novalidate>
+        <div class="field">
+          <label for="sName">দোকানের নাম</label>
+          <input id="sName" type="text" required placeholder="যেমন: Aarong Style" />
+        </div>
+
+        <div class="field">
+          <label for="sSlug">স্লাগ (ঐচ্ছিক)</label>
+          <input id="sSlug" type="text" placeholder="aarong-style" />
+          <p class="hint">শুধু ছোট হাতের অক্ষর, সংখ্যা আর hyphen (-)</p>
+        </div>
+
+        <div class="field">
+          <label>প্ল্যান নির্বাচন করুন</label>
+          <div class="plan-list" id="planList">
+            <div class="plan-skeleton">প্ল্যান লোড হচ্ছে...</div>
+          </div>
+        </div>
+
+        <button class="btn-gold" id="submitBtn" type="submit">দোকান তৈরি করুন</button>
+        <p class="msg" id="msg"></p>
+      </form>
+
+      <p class="switch">দোকান আছে? <button type="button" id="goDash">ড্যাশবোর্ডে যান</button></p>
+    </section>
+  </main>
+
+  <script src="/js/setup.js"></script>
+</body>
+</html>

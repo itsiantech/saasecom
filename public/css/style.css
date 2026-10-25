@@ -1,0 +1,50 @@
+:root {
+  --bg: #0a0a10;
+  --bg-2: #0e0e16;
+  --panel: #12121b;
+  --panel-2: #161622;
+  --line: rgba(212, 175, 122, 0.16);
+  --line-soft: rgba(255, 255, 255, 0.07);
+  --gold: #d4af7a;
+  --gold-2: #b8935c;
+  --gold-soft: rgba(212, 175, 122, 0.12);
+  --text: #ece9e2;
+  --muted: #98917f;
+  --danger: #e0705c;
+  --ok: #7fc79a;
+  --radius: 16px;
+  --shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* Global safety rule: the `hidden` attribute must always win over author
+   `display` rules (e.g. `.cat-select-panel { display:flex }`). Without this,
+   setting `el.hidden = true` from JS has no visual effect. */
+[hidden] { display: none !important; }
+
+html, body { height: 100%; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Inter", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, .serif { font-family: "Playfair Display", Georgia, serif; }
+
+button { font-family: inherit; cursor: pointer; }
+input, textarea { font-family: inherit; }
+
+::selection { background: var(--gold); color: #14100a; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes glowPulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 0.85; }
+}

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LUXE — Super Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/admin.css" />
+</head>
+<body>
+  <div class="dash">
+    <aside class="sidebar">
+      <div class="sb-brand">
+        <div class="mark">L</div>
+        <div>
+          <div class="name">LUXE</div>
+          <div class="role">Super Admin</div>
+        </div>
+      </div>
+      <nav class="sb-nav">
+        <a href="#stats" class="active">ড্যাশবোর্ড</a>
+        <a href="#plans">প্ল্যান</a>
+        <a href="#stores">দোকানসমূহ</a>
+        <a href="#settings">সেটিংস</a>
+      </nav>
+      <div class="sb-bottom">
+        <div class="sb-user">
+          <div class="avatar" id="avatar">A</div>
+          <div>
+            <div class="u-name" id="uName">—</div>
+            <div class="u-email" id="uEmail">—</div>
+          </div>
+        </div>
+        <a class="logout-btn" href="/dashboard.html">ড্যাশবোর্ড</a>
+        <button class="logout-btn" id="logoutBtn">Logout</button>
+      </div>
+    </aside>
+    <div class="sb-overlay" id="sbOverlay"></div>
+
+    <main class="main">
+      <div class="topbar">
+        <div>
+          <h2>Super Admin</h2>
+          <p class="crumb">প্ল্যাটফর্ম নিয়ন্ত্রণ</p>
+        </div>
+      </div>
+
+      <!-- stats -->
+      <section class="stats" id="stats">
+        <div class="stat"><p class="label">মোট দোকান</p><p class="value gold" id="stStores">0</p></div>
+        <div class="stat"><p class="label">মোট ইউজার</p><p class="value" id="stUsers">0</p></div>
+        <div class="stat"><p class="label">মোট প্রোডাক্ট</p><p class="value" id="stProducts">0</p></div>
+        <div class="stat"><p class="label">প্ল্যান</p><p class="value" id="stPlans">0</p></div>
+      </section>
+
+      <!-- plans -->
+      <section class="panel" id="plans">
+        <div class="panel-head">
+          <div>
+            <h3>প্ল্যান ম্যানেজমেন্ট</h3>
+            <p class="count" id="planCount">0 টি প্ল্যান</p>
+          </div>
+          <button class="btn-add" id="addPlanBtn">+ নতুন প্ল্যান</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>নাম</th><th>মূল্য</th><th>ট্রায়াল</th><th>লিমিট</th><th>স্ট্যাটাস</th><th>অ্যাকশন</th></tr>
+            </thead>
+            <tbody id="planBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- stores -->
+      <section class="panel" id="stores">
+        <div class="panel-head">
+          <div>
+            <h3>সব দোকান</h3>
+            <p class="count" id="storeCount">0 টি দোকান</p>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>দোকান</th><th>মালিক</th><th>বর্তমান প্ল্যান</th><th>প্ল্যান বদলান</th></tr>
+            </thead>
+            <tbody id="storeBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- settings -->
+      <section class="panel" id="settings">
+        <div class="panel-head">
+          <div>
+            <h3>প্ল্যাটফর্ম সেটিংস</h3>
+            <p class="count">SaaS (মাল্টি-টেন্যান্ট) মোড চালু/বন্ধ</p>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="saasToggle" />
+            <span class="slider"></span>
+          </label>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- plan modal -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <h3 id="modalTitle">নতুন প্ল্যান</h3>
+      <form id="planForm" novalidate>
+        <input type="hidden" id="fPlanId" />
+        <div class="field"><label for="fPlanName">নাম</label><input id="fPlanName" type="text" required placeholder="Pro" /></div>
+        <div class="field"><label for="fPlanSlug">স্লাগ</label><input id="fPlanSlug" type="text" placeholder="pro" /></div>
+        <div class="grid-2">
+          <div class="field"><label for="fPrice">মূল্য (৳)</label><input id="fPrice" type="number" min="0" placeholder="29" /></div>
+          <div class="field"><label for="fDuration">মেয়াদ (দিন)</label><input id="fDuration" type="number" min="0" placeholder="30" /></div>
+        </div>
+        <div class="grid-2">
+          <div class="field"><label for="fTrial">ট্রায়াল (দিন)</label><input id="fTrial" type="number" min="0" placeholder="14" /></div>
+          <div class="field"><label for="fOrder">ক্রম</label><input id="fOrder" type="number" placeholder="0" /></div>
+        </div>
+        <div class="field">
+          <label>লিমিট</label>
+          <div class="grid-2">
+            <input id="fProducts" type="number" min="0" placeholder="প্রোডাক্ট (0=আনলিমিটেড)" />
+            <input id="fOrders" type="number" min="0" placeholder="অর্ডার" />
+          </div>
+          <div class="grid-2" style="margin-top:10px;">
+            <input id="fStorage" type="number" min="0" placeholder="স্টোরেজ MB" />
+            <input id="fStaff" type="number" min="0" placeholder="স্টাফ" />
+          </div>
+        </div>
+        <div class="field">
+          <label>ফিচার</label>
+          <div class="feat-grid">
+            <label class="check"><input type="checkbox" id="fCustomDomain" /> কাস্টম ডোমেইন</label>
+            <label class="check"><input type="checkbox" id="fAnalytics" /> অ্যানালিটিক্স</label>
+            <label class="check"><input type="checkbox" id="fApi" /> API</label>
+            <label class="check"><input type="checkbox" id="fPriority" /> প্রায়োরিটি সাপোর্ট</label>
+          </div>
+        </div>
+        <div class="field">
+          <label class="check"><input type="checkbox" id="fActive" checked /> সক্রিয়</label>
+        </div>
+        <p class="msg" id="planMsg"></p>
+        <div class="modal-actions">
+          <button type="button" class="btn-ghost" id="cancelPlanBtn">বাতিল</button>
+          <button type="submit" class="btn-gold" id="savePlanBtn">সেভ করুন</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="/js/admin.js"></script>
+</body>
+</html>

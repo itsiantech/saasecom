@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My account — LUXE</title>
+  <link rel="stylesheet" href="/css/account.css" />
+</head>
+<body>
+  <div class="ac-shell">
+    <header class="ac-header">
+      <a class="ac-brand" id="acBrand" href="#" onclick="return false;">
+        <img id="acLogo" src="" alt="" hidden />
+        <span id="acTitle">My account</span>
+      </a>
+      <div class="ac-header-right">
+        <a class="ac-link" id="acCheckout" href="/checkout.html">Checkout</a>
+        <button type="button" id="acLogout" class="ac-link" hidden>Logout</button>
+      </div>
+    </header>
+
+    <main class="ac-main">
+      <div id="acLoading" class="ac-loading">Loading your account…</div>
+      <p id="acFatal" class="ac-error ac-fatal" hidden></p>
+
+      <section id="acStoreGate" class="ac-card ac-gate" hidden>
+        <h1>Store khun</h1>
+        <p class="ac-muted">Account dekhar jonno store slug din (example: <code>demo-store</code>).</p>
+        <form id="acStoreForm" class="ac-inline-form">
+          <input id="acStoreSlug" placeholder="demo-store" autocomplete="off" />
+          <button class="ac-btn" type="submit">Continue</button>
+        </form>
+      </section>
+
+      <section id="acLoginGate" class="ac-card ac-gate" hidden>
+        <h1>Login korun</h1>
+        <p class="ac-muted">Installment schedule, payment history ar due dekhte account e login korun.</p>
+        <form id="acLoginForm" class="ac-form">
+          <div class="ac-field">
+            <label for="acLoginId">Email or phone</label>
+            <input id="acLoginId" autocomplete="username" required />
+          </div>
+          <div class="ac-field">
+            <label for="acLoginPassword">Password</label>
+            <input id="acLoginPassword" type="password" autocomplete="current-password" required />
+          </div>
+          <p id="acLoginError" class="ac-error" hidden></p>
+          <button class="ac-btn" type="submit" id="acLoginBtn">Login</button>
+        </form>
+        <p class="ac-muted ac-gate-note">Account nei? <a id="acRegisterLink" href="#">Checkout theke account khulun</a>.</p>
+      </section>
+
+      <section id="acOrdersWrap" hidden>
+        <div class="ac-hero">
+          <div>
+            <h1>Installment orders</h1>
+            <p id="acSubtitle" class="ac-muted"></p>
+          </div>
+          <a class="ac-btn" id="acShopLink" href="/checkout.html">Go to checkout</a>
+        </div>
+        <p id="acNotice" class="ac-notice" hidden></p>
+        <div id="acOrders"></div>
+      </section>
+    </main>
+
+    <footer class="ac-footer" id="acFooter"></footer>
+  </div>
+
+  <div class="ac-modal" id="acPayModal" hidden>
+    <div class="ac-modal-card" role="dialog" aria-modal="true" aria-labelledby="acPayTitle">
+      <h2 id="acPayTitle">Pay installment</h2>
+      <p class="ac-muted" id="acPayMeta"></p>
+      <form id="acPayForm" class="ac-form">
+        <div class="ac-field">
+          <label for="acPayMethod">Payment method</label>
+          <select id="acPayMethod"></select>
+        </div>
+        <div class="ac-field">
+          <label for="acPaySender">Sender number</label>
+          <input id="acPaySender" type="tel" placeholder="01XXXXXXXXX" autocomplete="tel" />
+        </div>
+        <div class="ac-field">
+          <label for="acPayTrx">Transaction ID</label>
+          <input id="acPayTrx" placeholder="Trx ID" autocomplete="off" />
+        </div>
+        <p id="acPayError" class="ac-error" hidden></p>
+        <div class="ac-modal-actions">
+          <button type="button" id="acPayCancel" class="ac-btn ghost">Cancel</button>
+          <button type="submit" class="ac-btn" id="acPaySubmit">Submit payment</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/js/account.js"></script>
+</body>
+</html>

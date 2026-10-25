@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Checkout — LUXE</title>
+  <link rel="stylesheet" href="/css/checkout.css" />
+</head>
+<body>
+  <div class="co-shell">
+    <header class="co-header">
+      <a class="co-brand" id="coBrand" href="#" onclick="return false;">
+        <img id="coLogo" src="" alt="" hidden />
+        <span id="coTitle">Checkout</span>
+      </a>
+      <div class="co-header-right">
+        <span id="coUser" class="co-user" hidden></span>
+        <a class="co-link" id="coAccount" href="/account.html">My account</a>
+        <button type="button" id="coLogout" class="co-link" hidden>Logout</button>
+        <span class="co-cart-count" id="coCartCount">0 items</span>
+      </div>
+    </header>
+
+    <main class="co-main">
+      <!-- store slug gate -->
+      <section id="storeGate" class="co-card co-gate" hidden>
+        <h1>Store khun</h1>
+        <p class="co-muted">Checkout dekhar jonno store slug din (example: <code>demo-store</code>).</p>
+        <form id="storeForm" class="co-inline-form">
+          <input id="storeSlug" placeholder="demo-store" autocomplete="off" />
+          <button class="co-btn" type="submit">Continue</button>
+        </form>
+      </section>
+
+      <div id="coLoading" class="co-loading">Loading checkout…</div>
+      <p id="coFatal" class="co-error co-fatal" hidden></p>
+
+      <!-- login / register gate (only when settings e required) -->
+      <section id="authGate" class="co-card co-auth" hidden>
+        <h1>Login ba register korun</h1>
+        <p class="co-muted">Ei store e checkout er age account lagbe.</p>
+
+        <div class="co-tabs">
+          <button type="button" class="co-tab active" data-auth-tab="login">Login</button>
+          <button type="button" class="co-tab" data-auth-tab="register">Register</button>
+        </div>
+
+        <form id="loginForm" class="co-form">
+          <div class="co-field">
+            <label for="loginId" id="loginIdLabel">Email or phone</label>
+            <input id="loginId" autocomplete="username" required />
+          </div>
+          <div class="co-field">
+            <label for="loginPassword">Password</label>
+            <input id="loginPassword" type="password" autocomplete="current-password" required />
+          </div>
+          <p class="co-error" id="loginError" hidden></p>
+          <button class="co-btn" type="submit">Login</button>
+        </form>
+
+        <form id="registerForm" class="co-form" hidden>
+          <div class="co-field">
+            <label for="regName">Full name</label>
+            <input id="regName" autocomplete="name" required />
+          </div>
+          <div class="co-field" id="regEmailWrap">
+            <label for="regEmail">Email</label>
+            <input id="regEmail" type="email" autocomplete="email" />
+          </div>
+          <div class="co-field" id="regPhoneWrap">
+            <label for="regPhone">Phone number</label>
+            <input id="regPhone" type="tel" placeholder="01XXXXXXXXX" autocomplete="tel" />
+          </div>
+          <div class="co-field">
+            <label for="regPassword">Password</label>
+            <input id="regPassword" type="password" autocomplete="new-password" required />
+          </div>
+          <p class="co-error" id="registerError" hidden></p>
+          <button class="co-btn" type="submit">Create account</button>
+        </form>
+      </section>
+
+      <!-- main checkout -->
+      <div id="checkoutWrap" class="co-grid" hidden>
+        <section class="co-card">
+          <h2>Delivery details</h2>
+          <form id="checkoutForm" class="co-form" novalidate>
+            <div id="coFields"></div>
+
+            <h2 class="co-section-title">Shipping</h2>
+            <div id="shippingOptions" class="co-options"></div>
+            <p id="shippingNote" class="co-muted"></p>
+
+            <section id="installmentSection" hidden>
+              <h2 class="co-section-title">Payment plan</h2>
+              <div id="installmentOptions" class="co-options"></div>
+              <p id="installmentNote" class="co-muted co-plan-note"></p>
+              <div id="installmentPreview" class="co-plan-preview" hidden></div>
+            </section>
+
+            <h2 class="co-section-title">Payment</h2>
+            <div id="paymentOptions" class="co-options"></div>
+
+            <div id="senderFields" class="co-sender" hidden>
+              <div class="co-field">
+                <label for="senderNumber">Sender number <span class="req">*</span></label>
+                <input id="senderNumber" type="tel" placeholder="01XXXXXXXXX" />
+                <p class="co-field-error" id="senderNumberError" hidden></p>
+              </div>
+              <div class="co-field">
+                <label for="transactionId">Transaction ID <span class="req">*</span></label>
+                <input id="transactionId" placeholder="Trx ID" />
+                <p class="co-field-error" id="transactionIdError" hidden></p>
+              </div>
+            </div>
+
+            <p id="checkoutError" class="co-error" hidden></p>
+            <button class="co-btn co-place" type="submit" id="placeOrderBtn">Place order</button>
+          </form>
+        </section>
+
+        <aside class="co-card co-summary">
+          <h2>Order summary</h2>
+          <div id="cartItems"></div>
+
+          <div class="co-coupon" id="coCouponBox">
+            <div class="co-coupon-applied" id="coCouponApplied" hidden>
+              <div class="co-coupon-applied-main">
+                <strong id="coCouponCode"></strong>
+                <span id="coCouponLabel"></span>
+              </div>
+              <button type="button" id="coCouponRemove">Remove</button>
+            </div>
+            <form class="co-coupon-form" id="coCouponForm">
+              <input id="coCouponInput" type="text" placeholder="Coupon code" autocomplete="off" aria-label="Coupon code" />
+              <button type="submit" id="coCouponApply">Apply</button>
+            </form>
+            <p class="co-coupon-msg" id="coCouponMsg" hidden></p>
+          </div>
+
+          <div class="co-totals">
+            <div><span>Subtotal</span><span id="coSubtotal">৳0</span></div>
+            <div id="coCouponRow" hidden><span id="coCouponRowLabel">Coupon</span><span id="coCouponDiscount">−৳0</span></div>
+            <div><span>Shipping</span><span id="coShipping">—</span></div>
+            <div id="coPayNowRow" hidden><span>Pay now (1st installment)</span><span id="coPayNow">৳0</span></div>
+            <div id="coDueLaterRow" hidden><span>Due later</span><span id="coDueLater">৳0</span></div>
+            <div class="co-grand"><span>Total</span><span id="coTotal">৳0</span></div>
+          </div>
+        </aside>
+      </div>
+
+      <!-- success -->
+      <section id="coSuccess" class="co-card co-success" hidden>
+        <div class="co-check">✓</div>
+        <h1>Order confirm hoyeche</h1>
+        <p class="co-muted">Order number: <strong id="successOrder">—</strong></p>
+        <p id="successMeta" class="co-muted"></p>
+        <a class="co-btn" id="successAccount" href="/account.html" hidden>View installment schedule</a>
+        <button type="button" class="co-btn" id="successAgain">Abar order korun</button>
+      </section>
+    </main>
+
+    <footer class="co-footer" id="coFooter"></footer>
+  </div>
+
+  <datalist id="coDistrictList"></datalist>
+  <datalist id="coCountryList"></datalist>
+  <script src="/js/checkout.js"></script>
+</body>
+</html>

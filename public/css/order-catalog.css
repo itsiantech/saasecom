@@ -1,0 +1,381 @@
+/* ==========================================================================
+   Order list page — extends the product-catalog.css primitives (pc-*).
+   Same tokens (var(--gold), --panel, --line ...) so light/dark both work.
+   ========================================================================== */
+
+/* ---- tabs ---- */
+.ol-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding: 2px;
+  margin-bottom: 14px;
+  scrollbar-width: thin;
+}
+.ol-tab {
+  white-space: nowrap;
+  border: 1px solid var(--line-soft);
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 13px;
+  padding: 8px 13px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.ol-tab:hover { color: var(--text); border-color: var(--text); }
+.ol-tab[aria-selected="true"] {
+  color: var(--gold);
+  border-color: var(--gold);
+  background: var(--gold-soft);
+  font-weight: 600;
+}
+.ol-tab:focus-visible,
+.ol-tab-count:focus-visible,
+.pc-adv-toggle:focus-visible,
+.ol-status-select:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+.ol-tab-count {
+  display: inline-block;
+  min-width: 22px;
+  text-align: center;
+  font-size: 11.5px;
+  font-weight: 700;
+  background: var(--bg-2);
+  border-radius: 999px;
+  padding: 1px 7px;
+  margin-left: 3px;
+  color: var(--muted);
+}
+.ol-tab[aria-selected="true"] .ol-tab-count { color: var(--gold); }
+
+/* ---- order count + page size ---- */
+.ol-total-count { font-size: 13px; color: var(--muted); white-space: nowrap; }
+.ol-total-count b { color: var(--gold); font-size: 15px; }
+.ol-foot-info { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
+.ol-page-size {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.ol-page-size select {
+  border: 1px solid var(--line-soft);
+  background: var(--panel);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 5px 8px;
+  font-size: 12.5px;
+  outline: none;
+  cursor: pointer;
+}
+.ol-page-size select:focus { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-soft); }
+
+/* ---- table cells ---- */
+.ol-order-no { font-weight: 600; font-size: 13.5px; color: var(--text); }
+.ol-thumb {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--bg-2);
+  border: 1px solid var(--line-soft);
+}
+.ol-thumb-placeholder svg { width: 30px; height: 30px; color: var(--muted); }
+.ol-prod { display: flex; align-items: center; gap: 9px; }
+.ol-prod-name { font-size: 13.5px; font-weight: 600; }
+.ol-prod-sub { font-size: 12px; color: var(--muted); margin-top: 1px; }
+.ol-more { font-size: 12px; color: var(--gold); margin-top: 6px; cursor: pointer; }
+.ol-total { font-weight: 700; font-size: 14px; }
+.ol-country-chip {
+  display: inline-block;
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gold);
+  border: 1px solid var(--line-soft);
+  border-radius: 999px;
+  padding: 1px 8px;
+  margin-top: 5px;
+}
+
+/* payment badge */
+.ol-pay-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+.ol-pay-badge.paid { background: rgba(63, 185, 80, 0.14); color: #3fb950; }
+.ol-pay-badge.partial { background: rgba(210, 153, 34, 0.16); color: var(--gold); }
+.ol-pay-badge.unpaid { background: rgba(248, 113, 113, 0.12); color: #f87171; }
+
+/* status select */
+.ol-status-select {
+  border: 1px solid var(--line-soft);
+  background: var(--panel);
+  color: var(--text);
+  font-size: 13px;
+  border-radius: 8px;
+  padding: 6px 9px;
+  cursor: pointer;
+}
+.ol-status-select:hover { border-color: var(--gold); }
+
+/* ---- bulk bar extra ---- */
+.ol-bulk-label { font-size: 13px; color: var(--muted); }
+#olBulkStatus {
+  border: 1px solid var(--line-soft);
+  background: var(--panel);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 6px 9px;
+  font-size: 13px;
+}
+#olBulkApply {
+  border: 1px solid var(--gold);
+  color: var(--gold);
+  background: var(--gold-soft);
+  border-radius: 8px;
+  padding: 6px 13px;
+  cursor: pointer;
+  font-size: 13px;
+}
+#olBulkPrint {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: var(--gold-soft);
+}
+
+/* ---- edit modal ---- */
+.ol-edit-box { max-width: 560px; max-height: 84vh; overflow-y: auto; }
+.ol-history {
+  margin: 14px 0 4px;
+  border: 1px solid var(--line-soft);
+  border-radius: 10px;
+  background: var(--bg-2);
+  padding: 10px 12px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+.ol-history-empty { font-size: 12.5px; color: var(--muted); }
+.ol-history-row { display: flex; flex-direction: column; gap: 1px; padding: 5px 0; }
+.ol-history-row + .ol-history-row { border-top: 1px dashed var(--line-soft); }
+.ol-history-row b { font-size: 13px; }
+.ol-history-row span { font-size: 11.5px; color: var(--muted); }
+
+/* ---- installments note ---- */
+.ol-installment { font-weight: 600; }
+
+/* responsive: keep the wide table usable */
+@media (max-width: 760px) {
+  .ol-tabs { gap: 6px; }
+  .ol-tab { padding: 7px 10px; font-size: 12.5px; }
+}
+
+/* ==========================================================================
+   Order details
+   ========================================================================== */
+
+.ol-table tbody tr[data-row] { cursor: pointer; transition: background 0.15s; }
+.ol-table tbody tr[data-row]:hover td { background: var(--bg-2); }
+
+.od-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+  padding: 18px 20px;
+  margin-bottom: 16px;
+}
+.od-hero-badges { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 10px; }
+.od-status {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--bg-2);
+  color: var(--muted);
+}
+.od-status.is-ok { background: rgba(63, 185, 80, 0.14); color: #3fb950; }
+.od-status.is-mid { background: rgba(96, 165, 250, 0.14); color: #60a5fa; }
+.od-status.is-cancel { background: rgba(248, 113, 113, 0.12); color: #f87171; }
+.od-status.is-pending { background: var(--gold-soft); color: var(--gold); }
+.od-chip {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line-soft);
+  color: var(--muted);
+}
+.od-hero h3 { font-size: 22px; font-weight: 700; margin: 0; }
+.od-hero p { color: var(--muted); font-size: 13px; margin-top: 5px; }
+.od-hero-side {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(120px, auto));
+  gap: 10px 26px;
+  text-align: right;
+}
+.od-hero-side span {
+  display: block;
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.od-hero-side b { font-size: 13.5px; font-weight: 600; }
+
+.od-cards {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 16px;
+}
+.od-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+  padding: 18px 20px;
+}
+.od-card h4 {
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 12px;
+}
+.od-kv { margin: 0; display: grid; gap: 9px; }
+.od-kv dt {
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 2px;
+}
+.od-kv dd { margin: 0; font-size: 13px; color: var(--text); overflow-wrap: anywhere; }
+
+.od-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 270px;
+  gap: 16px;
+  align-items: start;
+  margin-bottom: 16px;
+}
+.od-items { padding: 18px 14px 8px; }
+.od-table-wrap { overflow-x: auto; }
+.od-table { width: 100%; min-width: 380px; border-collapse: collapse; }
+.od-table th {
+  text-align: left;
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 8px 6px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+.od-table td { padding: 9px 6px; border-bottom: 1px solid var(--line-soft); font-size: 13.5px; vertical-align: middle; }
+.od-table tbody tr:last-child td { border-bottom: none; }
+.od-c { text-align: center; }
+.od-r { text-align: right; }
+.od-item { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.od-item b { display: block; font-weight: 600; }
+.od-item span { display: block; color: var(--muted); font-size: 11.5px; margin-top: 2px; }
+.od-empty { text-align: center; color: var(--muted); padding: 22px 8px; }
+
+.od-totals { position: sticky; top: 16px; }
+.od-total-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 0;
+  font-size: 13.5px;
+  color: var(--muted);
+  border-bottom: 1px dashed var(--line-soft);
+}
+.od-total-row b { color: var(--text); font-weight: 600; white-space: nowrap; }
+.od-total-row.grand {
+  border-bottom: none;
+  border-top: 1px solid var(--line);
+  margin-top: 4px;
+  padding-top: 12px;
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 700;
+}
+.od-total-row.grand b { color: var(--gold); font-size: 17px; }
+
+.od-note { margin-bottom: 24px; }
+.od-note-text { font-size: 14px; line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; }
+.od-note-empty { color: var(--muted); font-size: 13.5px; }
+.od-note-history { color: var(--muted); font-size: 12.5px; margin-top: 8px; font-style: italic; }
+.od-note-btn {
+  margin-top: 12px;
+  background: none;
+  border: 1px solid var(--line-soft);
+  color: var(--muted);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.od-note-btn:hover { color: var(--gold); border-color: var(--gold); }
+#odNoteInput {
+  width: 100%;
+  margin-top: 8px;
+  background: var(--bg-2);
+  border: 1px solid var(--line-soft);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 13.5px;
+  resize: vertical;
+}
+#odNoteInput:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-soft); }
+.od-note-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; }
+
+.od-note-btn:focus-visible,
+.od-note-actions button:focus-visible,
+#odBack:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+@media (max-width: 1100px) {
+  .od-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 900px) {
+  .od-main { grid-template-columns: 1fr; }
+  .od-totals { position: static; }
+}
+@media (max-width: 760px) {
+  .od-cards { grid-template-columns: 1fr; }
+  .od-hero { flex-direction: column; }
+  .od-hero-side { text-align: left; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; }
+  .od-top-actions { flex-wrap: wrap; }
+  .od-top-actions .btn-ghost { display: inline-flex; }
+  .od-items { padding: 16px 12px 6px; }
+  .od-table { min-width: 0; }
+  .od-table th, .od-table td { padding: 8px 5px; font-size: 13px; }
+  .od-item { gap: 8px; }
+  .od-item > div { min-width: 0; }
+  .od-item b { overflow-wrap: anywhere; }
+}

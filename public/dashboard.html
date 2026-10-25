@@ -1,0 +1,2584 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LUXE — Admin Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/dashboard.css" />
+  <link rel="stylesheet" href="/css/categories.css" />
+  <link rel="stylesheet" href="/css/product-form.css" />
+  <link rel="stylesheet" href="/css/settings.css" />
+  <link rel="stylesheet" href="/css/installments.css?v=1" />
+  <link rel="stylesheet" href="/css/product-catalog.css?v=1" />
+  <link rel="stylesheet" href="/css/order-catalog.css?v=2" />
+  <link rel="stylesheet" href="/css/marketing.css?v=1" />
+  <link rel="stylesheet" href="/css/hero-slider.css?v=1" />
+  <link rel="stylesheet" href="/css/customers.css?v=1" />
+  <link rel="stylesheet" href="/css/suppliers.css?v=1" />
+  <link rel="stylesheet" href="/css/reports.css?v=2" />
+  <!-- Font Awesome Free (icon library) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+  <!-- SortableJS for drag-and-drop -->
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+</head>
+<body>
+  <div class="dash">
+    <aside class="sidebar" id="sidebar">
+      <div class="sb-brand">
+        <div class="mark">L</div>
+        <div>
+          <div class="name">LUXE</div>
+          <div class="role">Admin Panel</div>
+          <div class="s-store" id="storeName" hidden></div>
+        </div>
+      </div>
+
+      <nav class="sb-nav">
+        <div class="nav-group" id="navGroupProducts">
+          <div class="nav-parent-row">
+            <a href="#" class="nav-item active" data-view="products">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><path d="M3.3 8.3L12 13l8.7-4.7M12 13v9"/></svg>
+              Products
+            </a>
+            <button class="nav-toggle" type="button" aria-expanded="true" aria-controls="productsSubmenu" aria-label="Toggle Products submenu">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+          </div>
+          <div class="nav-sub" id="productsSubmenu">
+            <a href="#" class="nav-item" data-view="add-product">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
+              Add Product
+            </a>
+            <a href="#" class="nav-item" data-view="product-list">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+              Product list
+            </a>
+          </div>
+        </div>
+        <a href="#" class="nav-item" data-view="categories">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h6l2 3h8a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/></svg>
+          Categories
+        </a>
+        <a href="#" class="nav-item" data-view="brands">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          Brands
+        </a>
+        <a href="#" class="nav-item" data-view="orders">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2l.6 3H3.6L3 8h2.1L3.6 22h16.8L18.9 8H21l-.6-3h-3L16.8 2z"/><path d="M9 12h6M9 16h6"/></svg>
+          Orders
+        </a>
+        <a href="#" class="nav-item" data-view="customers" id="navCustomers">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Customers
+        </a>
+        <div class="nav-group" id="navGroupSuppliers">
+          <div class="nav-parent-row">
+            <a href="#" class="nav-item" data-view="suppliers">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h11v10H3z"/><path d="M14 10h4l3 3v4h-7z"/><circle cx="7" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/></svg>
+              Suppliers
+            </a>
+            <button class="nav-toggle" type="button" aria-expanded="true" aria-controls="suppliersSubmenu" aria-label="Toggle Suppliers submenu">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+          </div>
+          <div class="nav-sub" id="suppliersSubmenu">
+            <a href="#" class="nav-item" data-view="supplier-history">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
+              Order history
+            </a>
+          </div>
+        </div>
+        <div class="nav-group" id="navGroupReports" hidden>
+          <div class="nav-parent-row">
+            <a href="#" class="nav-item" data-view="report-sales">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
+              Reports
+            </a>
+            <button class="nav-toggle" type="button" aria-expanded="true" aria-controls="reportsSubmenu" aria-label="Toggle Reports submenu">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+          </div>
+          <div class="nav-sub" id="reportsSubmenu">
+            <a href="#" class="nav-item" data-view="report-sales">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
+              Sales reports
+            </a>
+            <a href="#" class="nav-item" data-view="report-products">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><path d="M3.3 8.3L12 13l8.7-4.7M12 13v9"/></svg>
+              Product wise
+            </a>
+            <a href="#" class="nav-item" data-view="report-categories">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h6l2 3h8a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/></svg>
+              Category wise
+            </a>
+            <a href="#" class="nav-item" data-view="report-coupons">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4V8z"/><path d="M9 6v12" stroke-dasharray="2 3"/></svg>
+              Coupon wise
+            </a>
+            <a href="#" class="nav-item" data-view="report-customers">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              Top customers
+            </a>
+          </div>
+        </div>
+        <a href="#" class="nav-item" data-view="settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1.11-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 8.89a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 8.96 4.5a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1z"/></svg>
+          Settings
+        </a>
+        <a href="#" class="nav-item" data-view="installment-orders">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 3h16a1 1 0 0 1 1 1v17l-3-2-2 2-2-2-2 2-2-2-3 2V4a1 1 0 0 1 1-1z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
+          Installment orders
+        </a>
+        <a href="#" class="nav-item" data-view="flash-sales" id="navFlashSales">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z"/></svg>
+          Flash sales
+        </a>
+        <a href="#" class="nav-item" data-view="coupons" id="navCoupons">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4V8z"/><path d="M9 6v12" stroke-dasharray="2 3"/></svg>
+          Coupons
+        </a>
+        <a href="#" class="nav-item" data-view="hero-slider" id="navHeroSlider">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.5"/><path d="M21 15l-5-5L5 19"/></svg>
+          Hero slider
+        </a>
+      </nav>
+
+      <div class="sb-bottom">
+        <div class="sb-user">
+          <div class="avatar" id="avatar">A</div>
+          <div>
+            <div class="u-name" id="uName">—</div>
+            <div class="u-email" id="uEmail">—</div>
+          </div>
+        </div>
+        <button class="theme-btn" id="themeToggle" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+          <span id="themeLabel">Light mode</span>
+        </button>
+        <button class="logout-btn" id="logoutBtn">Logout</button>
+      </div>
+    </aside>
+    <div class="sb-overlay" id="sbOverlay"></div>
+
+    <main class="main">
+      <!-- ===================== PRODUCTS VIEW ===================== -->
+      <section class="view" id="view-products">
+      <div class="topbar">
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <button class="menu-btn" id="menuBtn" aria-label="Menu">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+          </button>
+          <div>
+            <h2>Dashboard</h2>
+            <p class="crumb">Overview / Inventory</p>
+          </div>
+        </div>
+        <button class="btn-add" id="addBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
+          Add Product
+        </button>
+      </div>
+
+      <section class="setup-banner" id="setupBanner" hidden>
+        <div>
+          <h3>কোনো দোকান নেই</h3>
+          <p>শুরু করতে আপনার প্রথম দোকানটি খুলুন — প্ল্যান বেছে নিন।</p>
+        </div>
+        <a class="btn-add" href="/setup.html">দোকান খুলুন</a>
+      </section>
+
+      <section class="stats">
+        <div class="stat">
+          <p class="label">মোট প্রোডাক্ট</p>
+          <p class="value gold" id="stTotal">0</p>
+        </div>
+        <div class="stat">
+          <p class="label">মোট স্টক (ইউনিট)</p>
+          <p class="value" id="stUnits">0</p>
+        </div>
+        <div class="stat">
+          <p class="label">স্টকের মূল্য</p>
+          <p class="value gold" id="stValue">৳ 0</p>
+        </div>
+        <div class="stat">
+          <p class="label">স্টক শেষ</p>
+          <p class="value danger" id="stOut">0</p>
+        </div>
+      </section>
+
+      <section class="panel" id="products">
+        <div class="panel-head">
+          <div>
+            <h3>প্রোডাক্ট তালিকা</h3>
+            <p class="count" id="pCount">0 টি প্রোডাক্ট</p>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>প্রোডাক্ট</th>
+                <th>দাম</th>
+                <th>স্টক</th>
+                <th>তারিখ</th>
+                <th>অ্যাকশন</th>
+              </tr>
+            </thead>
+            <tbody id="pBody">
+              <tr><td colspan="5"><div class="empty">লোড হচ্ছে...</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+      </section><!-- /#view-products -->
+
+      <!-- ===================== CATEGORIES VIEW ===================== -->
+      <section class="view" id="view-categories" hidden>
+        <div class="cat-topbar">
+          <div style="display:flex;align-items:center;gap:14px;">
+            <button class="menu-btn" data-menu aria-label="Menu">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+            <div>
+              <h2>Categories</h2>
+              <p class="crumb">Catalog categories — add, edit, reorder &amp; manage</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="cat-layout">
+          <!-- ===== FORM ===== -->
+          <div class="cat-form-col">
+            <form id="categoryForm" class="cat-form" novalidate>
+              <input type="hidden" id="catId" />
+              <div class="cat-form-head">
+                <h3 id="catFormTitle">Add Category</h3>
+                <button type="button" class="cat-reset" id="catResetBtn">Reset</button>
+              </div>
+
+              <div class="field">
+                <label for="catName">Name</label>
+                <input id="catName" type="text" placeholder="e.g. Men" />
+              </div>
+
+              <div class="field">
+                <label for="catSlug">Slug</label>
+                <input id="catSlug" type="text" placeholder="auto-generated if empty" />
+                <p class="hint">Leave empty to auto-generate. Duplicates get -2, -3…</p>
+              </div>
+
+              <div class="field">
+                <label for="catParentTrigger">Parent</label>
+                <input type="hidden" id="catParent" />
+                <div class="cat-select" id="catParentSelect">
+                  <button type="button" class="cat-select-trigger" id="catParentTrigger" aria-haspopup="listbox" aria-expanded="false">
+                    <span class="cat-select-value" id="catParentValue">Select Category</span>
+                    <svg class="cat-select-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                  </button>
+                  <div class="cat-select-panel" id="catParentPanel" hidden>
+                    <input type="text" class="cat-select-search" id="catParentSearch" placeholder="Search parent…" aria-label="Search parent" />
+                    <div class="cat-select-list" id="catParentList" role="listbox"></div>
+                  </div>
+                </div>
+                <p class="hint">Full path shown, e.g. Men &gt; Shoes</p>
+              </div>
+
+              <div class="field">
+                <label>Image</label>
+                <div class="img-uploader">
+                  <div class="img-preview" id="catImagePreview"><span>No image</span></div>
+                  <div class="img-actions">
+                    <button type="button" class="btn-ghost sm" id="catImageBtn">Upload</button>
+                    <button type="button" class="btn-ghost sm danger" id="catImageRemove" hidden>Remove</button>
+                  </div>
+                  <input type="file" id="catImageInput" accept="image/*" hidden />
+                </div>
+              </div>
+
+              <div class="field">
+                <label>Icon</label>
+                <div class="icon-picker">
+                  <div class="icon-tabs">
+                    <button type="button" class="icon-tab active" data-icontype="library">Library</button>
+                    <button type="button" class="icon-tab" data-icontype="custom">Custom</button>
+                  </div>
+                  <div class="icon-library-panel" id="iconLibraryPanel">
+                    <input type="text" id="iconSearch" placeholder="Search icons…" />
+                    <div class="icon-grid" id="iconGrid"></div>
+                  </div>
+                  <div class="icon-custom-panel" id="iconCustomPanel" hidden>
+                    <div class="icon-custom-modes">
+                      <button type="button" class="icon-mode active" data-mode="svg">SVG code</button>
+                      <button type="button" class="icon-mode" data-mode="class">Icon class</button>
+                      <button type="button" class="icon-mode" data-mode="upload">Upload image</button>
+                    </div>
+                    <textarea id="iconSvgInput" rows="3" placeholder="<svg …></svg>"></textarea>
+                    <input type="text" id="iconClassInput" placeholder="fa-solid fa-shirt" hidden />
+                    <input type="file" id="iconUploadInput" accept="image/*" hidden />
+                    <button type="button" class="btn-ghost sm" id="iconUploadBtn" hidden>Choose file</button>
+                    <p class="hint" id="iconFileName"></p>
+                  </div>
+                  <div class="icon-preview-row">
+                    <div class="icon-preview" id="iconPreview"><span>No icon</span></div>
+                    <span class="hint" id="iconPreviewLabel">No icon selected</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="grid-2">
+                <div class="field">
+                  <label for="catOrder">Serial</label>
+                  <input id="catOrder" type="number" placeholder="0" />
+                </div>
+                <div class="field">
+                  <label>Status</label>
+                  <div class="status-toggle">
+                    <label class="check"><input type="radio" name="catStatus" value="draft" checked /> Draft</label>
+                    <label class="check"><input type="radio" name="catStatus" value="published" /> Published</label>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-actions">
+                <button type="submit" class="btn-ghost" id="catSaveDraft">Save (Draft)</button>
+                <button type="submit" class="btn-gold" id="catPublish">Publish</button>
+              </div>
+              <p class="msg" id="catMsg"></p>
+            </form>
+          </div>
+
+          <!-- ===== LIST ===== -->
+          <div class="cat-list-col">
+            <div class="cat-tabs" id="catTabs">
+              <button class="cat-tab active" data-status="">All <span class="badge" id="countAll">0</span></button>
+              <button class="cat-tab" data-status="published">Published <span class="badge" id="countPublished">0</span></button>
+              <button class="cat-tab" data-status="draft">Draft <span class="badge" id="countDraft">0</span></button>
+              <button class="cat-tab" data-status="trashed">Trash <span class="badge" id="countTrashed">0</span></button>
+            </div>
+
+            <div class="cat-toolbar">
+              <input type="search" id="catSearch" placeholder="Search name or slug…" aria-label="Search categories" />
+              <label class="check" style="white-space:nowrap;">
+                <input type="checkbox" id="catSelectAll" /> Select all
+              </label>
+              <div class="cat-bulk" id="catBulkBar" hidden>
+                <span id="catSelectedCount">0 selected</span>
+                <button class="btn-ghost sm" data-bulk="publish">Publish</button>
+                <button class="btn-ghost sm" data-bulk="draft">Draft</button>
+                <button class="btn-ghost sm" data-bulk="trash">Trash</button>
+                <button class="btn-ghost sm" data-bulk="restore">Restore</button>
+                <button class="btn-ghost sm danger" data-bulk="permanent">Delete</button>
+              </div>
+            </div>
+
+            <div class="cat-tree" id="categoryList">
+              <div id="catTreeBody">
+                <div class="skeleton"></div>
+                <div class="skeleton"></div>
+                <div class="skeleton"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section><!-- /#view-categories -->
+
+      <!-- ===================== BRANDS VIEW ===================== -->
+      <section class="view" id="view-brands" hidden>
+        <div class="cat-topbar">
+          <div style="display:flex;align-items:center;gap:14px;">
+            <button class="menu-btn" data-menu aria-label="Menu">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+            <div>
+              <h2>Brands</h2>
+              <p class="crumb">Catalog brands — add, edit, reorder &amp; manage</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="cat-layout">
+          <!-- ===== FORM ===== -->
+          <div class="cat-form-col">
+            <form id="brandForm" class="cat-form" novalidate>
+              <input type="hidden" id="brandId" />
+              <div class="cat-form-head">
+                <h3 id="brandFormTitle">Add Brand</h3>
+                <button type="button" class="cat-reset" id="brandResetBtn">Reset</button>
+              </div>
+
+              <div class="field">
+                <label for="brandName">Name</label>
+                <input id="brandName" type="text" placeholder="e.g. Men" />
+              </div>
+
+              <div class="field">
+                <label for="brandSlug">Slug</label>
+                <input id="brandSlug" type="text" placeholder="auto-generated if empty" />
+                <p class="hint">Leave empty to auto-generate. Duplicates get -2, -3…</p>
+              </div>
+
+              <div class="field">
+                <label for="brandParentTrigger">Parent</label>
+                <input type="hidden" id="brandParent" />
+                <div class="cat-select" id="brandParentSelect">
+                  <button type="button" class="cat-select-trigger" id="brandParentTrigger" aria-haspopup="listbox" aria-expanded="false">
+                    <span class="cat-select-value" id="brandParentValue">Select Brand</span>
+                    <svg class="cat-select-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                  </button>
+                  <div class="cat-select-panel" id="brandParentPanel" hidden>
+                    <input type="text" class="cat-select-search" id="brandParentSearch" placeholder="Search parent…" aria-label="Search parent" />
+                    <div class="cat-select-list" id="brandParentList" role="listbox"></div>
+                  </div>
+                </div>
+                <p class="hint">Full path shown, e.g. Men &gt; Shoes</p>
+              </div>
+
+              <div class="field">
+                <label>Image</label>
+                <div class="img-uploader">
+                  <div class="img-preview" id="brandImagePreview"><span>No image</span></div>
+                  <div class="img-actions">
+                    <button type="button" class="btn-ghost sm" id="brandImageBtn">Upload</button>
+                    <button type="button" class="btn-ghost sm danger" id="brandImageRemove" hidden>Remove</button>
+                  </div>
+                  <input type="file" id="brandImageInput" accept="image/*" hidden />
+                </div>
+              </div>
+
+              <div class="field">
+                <label>Icon</label>
+                <div class="icon-picker">
+                  <div class="icon-tabs">
+                    <button type="button" class="icon-tab active" data-icontype="library">Library</button>
+                    <button type="button" class="icon-tab" data-icontype="custom">Custom</button>
+                  </div>
+                  <div class="icon-library-panel" id="brandIconLibraryPanel">
+                    <input type="text" id="brandIconSearch" placeholder="Search icons…" />
+                    <div class="icon-grid" id="brandIconGrid"></div>
+                  </div>
+                  <div class="icon-custom-panel" id="brandIconCustomPanel" hidden>
+                    <div class="icon-custom-modes">
+                      <button type="button" class="icon-mode active" data-mode="svg">SVG code</button>
+                      <button type="button" class="icon-mode" data-mode="class">Icon class</button>
+                      <button type="button" class="icon-mode" data-mode="upload">Upload image</button>
+                    </div>
+                    <textarea id="brandIconSvgInput" rows="3" placeholder="<svg …></svg>"></textarea>
+                    <input type="text" id="brandIconClassInput" placeholder="fa-solid fa-shirt" hidden />
+                    <input type="file" id="brandIconUploadInput" accept="image/*" hidden />
+                    <button type="button" class="btn-ghost sm" id="brandIconUploadBtn" hidden>Choose file</button>
+                    <p class="hint" id="brandIconFileName"></p>
+                  </div>
+                  <div class="icon-preview-row">
+                    <div class="icon-preview" id="brandIconPreview"><span>No icon</span></div>
+                    <span class="hint" id="brandIconPreviewLabel">No icon selected</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="grid-2">
+                <div class="field">
+                  <label for="brandOrder">Serial</label>
+                  <input id="brandOrder" type="number" placeholder="0" />
+                </div>
+                <div class="field">
+                  <label>Status</label>
+                  <div class="status-toggle">
+                    <label class="check"><input type="radio" name="catStatus" value="draft" checked /> Draft</label>
+                    <label class="check"><input type="radio" name="catStatus" value="published" /> Published</label>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-actions">
+                <button type="submit" class="btn-ghost" id="brandSaveDraft">Save (Draft)</button>
+                <button type="submit" class="btn-gold" id="brandPublish">Publish</button>
+              </div>
+              <p class="msg" id="brandMsg"></p>
+            </form>
+          </div>
+
+          <!-- ===== LIST ===== -->
+          <div class="cat-list-col">
+            <div class="cat-tabs" id="brandTabs">
+              <button class="cat-tab active" data-status="">All <span class="badge" id="brandCountAll">0</span></button>
+              <button class="cat-tab" data-status="published">Published <span class="badge" id="brandCountPublished">0</span></button>
+              <button class="cat-tab" data-status="draft">Draft <span class="badge" id="brandCountDraft">0</span></button>
+              <button class="cat-tab" data-status="trashed">Trash <span class="badge" id="brandCountTrashed">0</span></button>
+            </div>
+
+            <div class="cat-toolbar">
+              <input type="search" id="brandSearch" placeholder="Search name or slug…" aria-label="Search brands" />
+              <label class="check" style="white-space:nowrap;">
+                <input type="checkbox" id="brandSelectAll" /> Select all
+              </label>
+              <div class="cat-bulk" id="brandBulkBar" hidden>
+                <span id="brandSelectedCount">0 selected</span>
+                <button class="btn-ghost sm" data-bulk="publish">Publish</button>
+                <button class="btn-ghost sm" data-bulk="draft">Draft</button>
+                <button class="btn-ghost sm" data-bulk="trash">Trash</button>
+                <button class="btn-ghost sm" data-bulk="restore">Restore</button>
+                <button class="btn-ghost sm danger" data-bulk="permanent">Delete</button>
+              </div>
+            </div>
+
+            <div class="cat-tree" id="brandList">
+              <div id="brandTreeBody">
+                <div class="skeleton"></div>
+                <div class="skeleton"></div>
+                <div class="skeleton"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section><!-- /#view-brands -->
+
+      <!-- ===================== ADD PRODUCT VIEW ===================== -->
+      <section class="view" id="view-add-product" hidden>
+        <div class="pf-topbar">
+          <div style="display:flex;align-items:center;gap:14px;">
+            <button class="menu-btn" data-menu aria-label="Menu">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+            <div>
+              <h2>Add Product</h2>
+              <p class="crumb">Catalog / Products / New product</p>
+            </div>
+          </div>
+          <div class="pf-actions">
+            <button class="btn-ghost" id="saveDraftBtn" type="button" style="margin-top:0;padding:10px 18px;flex:initial;">Save draft</button>
+            <button class="btn-add" id="publishBtn" type="button">Publish</button>
+          </div>
+        </div>
+
+        <div class="pf-layout">
+          <!-- ============ LEFT COLUMN ============ -->
+          <div class="pf-col">
+            <!-- 1. Product details -->
+            <div class="pf-card">
+              <div class="pf-card-head"><h3>Product details</h3></div>
+              <div class="pf-field">
+                <label for="pfTitle">Product title <span class="req">*</span></label>
+                <input id="pfTitle" type="text" placeholder="e.g. Cotton Polo shirt" autocomplete="off" />
+                <p class="pf-error" data-error="pfTitle"></p>
+              </div>
+              <div class="pf-field">
+                <label>Product description</label>
+                <div class="rt-toolbar" role="toolbar" aria-label="Formatting">
+                  <button type="button" data-cmd="bold" title="Bold"><b>B</b></button>
+                  <button type="button" data-cmd="italic" title="Italic"><i>I</i></button>
+                  <button type="button" data-cmd="underline" title="Underline"><u>U</u></button>
+                  <button type="button" data-cmd="insertUnorderedList" title="Bullet list">• List</button>
+                </div>
+                <div id="pfDesc" class="rt-editor" contenteditable="true" data-placeholder="Write the full description" role="textbox" aria-multiline="true" aria-label="Product description"></div>
+              </div>
+            </div>
+
+            <!-- 2. Main price and stock -->
+            <div class="pf-card">
+              <div class="pf-card-head"><h3>Main price and stock <span class="hint">Default for the product</span></h3></div>
+              <div class="pf-grid-2">
+                <div class="pf-field">
+                  <label for="pfRegular">Regular price</label>
+                  <input id="pfRegular" type="number" min="0" step="0.01" placeholder="0.00" />
+                </div>
+                <div class="pf-field">
+                  <label for="pfSale">Sale price</label>
+                  <input id="pfSale" type="number" min="0" step="0.01" placeholder="0.00" />
+                </div>
+                <div class="pf-field">
+                  <label for="pfStock">Stock quantity</label>
+                  <input id="pfStock" type="number" min="0" placeholder="0" />
+                </div>
+                <div class="pf-field">
+                  <label for="pfSku">SKU</label>
+                  <input id="pfSku" type="text" placeholder="Optional" />
+                </div>
+                <div class="pf-field">
+                  <label for="pfWeight">Weight (kg)</label>
+                  <input id="pfWeight" type="number" min="0" step="0.001" placeholder="0.000" />
+                </div>
+              </div>
+              <p class="pf-note">Used when a variation has no price or stock of its own. Weight drives wholesale per-kg and vehicle shipping.</p>
+            </div>
+
+            <!-- 3. Attributes (Super Settings theke on/off) -->
+            <div class="pf-card" id="attributesCard">
+              <div class="pf-card-head"><h3>Attributes <span class="hint">Size, Color and more</span></h3></div>
+              <div class="pf-grid-2">
+                <div class="pf-field">
+                  <label for="pfAttrSelect">Attribute</label>
+                  <select id="pfAttrSelect"></select>
+                </div>
+                <div class="pf-field">
+                  <label for="pfTermInput">Add term</label>
+                  <input id="pfTermInput" type="text" placeholder="Type L, XL, XXL and press Enter" />
+                </div>
+              </div>
+              <div class="chips" id="pfTermChips" aria-live="polite"></div>
+              <label class="pf-check"><input type="checkbox" id="pfPerTerm" /> Set separate stock and price for each term</label>
+              <div id="variationTableWrap" hidden>
+                <div class="pf-table-wrap">
+                  <table class="pf-table">
+                    <thead><tr><th>Image</th><th>Term</th><th>Regular price</th><th>Sale price</th><th>Stock</th></tr></thead>
+                    <tbody id="pfVariationRows"></tbody>
+                  </table>
+                </div>
+              </div>
+              <p class="pf-note">Each term has one image. When a customer orders that term, the cart shows its image, price and quantity.</p>
+            </div>
+
+            <!-- 4. Image swatches (Super Settings theke on/off) -->
+            <div class="pf-card" id="swatchesCard">
+              <div class="pf-card-head"><h3>Image swatches <span class="hint">Sell different looks under one product</span></h3></div>
+              <p class="pf-note" style="margin-top:8px;">Each swatch has its own image, name, price and stock. Customers can pick one or several and order them together.</p>
+              <div class="pf-swatches" id="pfSwatches"></div>
+              <button class="pf-btn-sm" id="addSwatchBtn" type="button">+ Add swatch</button>
+              <p class="pf-note">Gallery: one swatch can hold more than one image. Use the first as the cart image.</p>
+            </div>
+
+            <!-- 5. Wholesale quantity tiers (only while wholesale mode is ON) -->
+            <div class="pf-card" id="pfTiersCard" hidden>
+              <div class="pf-card-head"><h3>Wholesale quantity tiers <span class="hint">Quantity → unit price</span></h3></div>
+              <p class="pf-note" style="margin-top:8px;">The first tier starts at your store MOQ. Each next tier starts automatically at the previous To qty + 1. Leave the last To qty empty for unlimited.</p>
+              <div class="pf-field">
+                <label for="pfTierTarget">Tiers apply to</label>
+                <select id="pfTierTarget">
+                  <option value="__product__">Product (default)</option>
+                </select>
+              </div>
+              <div class="pf-table-wrap">
+                <table class="pf-table pf-tier-table">
+                  <thead><tr><th>From qty</th><th>To qty</th><th>Price / unit (৳)</th><th></th></tr></thead>
+                  <tbody id="pfTierRows"></tbody>
+                </table>
+              </div>
+              <div class="pf-row">
+                <button class="pf-btn-sm" id="addTierBtn" type="button">+ Add tier</button>
+              </div>
+              <p class="pf-error" id="pfTierError" role="alert"></p>
+              <p class="pf-note">Tier prices are stored as integer paisa. Variations without their own tiers use the product tiers.</p>
+            </div>
+          </div>
+
+          <!-- ============ RIGHT COLUMN ============ -->
+          <div class="pf-col pf-side">
+            <!-- 1. Categories -->
+            <div class="pf-card">
+              <div class="pf-card-head"><h3>Categories</h3></div>
+              <div class="pf-tree" id="pfCategoryTree"></div>
+              <button class="pf-btn-sm" id="createCategoryBtn" type="button" style="margin-top:12px;">+ Create category</button>
+              <form id="createCategoryForm" class="pf-inline-form" hidden novalidate>
+                <div class="pf-field" style="margin-top:0;">
+                  <label for="newCatName">Name <span class="req">*</span></label>
+                  <input id="newCatName" type="text" placeholder="New category" />
+                  <p class="pf-error" data-error="newCatName"></p>
+                </div>
+                <div class="pf-field">
+                  <label for="newCatParent">Parent</label>
+                  <select id="newCatParent"></select>
+                </div>
+                <div class="pf-row">
+                  <button type="button" class="pf-btn-sm" id="cancelCreateCat">Cancel</button>
+                  <button type="submit" class="btn-add" style="padding:8px 14px;font-size:13px;">Add</button>
+                </div>
+              </form>
+            </div>
+
+            <!-- 2. Tags -->
+            <div class="pf-card">
+              <div class="pf-card-head"><h3>Tags</h3></div>
+              <div class="pf-field" style="margin-top:10px;">
+                <input id="pfTagInput" type="text" placeholder="Type a tag and press Enter" aria-label="Add tag" />
+              </div>
+              <div class="chips" id="pfTagChips" aria-live="polite"></div>
+            </div>
+
+            <!-- 3. Short description -->
+            <div class="pf-card">
+              <div class="pf-card-head"><h3>Short description</h3></div>
+              <div class="pf-field" style="margin-top:10px;">
+                <textarea id="pfShortDesc" rows="3" placeholder="One or two lines shown on the product list"></textarea>
+              </div>
+            </div>
+
+            <!-- 4. (Product settings moved to Settings > Product settings) -->
+          </div>
+        </div>
+      </section><!-- /#view-add-product -->
+
+      <!-- ===================== SETTINGS VIEW ===================== -->
+      <section class="view" id="view-settings" hidden>
+        <div class="pf-topbar">
+          <div style="display:flex;align-items:center;gap:14px;">
+            <button class="menu-btn" data-menu aria-label="Menu">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+            <div>
+              <h2>Settings</h2>
+              <p class="crumb">Store configuration — header, footer, social &amp; shipping</p>
+            </div>
+          </div>
+          <div class="pf-actions">
+            <button class="btn-add" id="settingsSaveBtn" type="button">Save changes</button>
+          </div>
+        </div>
+
+        <div class="settings-layout">
+          <!-- left sub-menu -->
+          <aside class="settings-menu" id="settingsMenu">
+            <button class="settings-menu-item active" data-pane="header" type="button">Header</button>
+            <button class="settings-menu-item" data-pane="footer" type="button">Footer</button>
+            <button class="settings-menu-item" data-pane="social" type="button">Social media</button>
+            <button class="settings-menu-item" data-pane="product" type="button">Product settings</button>
+            <button class="settings-menu-item" data-pane="international" type="button">International import mode <span class="off-badge" data-international-off hidden>Off</span></button>
+            <div class="settings-menu-group">Wholesale</div>
+            <button class="settings-menu-item" data-pane="wholesale" type="button">Wholesale mode <span class="off-badge" data-wholesale-off hidden>Off</span></button>
+            <button class="settings-menu-item" data-pane="partial" type="button">Partial payment <span class="off-badge" data-partial-off hidden>Off</span></button>
+            <div class="settings-menu-group">Shop</div>
+            <button class="settings-menu-item" data-pane="manual" type="button">Manual shipping <span class="off-badge" data-off="manual" hidden>Off</span></button>
+            <button class="settings-menu-item" data-pane="area" type="button">Area shipping <span class="off-badge" data-off="area" hidden>Off</span></button>
+            <button class="settings-menu-item" data-pane="classes" type="button">Shipping classes <span class="off-badge" data-off="classes" hidden>Off</span></button>
+            <button class="settings-menu-item" data-pane="intl" type="button">International shipping <span class="off-badge" data-off="intl" hidden>Off</span></button>
+            <button class="settings-menu-item" data-pane="wd" type="button">Weight and dimensions <span class="off-badge" data-off="wd" hidden>Off</span></button>
+            <div class="settings-menu-group">Payment</div>
+            <button class="settings-menu-item" data-pane="payment-manual" type="button">Manual payment</button>
+            <button class="settings-menu-item" data-pane="payment-api" type="button">API payment</button>
+            <div class="settings-menu-group">Customer</div>
+            <button class="settings-menu-item" data-pane="login" type="button">Login and registration</button>
+            <button class="settings-menu-item" data-pane="checkout" type="button">Checkout fields</button>
+            <div class="settings-menu-group">Marketing</div>
+            <button class="settings-menu-item" data-pane="marketing" type="button">Flash sales <span class="off-badge" data-flash-off hidden>Off</span></button>
+            <div class="settings-menu-group">Notifications</div>
+            <button class="settings-menu-item" data-pane="email" type="button">Email settings</button>
+            <button class="settings-menu-item" data-pane="invoice" type="button">Invoice settings</button>
+            <button class="settings-menu-item" data-pane="sms" type="button">Phone / SMS settings</button>
+          </aside>
+
+          <!-- right form area -->
+          <div class="settings-panes">
+
+            <!-- ===== HEADER ===== -->
+            <section class="settings-pane active" data-pane="header">
+              <div class="pf-card">
+                <div class="pf-card-head"><h3>Header</h3></div>
+                <div class="pf-field">
+                  <label>Logo</label>
+                  <div class="settings-img-row">
+                    <div class="pf-img-slot settings-img" id="logoPreview"><span>No logo</span></div>
+                    <div class="settings-img-actions">
+                      <button class="pf-btn-sm" type="button" id="logoUploadBtn">Upload logo</button>
+                      <button class="pf-btn-sm pf-btn-danger" type="button" id="logoClearBtn">Remove</button>
+                    </div>
+                    <input type="file" accept="image/*" hidden id="logoFile" />
+                  </div>
+                </div>
+                <div class="pf-grid-2">
+                  <div class="pf-field">
+                    <label for="logoWidth">Width (px)</label>
+                    <input id="logoWidth" type="number" min="1" max="2000" placeholder="120" />
+                  </div>
+                  <div class="pf-field">
+                    <label for="logoHeight">Height (px)</label>
+                    <input id="logoHeight" type="number" min="1" max="2000" placeholder="40" />
+                  </div>
+                </div>
+                <div class="pf-field">
+                  <label for="siteTitle">Website title</label>
+                  <input id="siteTitle" type="text" placeholder="LUXE Store" />
+                  <p class="pf-note">No logo thakle ei title text hisebe dekhabe. Title khali hole project folder name use hobe.</p>
+                </div>
+              </div>
+
+              <div class="pf-card">
+                <div class="pf-card-head"><h3>Favicon <span class="hint">Default + per-shop icons</span></h3></div>
+                <div class="pf-field">
+                  <label>Default favicon</label>
+                  <div class="settings-img-row">
+                    <div class="pf-img-slot settings-img" id="faviconPreview"><span>No icon</span></div>
+                    <div class="settings-img-actions">
+                      <button class="pf-btn-sm" type="button" id="faviconUploadBtn">Upload favicon</button>
+                      <button class="pf-btn-sm pf-btn-danger" type="button" id="faviconClearBtn">Remove</button>
+                    </div>
+                    <input type="file" accept="image/*" hidden id="faviconFile" />
+                  </div>
+                </div>
+                <div class="settings-table-wrap">
+                  <table class="pf-table settings-table">
+                    <thead><tr><th>Icon</th><th>Shop name</th><th></th></tr></thead>
+                    <tbody id="shopFaviconRows"></tbody>
+                  </table>
+                </div>
+                <button class="pf-btn-sm" type="button" id="addShopIconBtn">+ Add shop icon</button>
+              </div>
+            </section>
+
+            <!-- ===== FOOTER ===== -->
+            <section class="settings-pane" data-pane="footer">
+              <div class="pf-card">
+                <div class="pf-card-head"><h3>Footer</h3></div>
+                <div class="pf-field">
+                  <label for="footerCopyright">Copyright text</label>
+                  <textarea id="footerCopyright" rows="3" placeholder="© 2026 Your Store. All rights reserved."></textarea>
+                </div>
+                <div class="pf-field">
+                  <label>Footer logo</label>
+                  <div class="settings-img-row">
+                    <div class="pf-img-slot settings-img" id="footerLogoPreview"><span>No logo</span></div>
+                    <div class="settings-img-actions">
+                      <button class="pf-btn-sm" type="button" id="footerLogoUploadBtn">Upload logo</button>
+                      <button class="pf-btn-sm pf-btn-danger" type="button" id="footerLogoClearBtn">Remove</button>
+                    </div>
+                    <input type="file" accept="image/*" hidden id="footerLogoFile" />
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- ===== SOCIAL MEDIA ===== -->
+            <section class="settings-pane" data-pane="social">
+              <div class="pf-card">
+                <div class="pf-card-head"><h3>Social media</h3></div>
+                <div class="settings-table-wrap">
+                  <table class="pf-table settings-table">
+                    <thead><tr><th>Icon</th><th>Name</th><th>URL</th><th></th></tr></thead>
+                    <tbody id="socialRows"></tbody>
+                  </table>
+                </div>
+                <button class="pf-btn-sm" type="button" id="addSocialBtn">+ Add social media</button>
+              </div>
+            </section>
+
+            <!-- ===== PRODUCT SETTINGS ===== -->
+            <section class="settings-pane" data-pane="product">
+              <div class="pf-card">
+                <div class="pf-card-head"><h3>Product settings</h3><span class="hint">Add Product page controls</span></div>
+                <div class="pf-toggle-row">
+                  <div><strong>Attributes</strong><p>Show the Attributes section on Add Product</p></div>
+                  <label class="pf-switch"><input type="checkbox" id="setAttributes" /><span class="slider"></span></label>
+                </div>
+                <div class="pf-toggle-row">
+                  <div><strong>Image swatches</strong><p>Show the Image swatches section on Add Product</p></div>
+                  <label class="pf-switch"><input type="checkbox" id="setSwatches" /><span class="slider"></span></label>
+                </div>
+              </div>
+            </section>
+
+            <!-- ===== INTERNATIONAL IMPORT MODE ===== -->
+            <section class="settings-pane" data-pane="international">
+              <div class="pf-card">
+                <div class="pf-card-head">
+                  <div>
+                    <h3>International Product Import Mode</h3>
+                    <span class="hint">Size-wise import catalog rules</span>
+                  </div>
+                  <label class="pf-switch" title="Enable / disable">
+                    <input type="checkbox" id="intlEnabled" aria-label="Enable international import mode" />
+                    <span class="slider"></span>
+                  </label>
+                </div>
+                <p class="pf-note">Mode ON korle Add Product form e attributes, size-wise price/stock, Air/Sea shipping, dimensions ar announcement fields ashbe. OFF korle purono form-i cholbe ebong existing data moche jabe na.</p>
+                <p class="pf-note" id="intlModeStatus"></p>
+                <div class="settings-warn" id="intlWholesaleWarn" hidden aria-live="polite">Wholesale mode ON ache — international mode enable korte age Wholesale mode OFF korun.</div>
+                <div class="settings-warn" id="intlLoadError" hidden aria-live="polite"></div>
+              </div>
+
+              <div class="settings-body" id="intlRules">
+                <div class="pf-card">
+                  <div class="pf-card-head">
+                    <h3>Payment split</h3>
+                    <span class="hint">Advance + COD = 100%</span>
+                  </div>
+                  <div class="pf-grid-2">
+                    <div class="pf-field">
+                      <label for="intlAdvancePercent">Advance payment (%)</label>
+                      <input id="intlAdvancePercent" type="number" min="0" max="100" step="0.01" inputmode="decimal" />
+                    </div>
+                    <div class="pf-field">
+                      <label for="intlCodPercent">Cash on delivery (%)</label>
+                      <input id="intlCodPercent" type="number" min="0" max="100" step="0.01" inputmode="decimal" />
+                    </div>
+                  </div>
+                  <p class="intl-hint" id="intlSplitHint" aria-live="polite"></p>
+                </div>
+
+                <div class="pf-card">
+                  <div class="pf-card-head">
+                    <h3>Air shipping</h3>
+                    <span class="hint">Rate per kg product page e set hobe</span>
+                  </div>
+                  <div class="pf-field">
+                    <label for="intlAirLabel">Label</label>
+                    <input id="intlAirLabel" type="text" maxlength="80" placeholder="Air Shipping" />
+                  </div>
+                  <div class="pf-grid-2">
+                    <div class="pf-field">
+                      <label for="intlAirMinDays">Min delivery days</label>
+                      <input id="intlAirMinDays" type="number" min="0" max="365" step="1" inputmode="numeric" />
+                    </div>
+                    <div class="pf-field">
+                      <label for="intlAirMaxDays">Max delivery days</label>
+                      <input id="intlAirMaxDays" type="number" min="0" max="365" step="1" inputmode="numeric" />
+                    </div>
+                  </div>
+                </div>
+
+                <div class="pf-card">
+                  <div class="pf-card-head">
+                    <h3>Sea shipping</h3>
+                    <span class="hint">Rate per kg product page e set hobe</span>
+                  </div>
+                  <div class="pf-field">
+                    <label for="intlSeaLabel">Label</label>
+                    <input id="intlSeaLabel" type="text" maxlength="80" placeholder="Sea Shipping" />
+                  </div>
+                  <div class="pf-grid-2">
+                    <div class="pf-field">
+                      <label for="intlSeaMinDays">Min delivery days</label>
+                      <input id="intlSeaMinDays" type="number" min="0" max="365" step="1" inputmode="numeric" />
+                    </div>
+                    <div class="pf-field">
+                      <label for="intlSeaMaxDays">Max delivery days</label>
+                      <input id="intlSeaMaxDays" type="number" min="0" max="365" step="1" inputmode="numeric" />
+                    </div>
+                  </div>
+                </div>
+
+                <div class="pf-card">
+                  <div class="pf-card-head">
+                    <h3>Charge labels</h3>
+                    <span class="hint">Cart &amp; checkout e ei naam dekhabe</span>
+                  </div>
+                  <div class="pf-grid-2">
+                    <div class="pf-field">
+                      <label for="intlShippingChargeLabel">Shipping charge label</label>
+                      <input id="intlShippingChargeLabel" type="text" maxlength="80" placeholder="Shipping Charge" />
+                    </div>
+                    <div class="pf-field">
+                      <label for="intlChinaCourierLabel">China courier fee label</label>
+                      <input id="intlChinaCourierLabel" type="text" maxlength="80" placeholder="China Courier Fee" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- ===== WHOLESALE MODE ===== -->
+            <section class="settings-pane" data-pane="wholesale">
+              <div class="pf-card">
+                <div class="pf-card-head">
+                  <div>
+                    <h3>Wholesale Mode</h3>
+                    <span class="hint">Tier price + wholesale shipping</span>
+                  </div>
+                  <label class="pf-switch" title="Enable / disable wholesale">
+                    <input type="checkbox" id="wholesaleEnabled" aria-label="Enable wholesale mode" />
+                    <span class="slider"></span>
+                  </label>
+                </div>
+                <p class="pf-note">ON korle retail single-product buying bondho hobe — quantity tier onujayi wholesale price cholbe. OFF korle retail flow ager motoi cholbe ebong existing data moche jabe na.</p>
+                <p class="pf-note" id="wholesaleModeStatus" aria-live="polite"></p>
+                <div class="settings-warn" id="wholesaleConflictWarn" hidden aria-live="polite">International import mode ON ache — wholesale enable korte age seta OFF korun.</div>
+                <div class="settings-warn" id="wholesaleLoadError" hidden aria-live="polite"></div>
+              </div>
+
+              <div class="settings-body" id="wholesaleBody">
+                <div class="pf-card">
+                  <div class="pf-card-head"><h3>General settings</h3><span class="hint">Badge, MOQ, buyer eligibility</span></div>
+                  <div class="pf-grid-2">
+                    <div class="pf-field">
+                      <label for="wholesaleBadgeText">Wholesale badge text</label>
+                      <input id="wholesaleBadgeText" type="text" maxlength="40" placeholder="Wholesale" />
+                    </div>
+                    <div class="pf-field">
+                      <label for="wholesaleMoq">Minimum order quantity (pieces)</label>
+                      <input id="wholesaleMoq" type="number" min="1" max="1000000" step="1" inputmode="numeric" />
+                    </div>
+                  </div>
+                  <div class="pf-grid-2">
+                    <div class="pf-field">
+                      <label for="wholesaleBuyers">Buyer eligibility</label>
+                      <select id="wholesaleBuyers">
+                        <option value="all">All customers</option>
+                        <option value="approved">Approved buyers only</option>
+                      </select>
+                    </div>
+                    <div class="pf-field">
+                      <label for="wholesaleOverflowRule">Vehicle overflow rule</label>
+                      <select id="wholesaleOverflowRule">
+                        <option value="cheapest">Cheapest vehicle combination</option>
+                        <option value="largest_first">Largest vehicle first</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="pf-toggle-row">
+                    <div><strong>Show retail price</strong><p>Wholesale price er pashe retail price dekhano hobe</p></div>
+                    <label class="pf-switch"><input type="checkbox" id="wholesaleShowRetail" aria-label="Show retail price on wholesale products" /><span class="slider"></span></label>
+                  </div>
+                  <p class="ws-form-error" id="wholesaleFormError" hidden aria-live="polite"></p>
+                </div>
+
+                <div class="pf-card">
+                  <div class="pf-card-head"><h3>Quantity price tiers</h3><span class="hint">Example</span></div>
+                  <p class="pf-note">Tier set korun Add Product form theke (product ba variation onujayi). "From qty" auto boshe; last tier er "To qty" khali = unlimited. Tier gulo contiguous thakte hobe.</p>
+                  <div class="settings-table-wrap">
+                    <table class="pf-table settings-wholesale-table">
+                      <thead><tr><th>From qty</th><th>To qty</th><th>Price</th></tr></thead>
+                      <tbody>
+                        <tr><td>10</td><td>50</td><td>৳ 900.00</td></tr>
+                        <tr><td>51</td><td>Unlimited</td><td>৳ 850.00</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <p class="pf-note">Example matro — asol tier price product form theke set hobe.</p>
+                </div>
+
+                <div class="pf-card">
+                  <div class="pf-card-head"><h3>Category shipping rules</h3><span class="hint">Base charge by category</span></div>
+                  <p class="pf-note">Per piece / per kg / flat. Ek category er ekta rule thakbe.</p>
+                  <div class="settings-table-wrap">
+                    <table class="pf-table settings-wholesale-table">
+                      <thead><tr><th>Category</th><th>Charge type</th><th>Rate</th><th></th></tr></thead>
+                      <tbody id="wsRuleRows"></tbody>
+                    </table>
+                  </div>
+                  <div class="ws-editor" id="wsRuleEditor">
+                    <div class="pf-grid-2">
+                      <div class="pf-field">
+                        <label for="wsRuleCategory">Category</label>
+                        <select id="wsRuleCategory"></select>
+                      </div>
+                      <div class="pf-field">
+                        <label for="wsRuleChargeType">Charge type</label>
+                        <select id="wsRuleChargeType">
+                          <option value="per_piece">Per piece</option>
+                          <option value="per_kg">Per kg</option>
+                          <option value="flat">Flat per category</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="pf-field">
+                      <label for="wsRuleRate">Rate (৳)</label>
+                      <input id="wsRuleRate" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00" />
+                    </div>
+                    <p class="ws-form-error" id="wsRuleError" hidden aria-live="polite"></p>
+                    <div class="ws-editor-actions">
+                      <button class="pf-btn-sm ws-primary" type="button" id="wsRuleSubmit">+ Add rule</button>
+                      <button class="pf-btn-sm" type="button" id="wsRuleCancel" hidden>Cancel edit</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="pf-card">
+                  <div class="pf-card-head"><h3>Vehicles</h3><span class="hint">Capacity + charge + overflow</span></div>
+                  <p class="pf-note">Order er total weight onujayi vehicle choose hobe. Capacity cross korle overflow rule cholbe (cheapest ba largest first).</p>
+                  <div class="settings-table-wrap">
+                    <table class="pf-table settings-wholesale-table">
+                      <thead><tr><th>Vehicle</th><th>Max load (kg)</th><th>Charge</th><th></th></tr></thead>
+                      <tbody id="wsVehicleRows"></tbody>
+                    </table>
+                  </div>
+                  <div class="ws-editor" id="wsVehicleEditor">
+                    <div class="pf-grid-2">
+                      <div class="pf-field">
+                        <label for="wsVehicleName">Vehicle name</label>
+                        <input id="wsVehicleName" type="text" maxlength="60" placeholder="Truck / Van" />
+                      </div>
+                      <div class="pf-field">
+                        <label for="wsVehicleMaxKg">Max load (kg)</label>
+                        <input id="wsVehicleMaxKg" type="number" min="1" max="1000000" step="1" inputmode="numeric" />
+                      </div>
+                    </div>
+                    <div class="pf-field">
+                      <label for="wsVehicleCharge">Charge (৳)</label>
+                      <input id="wsVehicleCharge" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00" />
+                    </div>
+                    <p class="ws-form-error" id="wsVehicleError" hidden aria-live="polite"></p>
+                    <div class="ws-editor-actions">
+                      <button class="pf-btn-sm ws-primary" type="button" id="wsVehicleSubmit">+ Add vehicle</button>
+                      <button class="pf-btn-sm" type="button" id="wsVehicleCancel" hidden>Cancel edit</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="pf-card">
+                  <div class="pf-card-head"><h3>Delivery speeds</h3><span class="hint">Extra charge</span></div>
+                  <p class="pf-note">Checkout e customer speed choose korle flat taka ba percent extra charge jog hobe.</p>
+                  <div class="settings-table-wrap">
+                    <table class="pf-table settings-wholesale-table">
+                      <thead><tr><th>Speed</th><th>ETA</th><th>Extra</th><th></th></tr></thead>
+                      <tbody id="wsSpeedRows"></tbody>
+                    </table>
+                  </div>
+                  <div class="ws-editor" id="wsSpeedEditor">
+                    <div class="pf-grid-2">
+                      <div class="pf-field">
+                        <label for="wsSpeedName">Speed name</label>
+                        <input id="wsSpeedName" type="text" maxlength="60" placeholder="Express" />
+                      </div>
+                      <div class="pf-field">
+                        <label for="wsSpeedEtaDays">Delivery days</label>
+                        <input id="wsSpeedEtaDays" type="number" min="0" max="365" step="1" inputmode="numeric" />
+                      </div>
+                    </div>
+                    <div class="pf-grid-2">
+                      <div class="pf-field">
+                        <label for="wsSpeedExtraType">Extra charge type</label>
+                        <select id="wsSpeedExtraType">
+                          <option value="flat">Flat (৳)</option>
+                          <option value="percent">Percent (%)</option>
+                        </select>
+                      </div>
+                      <div class="pf-field">
+                        <label for="wsSpeedExtraValue">Extra value <span id="wsSpeedValueUnit" class="ws-unit">(৳)</span></label>
+                        <input id="wsSpeedExtraValue" type="number" min="0" step="0.01" inputmode="decimal" />
+                      </div>
+                    </div>
+                    <p class="ws-form-error" id="wsSpeedError" hidden aria-live="polite"></p>
+                    <div class="ws-editor-actions">
+                      <button class="pf-btn-sm ws-primary" type="button" id="wsSpeedSubmit">+ Add speed</button>
+                      <button class="pf-btn-sm" type="button" id="wsSpeedCancel" hidden>Cancel edit</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="pf-card">
+                  <div class="pf-card-head"><h3>Buyer approvals</h3><span class="hint">Approved-only mode</span></div>
+                  <p class="pf-note">Buyer eligibility "Approved buyers only" hole ei list theke approve korun. SaaS mode e jei customer ei store theke age order koreche shudhu tader dekhano hoy.</p>
+                  <div class="ws-buyer-search">
+                    <input id="wsBuyerSearch" class="settings-input" type="search" placeholder="Name / email / phone diye khujun" aria-label="Search buyers" />
+                  </div>
+                  <div class="settings-table-wrap">
+                    <table class="pf-table settings-wholesale-table">
+                      <thead><tr><th>Buyer</th><th>Contact</th><th>Status</th><th></th></tr></thead>
+                      <tbody id="wsBuyerRows"></tbody>
+                    </table>
+                  </div>
+                  <p class="ws-form-error" id="wsBuyerError" hidden aria-live="polite"></p>
+                </div>
+              </div>
+            </section>
+
+            <!-- ===== PARTIAL / INSTALLMENT PAYMENT ===== -->
+            <section class="settings-pane" data-pane="partial">
+              <div class="pf-card">
+                <div class="pf-card-head">
+                  <div>
+                    <h3>Partial (Installment) Payment</h3>
+                    <span class="hint">Wholesale orders only</span>
+                  </div>
+                  <label class="pf-switch" title="Enable / disable partial payment">
+                    <input type="checkbox" id="partialEnabled" aria-label="Enable partial installment payment" />
+                    <span class="slider"></span>
+                  </label>
+                </div>
+                <p class="pf-note">Ei feature shudhu Wholesale mode ON thakle kaj kore. OFF thakle checkout e full payment-i cholbe.</p>
+                <p class="pf-note" id="partialModeStatus" aria-live="polite"></p>
+                <div class="settings-warn" id="partialWholesaleWarn" hidden aria-live="polite">Wholesale mode OFF ache — partial payment inactive. Age Wholesale mode ON korun.</div>
+              </div>
+
+              <div class="settings-body" id="partialBody">
+                <div class="pf-card">
+                  <div class="pf-card-head"><h3>Payment rules</h3><span class="hint">Late fee, overdue, refund</span></div>
+                  <div class="pf-grid-2">
+                    <div class="pf-field">
+                      <label for="partialLateFeeType">Late fee type</label>
+                      <select id="partialLateFeeType">
+                        <option value="flat">Flat (৳)</option>
+                        <option value="percent">Percent (%)</option>
+                      </select>
+                    </div>
+                    <div class="pf-field">
+                      <label for="partialLateFeeValue">Late fee <span id="partialLateFeeUnit" class="ws-unit">(৳)</span></label>
+                      <input id="partialLateFeeValue" type="number" min="0" step="0.01" inputmode="decimal" />
+                    </div>
+                  </div>
+                  <div class="pf-grid-2">
+                    <div class="pf-field">
+                      <label for="partialGraceDays">Grace days</label>
+                      <input id="partialGraceDays" type="number" min="0" max="365" step="1" inputmode="numeric" />
+                    </div>
+                    <div class="pf-field">
+                      <label for="partialMaxOpen">Max open installment orders</label>
+                      <input id="partialMaxOpen" type="number" min="0" step="1" inputmode="numeric" />
+                      <p class="pf-note">0 = unlimited.</p>
+                    </div>
+                  </div>
+                  <div class="pf-grid-2">
+                    <div class="pf-field">
+                      <label for="partialGoodsRelease">Goods release rule</label>
+                      <select id="partialGoodsRelease">
+                        <option value="after_advance">After advance payment</option>
+                        <option value="after_half">After 50% paid</option>
+                        <option value="after_full">After full payment</option>
+                      </select>
+                    </div>
+                    <div class="pf-field">
+                      <label for="partialBuyers">Eligible buyers</label>
+                      <select id="partialBuyers">
+                        <option value="approved">Approved buyers only</option>
+                        <option value="all">All customers</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="pf-toggle-row">
+                    <div><strong>Shipping in first installment</strong><p>ON = first installment e shipping jog hobe; OFF = last installment e</p></div>
+                    <label class="pf-switch"><input type="checkbox" id="partialShipFirst" aria-label="Charge shipping in first installment" /><span class="slider"></span></label>
+                  </div>
+                  <div class="pf-grid-2">
+                    <div class="pf-field">
+                      <label for="partialOverdueAction">After overdue days</label>
+                      <select id="partialOverdueAction">
+                        <option value="hold">Hold the order</option>
+                        <option value="cancel">Cancel the order</option>
+                      </select>
+                    </div>
+                    <div class="pf-field">
+                      <label for="partialOverdueDays">Overdue days</label>
+                      <input id="partialOverdueDays" type="number" min="0" max="365" step="1" inputmode="numeric" />
+                    </div>
+                  </div>
+                  <div class="pf-grid-2">
+                    <div class="pf-field">
+                      <label for="partialRefundType">Cancellation refund</label>
+                      <select id="partialRefundType">
+                        <option value="full">Full refund</option>
+                        <option value="percent">Percent refund</option>
+                        <option value="none">No refund</option>
+                      </select>
+                    </div>
+                    <div class="pf-field" id="partialRefundPercentField">
+                      <label for="partialRefundPercent">Refund percent (%)</label>
+                      <input id="partialRefundPercent" type="number" min="0" max="100" step="1" inputmode="numeric" />
+                    </div>
+                  </div>
+                  <p class="ws-form-error" id="partialFormError" hidden aria-live="polite"></p>
+                </div>
+
+                <div class="pf-card">
+                  <div class="pf-card-head"><h3>Installment plans</h3><span class="hint">2-60 installments</span></div>
+                  <p class="pf-note">Total installments er moddhe first/advance payment included. Baki amount equal bhabe bage hoy; leftover paisa last installment e jay.</p>
+                  <div class="settings-table-wrap">
+                    <table class="pf-table settings-installment-table">
+                      <thead><tr><th>Plan</th><th>Installments</th><th>Advance</th><th>Gap</th><th>Min order</th><th>Fee</th><th>Status</th><th></th></tr></thead>
+                      <tbody id="partialPlanRows"></tbody>
+                    </table>
+                  </div>
+                  <div class="ws-editor" id="partialPlanEditor">
+                    <div class="pf-grid-2">
+                      <div class="pf-field">
+                        <label for="planName">Plan name</label>
+                        <input id="planName" type="text" maxlength="80" placeholder="3-month plan" />
+                      </div>
+                      <div class="pf-field">
+                        <label for="planInstallments">Total installments (including advance)</label>
+                        <input id="planInstallments" type="number" min="2" max="60" step="1" inputmode="numeric" value="3" />
+                      </div>
+                    </div>
+                    <div class="pf-grid-2">
+                      <div class="pf-field">
+                        <label for="planAdvanceType">Advance type</label>
+                        <select id="planAdvanceType">
+                          <option value="percent">Percent (%)</option>
+                          <option value="fixed">Fixed (৳)</option>
+                        </select>
+                      </div>
+                      <div class="pf-field">
+                        <label for="planAdvanceValue">Advance value <span id="planAdvanceUnit" class="ws-unit">(%)</span></label>
+                        <input id="planAdvanceValue" type="number" min="0" step="0.01" inputmode="decimal" value="30" />
+                      </div>
+                    </div>
+                    <div class="pf-grid-2">
+                      <div class="pf-field">
+                        <label for="planGapDays">Gap between installments (days)</label>
+                        <input id="planGapDays" type="number" min="0" max="365" step="1" inputmode="numeric" value="30" />
+                      </div>
+                      <div class="pf-field">
+                        <label for="planMinOrder">Minimum order amount (৳)</label>
+                        <input id="planMinOrder" type="number" min="0" step="0.01" inputmode="decimal" value="0" />
+                      </div>
+                    </div>
+                    <div class="pf-grid-2">
+                      <div class="pf-field">
+                        <label for="planFeeType">Fee type</label>
+                        <select id="planFeeType">
+                          <option value="none">No fee</option>
+                          <option value="percent">Percent (%)</option>
+                          <option value="fixed">Fixed (৳)</option>
+                        </select>
+                      </div>
+                      <div class="pf-field">
+                        <label for="planFeeValue">Fee value <span id="planFeeUnit" class="ws-unit">(৳)</span></label>
+                        <input id="planFeeValue" type="number" min="0" step="0.01" inputmode="decimal" value="0" />
+                      </div>
+                    </div>
+                    <div class="pf-toggle-row">
+                      <div><strong>Plan active</strong><p>Active plan shudhu checkout e dekhabe</p></div>
+                      <label class="pf-switch"><input type="checkbox" id="planActive" aria-label="Plan active" checked /><span class="slider"></span></label>
+                    </div>
+                    <p class="ws-form-error" id="planError" hidden aria-live="polite"></p>
+                    <div class="ws-editor-actions">
+                      <button class="pf-btn-sm ws-primary" type="button" id="planSubmitBtn">+ Add plan</button>
+                      <button class="pf-btn-sm" type="button" id="planCancelBtn" hidden>Cancel edit</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="pf-card">
+                  <div class="pf-card-head"><h3>Schedule preview</h3><span class="hint">Paisa-accurate</span></div>
+                  <div class="pf-grid-2">
+                    <div class="pf-field">
+                      <label for="previewPlan">Plan</label>
+                      <select id="previewPlan"></select>
+                    </div>
+                    <div class="pf-field">
+                      <label for="previewAmount">Order amount (৳)</label>
+                      <input id="previewAmount" type="number" min="0" step="0.01" inputmode="decimal" value="100000" />
+                    </div>
+                  </div>
+                  <div class="pf-field">
+                    <label for="previewShipping">Shipping amount (৳)</label>
+                    <input id="previewShipping" type="number" min="0" step="0.01" inputmode="decimal" value="0" />
+                  </div>
+                  <p class="ws-form-error" id="previewError" hidden aria-live="polite"></p>
+                  <p class="pf-note" id="previewSummary" aria-live="polite"></p>
+                  <div class="settings-table-wrap">
+                    <table class="pf-table settings-preview-table">
+                      <thead><tr><th>#</th><th>Due date</th><th>Amount</th><th>Note</th></tr></thead>
+                      <tbody id="previewScheduleRows"></tbody>
+                    </table>
+                  </div>
+                  <p class="pf-note" id="previewFootnote"></p>
+                </div>
+              </div>
+            </section>
+
+            <!-- ===== MANUAL SHIPPING ===== -->
+            <section class="settings-pane" data-pane="manual">
+              <div class="pf-card">
+                <div class="pf-card-head">
+                  <h3>Manual shipping</h3>
+                  <label class="pf-switch" title="Enable / disable"><input type="checkbox" id="shipManualEnabled" aria-label="Enable manual shipping" /><span class="slider"></span></label>
+                </div>
+                <div class="settings-body" id="manualBody">
+                  <p class="pf-note">Area onujayi simple delivery charge. Customer checkout e area pick korbe.</p>
+                  <div class="settings-table-wrap">
+                    <table class="pf-table settings-table">
+                      <thead><tr><th>Area name</th><th>Delivery charge</th><th></th></tr></thead>
+                      <tbody id="manualRows"></tbody>
+                    </table>
+                  </div>
+                  <button class="pf-btn-sm" type="button" data-add-row="manual">+ Add area</button>
+                </div>
+              </div>
+            </section>
+
+            <!-- ===== AREA SHIPPING ===== -->
+            <section class="settings-pane" data-pane="area">
+              <div class="pf-card">
+                <div class="pf-card-head">
+                  <h3>Area shipping</h3>
+                  <label class="pf-switch" title="Enable / disable"><input type="checkbox" id="shipAreaEnabled" aria-label="Enable area shipping" /><span class="slider"></span></label>
+                </div>
+                <div class="settings-body" id="areaBody">
+                  <div class="pf-field">
+                    <label for="areaNote">Customer note</label>
+                    <input id="areaNote" type="text" placeholder="Delivery in 2 to 3 days" />
+                  </div>
+                  <div class="settings-table-wrap">
+                    <table class="pf-table settings-table">
+                      <thead><tr><th>District</th><th>Thana / area</th><th>Shipping class</th><th>Price</th><th></th></tr></thead>
+                      <tbody id="areaRows"></tbody>
+                    </table>
+                  </div>
+                  <button class="pf-btn-sm" type="button" data-add-row="area">+ Add area</button>
+                </div>
+              </div>
+            </section>
+
+            <!-- ===== SHIPPING CLASSES ===== -->
+            <section class="settings-pane" data-pane="classes">
+              <div class="pf-card">
+                <div class="pf-card-head">
+                  <h3>Shipping classes</h3>
+                  <label class="pf-switch" title="Enable / disable"><input type="checkbox" id="shipClassEnabled" aria-label="Enable shipping classes" /><span class="slider"></span></label>
+                </div>
+                <div class="settings-body" id="classesBody">
+                  <div class="settings-table-wrap">
+                    <table class="pf-table settings-table">
+                      <thead><tr><th>Class name</th><th>Cost</th><th></th></tr></thead>
+                      <tbody id="classRows"></tbody>
+                    </table>
+                  </div>
+                  <button class="pf-btn-sm" type="button" data-add-row="classes">+ Add class</button>
+                </div>
+              </div>
+            </section>
+
+            <!-- ===== INTERNATIONAL SHIPPING ===== -->
+            <section class="settings-pane" data-pane="intl">
+              <div class="pf-card">
+                <div class="pf-card-head">
+                  <h3>International shipping</h3>
+                  <label class="pf-switch" title="Enable / disable"><input type="checkbox" id="shipIntlEnabled" aria-label="Enable international shipping" /><span class="slider"></span></label>
+                </div>
+                <div class="settings-body" id="intlBody">
+                  <div class="pf-field">
+                    <label for="intlNote">Customer note</label>
+                    <input id="intlNote" type="text" placeholder="Delivery in 7 to 10 days" />
+                  </div>
+                  <div class="settings-table-wrap">
+                    <table class="pf-table settings-table">
+                      <thead><tr><th>Country</th><th>Product category</th><th>Min order</th><th>Max order</th><th>Shipping price</th><th></th></tr></thead>
+                      <tbody id="intlRows"></tbody>
+                    </table>
+                  </div>
+                  <button class="pf-btn-sm" type="button" data-add-row="intl">+ Add country</button>
+                </div>
+              </div>
+            </section>
+
+            <!-- ===== WEIGHT AND DIMENSIONS ===== -->
+            <section class="settings-pane" data-pane="wd">
+              <div class="pf-card">
+                <div class="pf-card-head">
+                  <h3>Weight and dimensions</h3>
+                  <label class="pf-switch" title="Enable / disable"><input type="checkbox" id="shipWdEnabled" aria-label="Enable weight and dimensions shipping" /><span class="slider"></span></label>
+                </div>
+                <div class="settings-body" id="wdBody">
+                  <p class="pf-note">First matching rule (category + area + weight + size) shipping price set kore.</p>
+                  <div class="settings-table-wrap">
+                    <table class="pf-table settings-table">
+                      <thead><tr><th>Category</th><th>Area</th><th>Weight min (kg)</th><th>Weight max (kg)</th><th>L × W × H (cm)</th><th>Price</th><th></th></tr></thead>
+                      <tbody id="wdRows"></tbody>
+                    </table>
+                  </div>
+                  <button class="pf-btn-sm" type="button" data-add-row="wd">+ Add rule</button>
+                </div>
+              </div>
+            </section>
+
+            <!-- ===== MANUAL PAYMENT ===== -->
+            <section class="settings-pane" data-pane="payment-manual">
+              <div class="pf-card">
+                <div class="pf-card-head">
+                  <h3>Cash on delivery</h3>
+                  <label class="pf-switch" title="Enable / disable"><input type="checkbox" id="codEnabled" aria-label="Enable cash on delivery" /><span class="slider"></span></label>
+                </div>
+                <div class="settings-body" id="codBody">
+                  <div class="pf-field">
+                    <label for="codInstruction">Instruction text (checkout e dekhabe)</label>
+                    <textarea id="codInstruction" rows="3" placeholder="Pay in cash when your order is delivered."></textarea>
+                  </div>
+                </div>
+              </div>
+
+              <div class="pf-card">
+                <div class="pf-card-head">
+                  <h3>Mobile banking</h3>
+                  <label class="pf-switch" title="Enable / disable"><input type="checkbox" id="mobileBankingEnabled" aria-label="Enable mobile banking" /><span class="slider"></span></label>
+                </div>
+                <div class="settings-body" id="mobileBankingBody">
+                  <p class="pf-note">bKash / Nagad / Upay number — customer ei number e send money kore sender number + transaction ID submit korbe.</p>
+                  <div class="settings-table-wrap">
+                    <table class="pf-table settings-table settings-payment-table">
+                      <thead><tr><th>Name</th><th>Account type</th><th>Number</th><th>Instruction</th><th></th></tr></thead>
+                      <tbody id="mobileManualRows"></tbody>
+                    </table>
+                  </div>
+                  <button class="pf-btn-sm" type="button" data-add-row="mobileManual">+ Add mobile banking</button>
+                  <label class="settings-check">
+                    <input type="checkbox" id="mobileAskSender" />
+                    Ask the customer for sender number and transaction ID
+                  </label>
+                </div>
+              </div>
+
+              <div class="pf-card">
+                <div class="pf-card-head">
+                  <h3>Banking</h3>
+                  <label class="pf-switch" title="Enable / disable"><input type="checkbox" id="bankingEnabled" aria-label="Enable bank transfer" /><span class="slider"></span></label>
+                </div>
+                <div class="settings-body" id="bankingBody">
+                  <div class="settings-table-wrap">
+                    <table class="pf-table settings-table settings-payment-table">
+                      <thead><tr><th>Bank name</th><th>Account name</th><th>Account number</th><th>Branch / routing</th><th>Instruction</th><th></th></tr></thead>
+                      <tbody id="bankManualRows"></tbody>
+                    </table>
+                  </div>
+                  <button class="pf-btn-sm" type="button" data-add-row="bankManual">+ Add bank</button>
+                </div>
+              </div>
+            </section>
+
+            <!-- ===== API PAYMENT ===== -->
+            <section class="settings-pane" data-pane="payment-api">
+              <div class="pf-card">
+                <div class="pf-card-head">
+                  <h3>Mobile banking (API)</h3>
+                  <label class="pf-switch" title="Enable / disable"><input type="checkbox" id="apiMobileEnabled" aria-label="Enable mobile banking API" /><span class="slider"></span></label>
+                </div>
+                <div class="settings-body" id="apiMobileBody">
+                  <p class="pf-note">Secrets server e encrypted (AES-256-GCM) thake. Save korar por full secret ar dekhano hoy na — khali rakhe purono secret thake.</p>
+                  <div class="settings-table-wrap">
+                    <table class="pf-table settings-table settings-payment-table">
+                      <thead><tr><th>Provider</th><th>Mode</th><th>App key</th><th>App secret</th><th>Username</th><th>Password</th><th>Active</th></tr></thead>
+                      <tbody id="apiMobileRows"></tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+              <div class="pf-card">
+                <div class="pf-card-head">
+                  <h3>Banking (API)</h3>
+                  <label class="pf-switch" title="Enable / disable"><input type="checkbox" id="apiBankEnabled" aria-label="Enable banking API" /><span class="slider"></span></label>
+                </div>
+                <div class="settings-body" id="apiBankBody">
+                  <p class="pf-note">Store password encrypted thake; masked value save korle purono password-i thake.</p>
+                  <div class="settings-table-wrap">
+                    <table class="pf-table settings-table settings-payment-table">
+                      <thead><tr><th>Provider</th><th>Mode</th><th>Store ID</th><th>Store password</th><th>Active</th></tr></thead>
+                      <tbody id="apiBankRows"></tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- ===== LOGIN AND REGISTRATION ===== -->
+            <section class="settings-pane" data-pane="login">
+              <div class="pf-card">
+                <div class="pf-card-head">
+                  <h3>Login and registration</h3>
+                  <label class="pf-switch" title="Enable / disable"><input type="checkbox" id="loginRegEnabled" aria-label="Require login before checkout" /><span class="slider"></span></label>
+                </div>
+                <div class="settings-body" id="loginRegBody">
+                  <p class="pf-note" id="loginRegStatus">Guest checkout cholche — customer login charao order dite parbe.</p>
+                </div>
+              </div>
+
+              <div class="pf-card">
+                <div class="pf-card-head"><h3>Login method</h3><span class="hint">Password always required</span></div>
+                <label class="settings-check"><input type="checkbox" id="loginEmailEnabled" /> Email</label>
+                <label class="settings-check"><input type="checkbox" id="loginPhoneEnabled" /> Phone number</label>
+                <p class="pf-note">Duitai on thakle login field e email ba phone — server nije detect kore. Phone format: 01XXXXXXXXX.</p>
+                <p class="settings-warn" id="loginMethodWarn" hidden>At least one login method (Email ba Phone) on rakhte hobe.</p>
+              </div>
+
+              <div class="pf-card">
+                <div class="pf-card-head"><h3>Live preview</h3></div>
+                <div class="settings-preview-grid">
+                  <div class="settings-preview" id="loginPreview"></div>
+                  <div class="settings-preview" id="registerPreview"></div>
+                </div>
+              </div>
+            </section>
+
+            <!-- ===== CHECKOUT FIELDS ===== -->
+            <section class="settings-pane" data-pane="checkout">
+              <div class="pf-card">
+                <div class="pf-card-head"><h3>Checkout fields</h3></div>
+                <div class="settings-preset-row">
+                  <button class="pf-btn-sm" type="button" id="presetSimple">Simple preset</button>
+                  <button class="pf-btn-sm" type="button" id="presetFull">Full preset</button>
+                </div>
+                <p class="settings-warn" id="checkoutWarn" hidden>Phone ar Email duitai off — customer er sathe jogajog kora jabe na.</p>
+                <div class="settings-table-wrap">
+                  <table class="pf-table settings-table settings-checkout-table">
+                    <thead><tr><th>Field</th><th>Show</th><th>Required</th><th>Label</th></tr></thead>
+                    <tbody id="checkoutFieldRows"></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="pf-card">
+                <div class="pf-card-head"><h3>Checkout form preview</h3><span class="hint">Required fields have *</span></div>
+                <div class="settings-preview" id="checkoutPreview"></div>
+              </div>
+            </section>
+
+            <!-- ===== MARKETING ===== -->
+            <section class="settings-pane" data-pane="marketing">
+              <div class="pf-card">
+                <div class="pf-card-head">
+                  <h3>Flash sales</h3>
+                  <label class="pf-switch" title="Enable / disable"><input type="checkbox" id="flashSalesEnabled" aria-label="Enable flash sales menu" /><span class="slider"></span></label>
+                </div>
+                <div class="settings-body" id="flashSalesBody">
+                  <p class="pf-note" id="flashSalesStatus">Flash sales ON — sidebar e menu dekhabe.</p>
+                  <p class="pf-note">ON thakle sidebar e “Flash sales” menu dekhabe, OFF korle hide hobe. Campaign list ekhane theke manage korun.</p>
+                  <div class="settings-preset-row">
+                    <button class="pf-btn-sm" type="button" id="flashSalesManageBtn">Manage campaigns</button>
+                    <button class="pf-btn-sm" type="button" id="couponsManageBtn">Manage coupons</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="pf-card">
+                <div class="pf-card-head"><h3>Coupons</h3></div>
+                <div class="settings-body">
+                  <p class="pf-note">Coupons always active — customer checkout e code diye discount ba free delivery nite parbe. Min order set korle tar niche coupon apply hobe na.</p>
+                </div>
+              </div>
+            </section>
+
+            <!-- ===== EMAIL / SMTP ===== -->
+            <section class="settings-pane" data-pane="email">
+              <div class="pf-card">
+                <div class="pf-card-head">
+                  <h3>Email / SMTP</h3>
+                  <label class="pf-switch" title="Enable / disable"><input type="checkbox" id="emailEnabled" aria-label="Enable email notifications" /><span class="slider"></span></label>
+                </div>
+                <div class="settings-body" id="emailBody">
+                  <p class="pf-note">SMTP password encrypted (AES-256-GCM) thake. Save korar por full secret ar dekhano hoy na — field khali rakhe purono password thake.</p>
+
+                  <h4 class="settings-subhead">Sender</h4>
+                  <div class="pf-grid-2">
+                    <div class="pf-field">
+                      <label for="emailFromName">From name</label>
+                      <input id="emailFromName" placeholder="LUXE Store" />
+                    </div>
+                    <div class="pf-field">
+                      <label for="emailFromEmail">From email</label>
+                      <input id="emailFromEmail" type="email" placeholder="orders@store.com" />
+                    </div>
+                  </div>
+                  <div class="pf-field">
+                    <label for="emailReplyTo">Reply-to (optional)</label>
+                    <input id="emailReplyTo" type="email" placeholder="support@store.com" />
+                  </div>
+
+                  <h4 class="settings-subhead">SMTP server</h4>
+                  <div class="pf-grid-2">
+                    <div class="pf-field">
+                      <label for="smtpHost">Host</label>
+                      <input id="smtpHost" placeholder="smtp.gmail.com" />
+                    </div>
+                    <div class="pf-field">
+                      <label for="smtpPort">Port</label>
+                      <input id="smtpPort" type="number" min="1" max="65535" placeholder="587" />
+                    </div>
+                    <div class="pf-field">
+                      <label for="smtpUser">Username</label>
+                      <input id="smtpUser" autocomplete="off" placeholder="orders@store.com" />
+                    </div>
+                    <div class="pf-field">
+                      <label for="smtpPassword">Password</label>
+                      <input id="smtpPassword" type="password" autocomplete="new-password" placeholder="Not set" />
+                    </div>
+                  </div>
+                  <label class="settings-check"><input type="checkbox" id="smtpSecure" /> Use SSL/TLS (usually port 465)</label>
+
+                  <h4 class="settings-subhead">Recipients</h4>
+                  <div class="pf-grid-2">
+                    <div class="pf-field">
+                      <label for="emailOrderEmail">New order email goes to</label>
+                      <input id="emailOrderEmail" type="email" placeholder="orders@store.com" />
+                    </div>
+                    <div class="pf-field">
+                      <label for="emailCancelEmail">Cancel order email</label>
+                      <input id="emailCancelEmail" type="email" placeholder="cancel@store.com" />
+                    </div>
+                  </div>
+                  <div class="pf-field">
+                    <label for="emailAdminEmail">Admin email (fallback)</label>
+                    <input id="emailAdminEmail" type="email" placeholder="admin@store.com" />
+                  </div>
+
+                  <h4 class="settings-subhead">Send emails for</h4>
+                  <label class="settings-check"><input type="checkbox" id="notifyAdminNewOrder" /> New order — notify admin</label>
+                  <label class="settings-check"><input type="checkbox" id="notifyCustomerNewOrder" /> New order — customer confirmation</label>
+                  <label class="settings-check"><input type="checkbox" id="notifyCustomerCancelled" /> Cancel order — customer</label>
+                  <label class="settings-check"><input type="checkbox" id="notifyCustomerStatus" /> Order status change — customer</label>
+
+                  <h4 class="settings-subhead">Test SMTP</h4>
+                  <div class="settings-test-row">
+                    <input id="emailTestTo" type="email" placeholder="you@example.com" />
+                    <button class="pf-btn-sm" type="button" id="emailTestBtn">Send test email</button>
+                  </div>
+                  <p class="settings-test-status" id="emailTestStatus" hidden></p>
+                </div>
+              </div>
+
+              <div class="pf-card">
+                <div class="pf-card-head"><h3>Email templates</h3><span class="hint">Placeholders dynamic</span></div>
+                <div class="settings-body" id="emailTemplatesBody">
+                  <div class="pf-field">
+                    <label for="emailTemplateSelect">Template</label>
+                    <select id="emailTemplateSelect"></select>
+                  </div>
+                  <label class="settings-check"><input type="checkbox" id="emailTemplateEnabled" /> Template active</label>
+                  <div class="pf-field">
+                    <label for="emailTemplateSubject">Subject</label>
+                    <input id="emailTemplateSubject" />
+                  </div>
+                  <div class="pf-field">
+                    <label for="emailTemplateBodyInput">HTML body</label>
+                    <textarea id="emailTemplateBodyInput" rows="9" class="settings-code" spellcheck="false"></textarea>
+                  </div>
+                  <p class="pf-note">Placeholders: {{store_name}}, {{order_number}}, {{invoice_number}}, {{customer_name}}, {{items}}, {{subtotal}}, {{shipping}}, {{total}}, {{payment_method}}, {{shipping_address}}, {{status}}, {{year}}</p>
+                  <div class="settings-preview">
+                    <h4>Live preview</h4>
+                    <div id="emailPreview" class="settings-email-preview"></div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- ===== PHONE / SMS / OTP ===== -->
+            <section class="settings-pane" data-pane="sms">
+              <div class="pf-card">
+                <div class="pf-card-head">
+                  <h3>SMS provider</h3>
+                  <label class="pf-switch" title="Enable / disable"><input type="checkbox" id="smsEnabled" aria-label="Enable SMS" /><span class="slider"></span></label>
+                </div>
+                <div class="settings-body" id="smsBody">
+                  <p class="pf-note">BulkSMSBD default. API key encrypted thake; masked value save korle purono key-i thake.</p>
+                  <div class="pf-grid-2">
+                    <div class="pf-field">
+                      <label for="smsProvider">Provider</label>
+                      <select id="smsProvider">
+                        <option value="bulksmsbd">BulkSMSBD</option>
+                        <option value="generic">Generic JSON API</option>
+                      </select>
+                    </div>
+                    <div class="pf-field">
+                      <label for="smsSenderId">Sender ID</label>
+                      <input id="smsSenderId" placeholder="8809612xxxxxx" />
+                    </div>
+                  </div>
+                  <div class="pf-field">
+                    <label for="smsApiKey">API key</label>
+                    <input id="smsApiKey" type="password" autocomplete="new-password" placeholder="Not set" />
+                  </div>
+                  <div class="pf-field" id="smsApiUrlWrap">
+                    <label for="smsApiUrl">Custom API URL (generic provider)</label>
+                    <input id="smsApiUrl" placeholder="https://provider.com/api/send" />
+                  </div>
+
+                  <h4 class="settings-subhead">Order SMS</h4>
+                  <label class="settings-check"><input type="checkbox" id="smsNotifyOrder" /> Order confirm SMS to customer</label>
+                  <label class="settings-check"><input type="checkbox" id="smsNotifyAdminOrder" /> New order SMS to admin</label>
+                  <div class="pf-field">
+                    <label for="smsAdminPhone">Admin phone</label>
+                    <input id="smsAdminPhone" placeholder="01XXXXXXXXX" />
+                  </div>
+                  <div class="pf-field">
+                    <label for="smsOrderTemplate">Order SMS template</label>
+                    <textarea id="smsOrderTemplate" rows="3"></textarea>
+                  </div>
+                  <p class="pf-note">Placeholders: {{order_number}}, {{total}}, {{customer_name}}, {{store_name}}</p>
+                </div>
+              </div>
+
+              <div class="pf-card">
+                <div class="pf-card-head"><h3>Login OTP</h3><span class="hint">SMS provider required</span></div>
+                <div class="settings-body" id="smsOtpBody">
+                  <label class="settings-check"><input type="checkbox" id="smsOtpEnabled" /> Phone OTP login enable</label>
+                  <div class="pf-grid-2">
+                    <div class="pf-field">
+                      <label for="smsOtpLength">OTP length</label>
+                      <input id="smsOtpLength" type="number" min="4" max="8" placeholder="6" />
+                    </div>
+                    <div class="pf-field">
+                      <label for="smsOtpExpiry">Expiry (minutes)</label>
+                      <input id="smsOtpExpiry" type="number" min="1" max="30" placeholder="5" />
+                    </div>
+                  </div>
+                  <div class="pf-field">
+                    <label for="smsOtpTemplate">OTP SMS template</label>
+                    <textarea id="smsOtpTemplate" rows="3"></textarea>
+                  </div>
+                  <p class="pf-note">Placeholders: {{code}}, {{minutes}}, {{store_name}}. Max 5 wrong attempts.</p>
+                </div>
+              </div>
+
+              <div class="pf-card">
+                <div class="pf-card-head"><h3>Process &amp; test</h3></div>
+                <div class="settings-body" id="smsProcessBody">
+                  <ol class="settings-flow">
+                    <li><strong>Order placed</strong><span>Customer phone e order confirm SMS (email/SMS fail korle order fail korbe na)</span></li>
+                    <li><strong>Login request</strong><span>Customer phone e dynamic OTP SMS</span></li>
+                    <li><strong>Verify</strong><span>OTP match hole JWT login token</span></li>
+                  </ol>
+                  <div class="settings-preview">
+                    <h4>Order SMS preview</h4>
+                    <p id="smsPreview" class="settings-sms-preview"></p>
+                  </div>
+                  <div class="settings-test-row">
+                    <input id="smsTestTo" placeholder="01XXXXXXXXX" />
+                    <button class="pf-btn-sm" type="button" id="smsTestBtn">Send test SMS</button>
+                  </div>
+                  <p class="settings-test-status" id="smsTestStatus" hidden></p>
+                </div>
+              </div>
+            </section>
+
+            <!-- ===== INVOICE ===== -->
+            <section class="settings-pane" data-pane="invoice">
+              <div class="pf-card">
+                <div class="pf-card-head">
+                  <h3>Invoice</h3>
+                  <label class="pf-switch" title="Enable / disable"><input type="checkbox" id="invoiceEnabled" aria-label="Enable invoices" /><span class="slider"></span></label>
+                </div>
+                <div class="settings-body" id="invoiceBody">
+                  <p class="pf-note">Ek page e duita copy — <strong>Customer copy</strong> ar <strong>Office copy</strong>. Order create er somoy invoice number auto allocate hoy.</p>
+
+                  <h4 class="settings-subhead">Business identity</h4>
+                  <div class="pf-grid-2">
+                    <div class="pf-field">
+                      <label for="invoiceCompanyName">Company name</label>
+                      <input id="invoiceCompanyName" placeholder="Store name" />
+                    </div>
+                    <div class="pf-field">
+                      <label for="invoiceBin">BIN (optional)</label>
+                      <input id="invoiceBin" />
+                    </div>
+                  </div>
+                  <div class="pf-field">
+                    <label for="invoiceCompanyAddress">Company address</label>
+                    <input id="invoiceCompanyAddress" />
+                  </div>
+                  <div class="pf-grid-2">
+                    <div class="pf-field">
+                      <label for="invoiceCompanyPhone">Company phone</label>
+                      <input id="invoiceCompanyPhone" />
+                    </div>
+                    <div class="pf-field">
+                      <label for="invoiceCompanyEmail">Company email</label>
+                      <input id="invoiceCompanyEmail" type="email" />
+                    </div>
+                  </div>
+
+                  <h4 class="settings-subhead">Design</h4>
+                  <div class="pf-grid-2">
+                    <div class="pf-field">
+                      <label for="invoicePrefix">Invoice prefix</label>
+                      <input id="invoicePrefix" placeholder="INV-" maxlength="12" />
+                    </div>
+                    <div class="pf-field">
+                      <label for="invoiceAccent">Accent color</label>
+                      <input id="invoiceAccent" type="color" />
+                    </div>
+                    <div class="pf-field">
+                      <label for="invoicePaper">Paper size</label>
+                      <select id="invoicePaper">
+                        <option value="a4">A4</option>
+                        <option value="a5">A5</option>
+                        <option value="thermal">Thermal</option>
+                      </select>
+                    </div>
+                    <div class="pf-field">
+                      <label for="invoiceCopies">Copies</label>
+                      <select id="invoiceCopies">
+                        <option value="both">Customer + Office</option>
+                        <option value="customer">Customer only</option>
+                        <option value="admin">Office only</option>
+                      </select>
+                    </div>
+                  </div>
+                  <p class="pf-note">Next invoice: <strong id="invoiceNextNumber">INV-01001</strong></p>
+                  <label class="settings-check"><input type="checkbox" id="invoiceShowLogo" /> Show store logo</label>
+                  <label class="settings-check"><input type="checkbox" id="invoiceShowSignature" /> Show signature line</label>
+                  <div class="pf-field">
+                    <label for="invoiceSignatureLabel">Signature label</label>
+                    <input id="invoiceSignatureLabel" placeholder="Authorized signature" />
+                  </div>
+                  <label class="settings-check"><input type="checkbox" id="invoiceShowVat" /> Show VAT (included in total)</label>
+                  <div class="pf-field">
+                    <label for="invoiceVat">VAT %</label>
+                    <input id="invoiceVat" type="number" min="0" max="100" step="0.01" />
+                  </div>
+
+                  <h4 class="settings-subhead">Footer</h4>
+                  <div class="pf-field">
+                    <label for="invoiceFooterNote">Footer note</label>
+                    <input id="invoiceFooterNote" placeholder="Thank you for shopping with us!" />
+                  </div>
+                  <div class="pf-field">
+                    <label for="invoiceTerms">Terms</label>
+                    <textarea id="invoiceTerms" rows="3"></textarea>
+                  </div>
+
+                  <div class="inv-preview-tools">
+                    <div class="inv-preview-modes" role="group" aria-label="Preview invoice mode">
+                      <button type="button" class="inv-mode is-active" data-inv-mode="retail" aria-pressed="true">Retail</button>
+                      <button type="button" class="inv-mode" data-inv-mode="wholesale" aria-pressed="false">Wholesale</button>
+                      <button type="button" class="inv-mode" data-inv-mode="international" aria-pressed="false">International</button>
+                    </div>
+                    <button class="pf-btn-sm" type="button" id="invoicePreviewBtn">Preview &amp; print invoice</button>
+                  </div>
+                  <p class="pf-note">Mode preview only — store settings bodlay na.</p>
+                </div>
+              </div>
+
+              <div class="pf-card" id="invoicePreviewCard" hidden>
+                <div class="pf-card-head"><h3>Invoice preview</h3><span class="hint">Customer + Office copy</span></div>
+                <iframe id="invoicePreviewFrame" class="settings-invoice-preview" title="Invoice preview"></iframe>
+              </div>
+            </section>
+          </div>
+        </div>
+
+        <datalist id="districtList"></datalist>
+        <datalist id="countryList"></datalist>
+      </section><!-- /#view-settings -->
+
+      <!-- ===================== INSTALLMENT ORDERS VIEW ===================== -->
+      <section class="view" id="view-installment-orders" hidden>
+        <div class="topbar">
+          <div style="display:flex;align-items:center;gap:14px;">
+            <button class="menu-btn" data-menu aria-label="Menu">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+            <div>
+              <h2>Installment orders</h2>
+              <p class="crumb">Wholesale partial payments — verify manual payments &amp; track dues</p>
+            </div>
+          </div>
+          <button class="btn-add" id="instRefreshBtn" type="button">Refresh</button>
+        </div>
+
+        <section class="stats">
+          <div class="stat">
+            <p class="label">Installment orders</p>
+            <p class="value gold" id="instStatOrders">0</p>
+          </div>
+          <div class="stat">
+            <p class="label">Total due</p>
+            <p class="value danger" id="instStatDue">৳ 0</p>
+          </div>
+          <div class="stat">
+            <p class="label">Pending verification</p>
+            <p class="value" id="instStatPending">0</p>
+          </div>
+          <div class="stat">
+            <p class="label">Overdue installments</p>
+            <p class="value danger" id="instStatOverdue">0</p>
+          </div>
+        </section>
+
+        <div class="inst-tabs" role="tablist" aria-label="Installment orders tabs">
+          <button type="button" class="inst-tab active" data-inst-tab="orders">Orders</button>
+          <button type="button" class="inst-tab" data-inst-tab="payments">Pending payments</button>
+        </div>
+
+        <section class="panel" id="instOrdersPanel">
+          <div class="panel-head">
+            <div>
+              <h3>Wholesale installment orders</h3>
+              <p class="count" id="instOrderCount">0 orders</p>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Order</th>
+                  <th>Buyer</th>
+                  <th>Plan</th>
+                  <th>Amounts</th>
+                  <th>Status</th>
+                  <th>Next due</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="instOrdersBody">
+                <tr><td colspan="7"><div class="empty">Loading…</div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel" id="instPaymentsPanel" hidden>
+          <div class="panel-head">
+            <div>
+              <h3>Manual payments — pending verification</h3>
+              <p class="count" id="instPaymentCount">0 pending payments</p>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Order</th>
+                  <th>Buyer</th>
+                  <th>Installment</th>
+                  <th>Amount</th>
+                  <th>Method</th>
+                  <th>Transaction</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="instPaymentsBody">
+                <tr><td colspan="7"><div class="empty">Loading…</div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel" id="instDetailPanel" hidden>
+          <div class="panel-head">
+            <div>
+              <h3 id="instDetailTitle">Order</h3>
+              <p class="count">Schedule snapshot + manual payment history</p>
+            </div>
+            <button type="button" class="inst-btn" id="instDetailClose">Close</button>
+          </div>
+          <div id="instDetailBody" class="inst-detail-body"></div>
+        </section>
+      </section><!-- /#view-installment-orders -->
+
+      <!-- ===================== FLASH SALES VIEW ===================== -->
+      <section class="view" id="view-flash-sales" hidden>
+        <div class="topbar">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <button class="menu-btn" aria-label="Menu">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+            <div>
+              <h2>Flash sales</h2>
+              <p class="crumb">Marketing / Flash sale campaigns</p>
+            </div>
+          </div>
+          <div class="pc-top-actions">
+            <button type="button" class="btn-ghost" id="fsRefresh">Refresh</button>
+            <button type="button" class="btn-add" id="fsCreateBtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
+              Create campaign
+            </button>
+          </div>
+        </div>
+        <div class="promo-stats" id="fsStats"></div>
+        <div id="fsListRoot" class="promo-list"></div>
+      </section><!-- /#view-flash-sales -->
+
+      <!-- ===================== COUPONS VIEW ===================== -->
+      <section class="view" id="view-coupons" hidden>
+        <div class="topbar">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <button class="menu-btn" aria-label="Menu">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+            <div>
+              <h2>Coupons</h2>
+              <p class="crumb">Marketing / Discount coupons</p>
+            </div>
+          </div>
+          <div class="pc-top-actions">
+            <button type="button" class="btn-ghost" id="cpRefresh">Refresh</button>
+            <button type="button" class="btn-add" id="cpCreateBtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
+              Add coupon
+            </button>
+          </div>
+        </div>
+        <div class="promo-stats" id="cpStats"></div>
+        <div id="cpListRoot" class="promo-list"></div>
+      </section><!-- /#view-coupons -->
+
+      <!-- ===================== HERO SLIDER VIEW ===================== -->
+      <section class="view" id="view-hero-slider" hidden>
+        <div class="topbar">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <button class="menu-btn" aria-label="Menu">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+            <div>
+              <h2>Hero slider</h2>
+              <p class="crumb">Storefront / Home hero</p>
+            </div>
+          </div>
+          <div class="pc-top-actions">
+            <a class="hs-top-link" id="hsStorefrontLink" href="/" target="_blank" rel="noopener">View storefront</a>
+            <button type="button" class="btn-ghost" id="hsRefresh">Refresh</button>
+            <button type="button" class="btn-add" id="hsCreateBtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
+              Add slide
+            </button>
+          </div>
+        </div>
+        <p class="hs-note">Home page er hero ei order e dekhabe. Drag kore ba arrow diye order change korun — active off dile slide public e dekhabe na.</p>
+        <div id="hsListRoot" class="hs-list"></div>
+      </section><!-- /#view-hero-slider -->
+
+      <!-- ===================== PRODUCT LIST VIEW ===================== -->
+      <section class="view" id="view-product-list" hidden>
+        <div class="topbar">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <button class="menu-btn" aria-label="Menu">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+            <div>
+              <h2>Product list</h2>
+              <p class="crumb">Inventory / Product list</p>
+            </div>
+          </div>
+          <div class="pc-top-actions">
+            <button type="button" class="btn-ghost" id="pcImportExport">Import / Export</button>
+            <button type="button" class="btn-add" id="pcAddProduct">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
+              Add product
+            </button>
+          </div>
+        </div>
+        <div id="pcListRoot"></div>
+      </section><!-- /#view-product-list -->
+
+      <!-- ===================== PRODUCT VIEW (DETAILS) ===================== -->
+      <section class="view" id="view-product-view" hidden>
+        <div id="pcViewRoot"></div>
+      </section><!-- /#view-product-view -->
+
+      <!-- ===================== ORDERS VIEW ===================== -->
+      <section class="view" id="view-orders" hidden>
+        <div class="topbar">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <button class="menu-btn" aria-label="Menu">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+            <div>
+              <h2>Order list</h2>
+              <p class="crumb">Sales / Orders</p>
+            </div>
+          </div>
+          <div class="pc-top-actions">
+            <button type="button" class="btn-ghost" id="olExport">Export</button>
+            <button type="button" class="btn-add" id="olCreateOrder">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
+              Create order
+            </button>
+          </div>
+        </div>
+        <div id="olRoot"></div>
+      </section><!-- /#view-orders -->
+
+      <!-- ===================== ORDER DETAILS VIEW ===================== -->
+      <section class="view" id="view-order-detail" hidden>
+        <div id="odRoot"></div>
+      </section><!-- /#view-order-detail -->
+
+      <!-- ===================== CUSTOMERS VIEW ===================== -->
+      <section class="view" id="view-customers" hidden>
+        <div class="topbar">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <button class="menu-btn" aria-label="Menu">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+            <div>
+              <h1>Customers</h1>
+              <p class="crumb">Registered buyers · orders, notes &amp; account actions</p>
+            </div>
+          </div>
+        </div>
+        <div id="custRoot"></div>
+      </section><!-- /#view-customers -->
+
+      <!-- ===================== SUPPLIERS VIEW ===================== -->
+      <section class="view" id="view-suppliers" hidden>
+        <div class="topbar">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <button class="menu-btn" aria-label="Menu">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+            <div>
+              <h1>Suppliers</h1>
+              <p class="crumb">Purchases · invoices · payments &amp; stock</p>
+            </div>
+          </div>
+          <div class="pc-top-actions">
+            <button type="button" class="btn-ghost" id="supSettingsBtn">Supplier settings</button>
+            <button type="button" class="btn-add" id="supNewBtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
+              New supplier
+            </button>
+          </div>
+        </div>
+        <div id="supRoot"></div>
+      </section><!-- /#view-suppliers -->
+
+      <!-- ===================== SUPPLIER ORDER HISTORY ===================== -->
+      <section class="view" id="view-supplier-history" hidden>
+        <div class="topbar">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <button class="menu-btn" aria-label="Menu">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+            <div>
+              <h1>Order history</h1>
+              <p class="crumb">Supplier invoices · daily, monthly &amp; yearly</p>
+            </div>
+          </div>
+          <div class="pc-top-actions">
+            <button type="button" class="btn-ghost" id="supExportBtn">Export CSV</button>
+          </div>
+        </div>
+        <div id="supHistoryRoot"></div>
+      </section><!-- /#view-supplier-history -->
+
+      <!-- ===================== REPORTS: SALES ===================== -->
+      <section class="view" id="view-report-sales" hidden>
+        <div class="topbar">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <button class="menu-btn" aria-label="Menu">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+            <div>
+              <h1>Sales reports</h1>
+              <p class="crumb">Sales · orders · refunds &amp; coupons</p>
+            </div>
+          </div>
+        </div>
+        <div id="repSalesRoot"></div>
+      </section><!-- /#view-report-sales -->
+
+      <!-- ===================== REPORTS: PRODUCT WISE ===================== -->
+      <section class="view" id="view-report-products" hidden>
+        <div class="topbar">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <button class="menu-btn" aria-label="Menu">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+            <div>
+              <h1>Product-wise sales</h1>
+              <p class="crumb">Revenue &amp; quantity by product</p>
+            </div>
+          </div>
+        </div>
+        <div id="repProductsRoot"></div>
+      </section><!-- /#view-report-products -->
+
+      <!-- ===================== REPORTS: CATEGORY WISE ===================== -->
+      <section class="view" id="view-report-categories" hidden>
+        <div class="topbar">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <button class="menu-btn" aria-label="Menu">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+            <div>
+              <h1>Category-wise sales</h1>
+              <p class="crumb">Primary category attribution</p>
+            </div>
+          </div>
+        </div>
+        <div id="repCategoriesRoot"></div>
+      </section><!-- /#view-report-categories -->
+
+      <!-- ===================== REPORTS: COUPON WISE ===================== -->
+      <section class="view" id="view-report-coupons" hidden>
+        <div class="topbar">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <button class="menu-btn" aria-label="Menu">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+            <div>
+              <h1>Coupon-wise sales</h1>
+              <p class="crumb">Discount value &amp; orders</p>
+            </div>
+          </div>
+        </div>
+        <div id="repCouponsRoot"></div>
+      </section><!-- /#view-report-coupons -->
+
+      <!-- ===================== REPORTS: TOP CUSTOMERS ===================== -->
+      <section class="view" id="view-report-customers" hidden>
+        <div class="topbar">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <button class="menu-btn" aria-label="Menu">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+            <div>
+              <h1>Top customers</h1>
+              <p class="crumb">Monthly · half-yearly · yearly</p>
+            </div>
+          </div>
+        </div>
+        <div id="repCustomersRoot"></div>
+      </section><!-- /#view-report-customers -->
+
+      <!-- ===================== FOOTER ===================== -->
+      <footer class="dash-footer">
+        <div class="footer-left">
+          <img id="footerLogo" src="" alt="Footer logo" hidden />
+          <span id="siteFooterCopyright">© <span id="footerYear">2026</span> LUXE Admin — all rights reserved.</span>
+        </div>
+        <div class="f-links">
+          <a href="#" onclick="return false;">Help</a>
+          <a href="#" onclick="return false;">Privacy</a>
+          <a href="#" onclick="return false;">Docs</a>
+        </div>
+      </footer>
+    </main>
+  </div>
+
+  <!-- add / edit modal -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <h3 id="modalTitle">নতুন প্রোডাক্ট</h3>
+      <form id="productForm" novalidate>
+        <div class="field">
+          <label for="fName">প্রোডাক্টের নাম</label>
+          <input id="fName" type="text" required placeholder="যেমন: Premium Leather Wallet" />
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label for="fPrice">দাম (৳)</label>
+            <input id="fPrice" type="number" min="0" step="any" required placeholder="1500" />
+          </div>
+          <div class="field">
+            <label for="fStock">স্টক</label>
+            <input id="fStock" type="number" min="0" step="1" placeholder="20" />
+          </div>
+        </div>
+        <div class="field">
+          <label for="fDesc">বিস্তারিত</label>
+          <textarea id="fDesc" rows="3" placeholder="ছোট বিবরণ..."></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-ghost" id="cancelBtn">বাতিল</button>
+          <button type="submit" class="btn-gold" id="saveBtn">সেভ করুন</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- category view modal -->
+  <div class="modal-overlay" id="catViewOverlay">
+    <div class="modal" style="max-width:660px;">
+      <h3 id="catViewTitle">Category</h3>
+      <div id="catViewBody" style="margin-top:16px;"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn-ghost" id="catViewClose">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- flash sale campaign modal -->
+  <div class="modal-overlay" id="fsOverlay">
+    <div class="modal promo-modal">
+      <div class="promo-modal-head">
+        <div>
+          <h3 id="fsModalTitle">Create campaign</h3>
+          <p class="promo-modal-sub" id="fsModalSub">Product ba category select kore campaign chalu korun</p>
+        </div>
+        <button type="button" class="promo-x" id="fsClose" aria-label="Close">×</button>
+      </div>
+      <form id="fsForm" novalidate>
+        <div class="field">
+          <label for="fsTitle">Campaign title *</label>
+          <input id="fsTitle" type="text" maxlength="160" placeholder="Eid Flash Sale" />
+        </div>
+        <div class="field">
+          <label for="fsDesc">Description</label>
+          <textarea id="fsDesc" rows="2" maxlength="2000" placeholder="Short campaign description"></textarea>
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label for="fsStart">Start date &amp; time *</label>
+            <input id="fsStart" type="datetime-local" />
+          </div>
+          <div class="field">
+            <label for="fsEnd">End date &amp; time *</label>
+            <input id="fsEnd" type="datetime-local" />
+          </div>
+        </div>
+        <div class="field">
+          <label for="fsPercent">Discount (%)</label>
+          <input id="fsPercent" type="number" min="1" max="100" step="1" placeholder="20" />
+          <p class="promo-hint">Retail/wholesale er cheye kom dam hobe tokhon flash price apply hobe.</p>
+        </div>
+        <div class="field">
+          <label>Apply on *</label>
+          <div class="promo-seg" id="fsTargetSeg" role="group" aria-label="Campaign target">
+            <button type="button" class="active" data-target="product">Product</button>
+            <button type="button" data-target="category">Category</button>
+          </div>
+        </div>
+        <div id="fsProductField">
+          <div class="field">
+            <label for="fsProductSearch">Products *</label>
+            <input id="fsProductSearch" type="search" placeholder="Search product…" autocomplete="off" />
+            <div class="promo-picker" id="fsProductPicker" data-empty="Kono product nei"></div>
+            <p class="promo-hint" id="fsProductCount">0 selected</p>
+          </div>
+        </div>
+        <div id="fsCategoryField" hidden>
+          <div class="field">
+            <label for="fsCategorySearch">Categories *</label>
+            <input id="fsCategorySearch" type="search" placeholder="Search category…" autocomplete="off" />
+            <div class="promo-picker" id="fsCategoryPicker" data-empty="Kono category nei"></div>
+            <p class="promo-hint" id="fsCategoryCount">0 selected</p>
+          </div>
+        </div>
+        <p class="promo-error" id="fsFormError" hidden></p>
+        <div class="modal-actions">
+          <button type="button" class="btn-ghost" id="fsCancel">Cancel</button>
+          <button type="submit" class="btn-gold" id="fsSave">Save campaign</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- coupon modal -->
+  <div class="modal-overlay" id="cpOverlay">
+    <div class="modal promo-modal">
+      <div class="promo-modal-head">
+        <div>
+          <h3 id="cpModalTitle">Add coupon</h3>
+          <p class="promo-modal-sub">Target na dile sob product e apply hobe</p>
+        </div>
+        <button type="button" class="promo-x" id="cpClose" aria-label="Close">×</button>
+      </div>
+      <form id="cpForm" novalidate>
+        <div class="field">
+          <label for="cpCode">Coupon code *</label>
+          <input id="cpCode" type="text" maxlength="40" placeholder="SAVE10" autocomplete="off" style="text-transform:uppercase" />
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label for="cpType">Discount type</label>
+            <select id="cpType">
+              <option value="percent">Percent (%)</option>
+              <option value="fixed">Fixed (৳)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="cpValue">Discount value</label>
+            <input id="cpValue" type="number" min="0" step="0.01" placeholder="10" />
+          </div>
+        </div>
+        <div class="field">
+          <label for="cpMin">Min order (৳)</label>
+          <input id="cpMin" type="number" min="0" step="0.01" placeholder="0" />
+          <p class="promo-hint">Ei amount er beshi kena korle coupon apply hobe.</p>
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label for="cpStart">Start date *</label>
+            <input id="cpStart" type="date" />
+          </div>
+          <div class="field">
+            <label for="cpEnd">End date *</label>
+            <input id="cpEnd" type="date" />
+          </div>
+        </div>
+        <label class="promo-check">
+          <input type="checkbox" id="cpFreeDelivery" />
+          <span>Free delivery (min order pouchale shipping charge 0)</span>
+        </label>
+        <div class="field">
+          <label for="cpCategorySearch">Assigned categories</label>
+          <input id="cpCategorySearch" type="search" placeholder="Search category…" autocomplete="off" />
+          <div class="promo-picker" id="cpCategoryPicker" data-empty="Kono category nei"></div>
+          <p class="promo-hint" id="cpCategoryCount">0 selected — sob category eligible</p>
+        </div>
+        <div class="field">
+          <label for="cpProductSearch">Assigned products</label>
+          <input id="cpProductSearch" type="search" placeholder="Search product…" autocomplete="off" />
+          <div class="promo-picker" id="cpProductPicker" data-empty="Kono product nei"></div>
+          <p class="promo-hint" id="cpProductCount">0 selected — sob product eligible</p>
+        </div>
+        <p class="promo-error" id="cpFormError" hidden></p>
+        <div class="modal-actions">
+          <button type="button" class="btn-ghost" id="cpCancel">Cancel</button>
+          <button type="submit" class="btn-gold" id="cpSave">Save coupon</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- hero slide modal -->
+  <div class="modal-overlay" id="hsOverlay">
+    <div class="modal promo-modal hs-modal">
+      <div class="promo-modal-head">
+        <div>
+          <h3 id="hsModalTitle">Add slide</h3>
+          <p class="promo-modal-sub">Home page er hero banner image</p>
+        </div>
+        <button type="button" class="promo-x" id="hsClose" aria-label="Close">×</button>
+      </div>
+      <form id="hsForm" novalidate>
+        <div class="field">
+          <label>Slide image *</label>
+          <div class="hs-upload">
+            <div class="hs-preview" id="hsPreview">
+              <span class="hs-preview-empty" id="hsPreviewEmpty">No image</span>
+              <img id="hsPreviewImg" alt="" hidden />
+            </div>
+            <div class="hs-upload-side">
+              <input type="file" id="hsFile" accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml" hidden />
+              <button type="button" class="btn-ghost" id="hsPickBtn">Upload image</button>
+              <p class="promo-hint">JPG / PNG / WebP · max 2MB · 1600×800 recommended</p>
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <label for="hsTitle">Title</label>
+          <input id="hsTitle" type="text" maxlength="120" placeholder="New season" />
+        </div>
+        <div class="field">
+          <label for="hsSubtitle">Subtitle</label>
+          <input id="hsSubtitle" type="text" maxlength="240" placeholder="Hand-picked essentials, made to last." />
+          <p class="promo-hint">Title/subtitle blank hole image-only slide hobe.</p>
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label for="hsButton">Button label</label>
+            <input id="hsButton" type="text" maxlength="40" placeholder="Shop now" />
+          </div>
+          <div class="field">
+            <label for="hsLink">Link</label>
+            <input id="hsLink" type="text" maxlength="500" placeholder="/product/amber-noir" />
+          </div>
+        </div>
+        <div class="field">
+          <label for="hsAlt">Alt text</label>
+          <input id="hsAlt" type="text" maxlength="160" placeholder="Short description of the image" />
+        </div>
+        <label class="promo-check">
+          <input type="checkbox" id="hsActive" checked />
+          <span>Active — home page e dekhabe</span>
+        </label>
+        <p class="promo-error" id="hsFormError" hidden></p>
+        <div class="modal-actions">
+          <button type="button" class="btn-ghost" id="hsCancel">Cancel</button>
+          <button type="submit" class="btn-gold" id="hsSave">Save slide</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- generic confirm modal -->
+  <div class="modal-overlay" id="confirmOverlay">
+    <div class="modal" style="max-width:420px;">
+      <h3 id="confirmTitle">Are you sure?</h3>
+      <p id="confirmText" style="color:var(--muted);margin-top:10px;font-size:14px;"></p>
+      <div class="modal-actions">
+        <button type="button" class="btn-ghost" id="confirmCancel">Cancel</button>
+        <button type="button" class="btn-gold" id="confirmOk">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="/js/dashboard.js?v=2"></script>
+  <script src="/js/categories.js"></script>
+  <script src="/js/brands.js"></script>
+  <script src="/js/product-form.js"></script>
+  <script src="/js/settings.js"></script>
+  <script src="/js/installments-admin.js?v=1"></script>
+  <script src="/js/orders.js?v=2"></script>
+  <script src="/js/product-catalog.js?v=1"></script>
+  <script src="/js/marketing.js?v=1"></script>
+  <script src="/js/hero-slider.js?v=1"></script>
+  <script src="/js/customers.js?v=1"></script>
+  <script src="/js/suppliers.js?v=2"></script>
+  <script src="/js/reports.js?v=2"></script>
+</body>
+</html>
+

@@ -1,0 +1,495 @@
+/* ==========================================================================
+   Storefront home — cinematic hero slider + new arrivals
+   ========================================================================== */
+:root {
+  --bg: #0d0c0a;
+  --bg-2: #12100c;
+  --panel: #17140f;
+  --line: rgba(201, 169, 97, 0.28);
+  --line-soft: rgba(255, 255, 255, 0.08);
+  --gold: #c9a961;
+  --gold-2: #e3c992;
+  --gold-soft: rgba(201, 169, 97, 0.12);
+  --text: #f0ece2;
+  --muted: #9b9486;
+  --danger: #e0705c;
+  --radius: 20px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+[hidden] { display: none !important; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  min-height: 100vh;
+  line-height: 1.5;
+  color: var(--text);
+  font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  background:
+    radial-gradient(1100px 560px at 88% -8%, rgba(201, 169, 97, 0.1), transparent 60%),
+    radial-gradient(800px 420px at 0% 105%, rgba(93, 107, 74, 0.1), transparent 60%),
+    var(--bg);
+}
+
+button, input { font: inherit; }
+button { cursor: pointer; }
+a { color: inherit; }
+img { display: block; max-width: 100%; }
+
+.hm-shell {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 22px 24px 0;
+}
+
+/* ---------------------------------------------------------------- header */
+.hm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 6px 2px 22px;
+}
+
+.hm-brand {
+  text-decoration: none;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 24px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.hm-nav {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.hm-nav-link {
+  text-decoration: none;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  transition: color 0.2s ease;
+}
+
+.hm-nav-link:hover { color: var(--gold); }
+
+.hm-cart {
+  text-decoration: none;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 7px 16px;
+  transition: background 0.2s ease;
+}
+
+.hm-cart:hover { background: var(--gold-soft); }
+
+/* ------------------------------------------------------------------ hero */
+.hm-hero {
+  position: relative;
+  height: clamp(460px, 64vh, 680px);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--bg-2);
+  outline: none;
+}
+
+.hm-hero:focus-visible { box-shadow: 0 0 0 2px rgba(201, 169, 97, 0.6); }
+
+.hm-slides { position: absolute; inset: 0; }
+
+.hm-slide {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  opacity: 0;
+  transform: scale(1.02);
+  transition: opacity 0.9s ease;
+}
+
+.hm-slide.is-active {
+  opacity: 1;
+  animation: hm-kenburns 7s ease-out forwards;
+}
+
+.hm-fallback {
+  background:
+    radial-gradient(110% 90% at 76% 22%, rgba(201, 169, 97, 0.3), transparent 52%),
+    radial-gradient(90% 80% at 12% 90%, rgba(93, 107, 74, 0.36), transparent 60%),
+    linear-gradient(135deg, #2c2a22 0%, #1a1813 52%, #100f0c 100%);
+}
+
+.hm-hero.is-empty .hm-hero-bottom { display: none; }
+
+@keyframes hm-kenburns {
+  from { transform: scale(1.07); }
+  to { transform: scale(1); }
+}
+
+.hm-scrim {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(9, 8, 6, 0.82) 0%, rgba(9, 8, 6, 0.32) 46%, rgba(9, 8, 6, 0.04) 72%),
+    linear-gradient(180deg, rgba(9, 8, 6, 0.28) 0%, transparent 28%, transparent 64%, rgba(9, 8, 6, 0.62) 100%);
+}
+
+.hm-copy {
+  position: absolute;
+  left: clamp(24px, 6vw, 88px);
+  bottom: clamp(84px, 15%, 124px);
+  max-width: min(620px, 78%);
+  z-index: 2;
+}
+
+.hm-kicker {
+  display: inline-block;
+  font-size: 10px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.hm-title {
+  margin: 12px 0 14px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 400;
+  font-size: clamp(40px, 5.6vw, 72px);
+  line-height: 1.02;
+  letter-spacing: -0.015em;
+  color: #f8f3e7;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+
+.hm-sub {
+  max-width: 430px;
+  font-size: clamp(13px, 1.2vw, 15px);
+  line-height: 1.65;
+  color: #c9c1b1;
+}
+
+.hm-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 26px;
+  padding: 14px 26px;
+  background: var(--gold);
+  color: #17140f;
+  text-decoration: none;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  border-radius: 2px;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.hm-cta::after { content: "→"; font-size: 13px; letter-spacing: 0; }
+.hm-cta:hover { background: var(--gold-2); transform: translateY(-1px); }
+
+.hm-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 3;
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(13, 12, 10, 0.36);
+  color: var(--text);
+  font-size: 24px;
+  line-height: 1;
+  padding-bottom: 3px;
+  backdrop-filter: blur(8px);
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.hm-arrow:hover { border-color: var(--gold); background: rgba(13, 12, 10, 0.62); }
+.hm-prev { left: 22px; }
+.hm-next { right: 22px; }
+
+.hm-hero-bottom {
+  position: absolute;
+  left: clamp(24px, 6vw, 88px);
+  right: clamp(24px, 6vw, 88px);
+  bottom: 26px;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.hm-dots { display: flex; align-items: center; gap: 4px; }
+
+.hm-dot {
+  width: 28px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  display: grid;
+  align-items: center;
+}
+
+.hm-dot::before {
+  content: "";
+  display: block;
+  width: 100%;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.3);
+  transition: background 0.25s ease, transform 0.25s ease;
+}
+
+.hm-dot.on::before { background: var(--gold); transform: scaleY(2); }
+.hm-dot:hover::before { background: rgba(255, 255, 255, 0.7); }
+.hm-dot.on:hover::before { background: var(--gold); }
+
+.hm-count {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+/* -------------------------------------------------------------- products */
+.hm-products { padding: 58px 0 30px; }
+
+.hm-section-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.hm-section-head h2 {
+  margin-top: 8px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 400;
+  font-size: clamp(26px, 3vw, 38px);
+  letter-spacing: -0.01em;
+}
+
+.hm-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+  padding-top: 22px;
+}
+
+.hm-card {
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  transition: border-color 0.25s ease, transform 0.25s ease;
+  min-width: 0;
+}
+
+.hm-card:hover { border-color: var(--line); transform: translateY(-3px); }
+
+.hm-card-media {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  border-radius: 12px;
+  background:
+    radial-gradient(120% 90% at 70% 20%, rgba(201, 169, 97, 0.16), transparent 55%),
+    linear-gradient(145deg, #26231c, #14120e);
+}
+
+.hm-card-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s ease;
+}
+
+.hm-card:hover .hm-card-media img { transform: scale(1.035); }
+
+.hm-card-empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: Georgia, serif;
+  font-size: 26px;
+  color: rgba(201, 169, 97, 0.45);
+}
+
+.hm-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: rgba(13, 12, 10, 0.82);
+  border: 1px solid var(--line);
+  color: var(--gold);
+  backdrop-filter: blur(6px);
+}
+
+.hm-card-body { padding: 12px 2px 4px; }
+
+.hm-card-body h3 {
+  font-size: 13.5px;
+  font-weight: 500;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.hm-price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 5px;
+}
+
+.hm-price { font-size: 13px; color: var(--gold); }
+.hm-was { font-size: 11px; color: var(--muted); text-decoration: line-through; }
+
+.hm-out {
+  margin-top: 4px;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.hm-empty {
+  padding: 34px 0 10px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* ----------------------------------------------------------- gate / boot */
+.hm-gate {
+  max-width: 540px;
+  margin: 70px auto 40px;
+  padding: 30px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, var(--panel) 0%, var(--bg-2) 100%);
+}
+
+.hm-gate h1 {
+  margin: 10px 0 8px;
+  font-family: Georgia, serif;
+  font-weight: 400;
+  font-size: 30px;
+}
+
+.hm-gate p { color: var(--muted); font-size: 13px; }
+.hm-gate code { color: var(--gold); }
+
+.hm-gate-form { display: flex; gap: 8px; margin-top: 20px; }
+
+.hm-gate-form input {
+  flex: 1;
+  min-width: 0;
+  padding: 12px 14px;
+  border-radius: 9px;
+  border: 1px solid var(--line-soft);
+  background: var(--bg-2);
+  color: var(--text);
+}
+
+.hm-gate-form input:focus { outline: none; border-color: var(--gold); }
+
+.hm-gate-form button {
+  padding: 12px 18px;
+  border: 0;
+  border-radius: 9px;
+  background: var(--gold);
+  color: #17140f;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+}
+
+.hm-boot { padding: 80px 0 50px; color: var(--muted); font-size: 13px; }
+
+.hm-error { margin-top: 14px; color: var(--danger); font-size: 12.5px; }
+.hm-fatal { padding: 50px 0; }
+
+/* ---------------------------------------------------------------- footer */
+.hm-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 26px;
+  padding: 22px 2px 28px;
+  border-top: 1px solid var(--line-soft);
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.hm-footer-right { display: flex; align-items: center; gap: 16px; }
+.hm-footer a { text-decoration: none; color: var(--gold); }
+.hm-footer a:hover { text-decoration: underline; }
+
+/* -------------------------------------------------------------- responsive */
+@media (max-width: 980px) {
+  .hm-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 720px) {
+  .hm-shell { padding: 16px 14px 0; }
+  .hm-header { padding-bottom: 16px; }
+  .hm-brand { font-size: 19px; letter-spacing: 0.12em; }
+  .hm-nav { gap: 14px; }
+  .hm-nav-link { display: none; }
+  .hm-nav-link:first-of-type { display: inline; }
+  .hm-cart { padding: 6px 12px; font-size: 10px; }
+
+  .hm-hero { height: min(76vh, 600px); min-height: 440px; border-radius: 16px; }
+  .hm-scrim {
+    background:
+      linear-gradient(180deg, rgba(9, 8, 6, 0.22) 0%, transparent 26%, rgba(9, 8, 6, 0.18) 44%, rgba(9, 8, 6, 0.84) 100%);
+  }
+  .hm-copy { left: 20px; right: 20px; bottom: 92px; max-width: none; }
+  .hm-title { font-size: clamp(34px, 10vw, 46px); margin: 10px 0 12px; }
+  .hm-sub { font-size: 13px; max-width: 88%; }
+  .hm-cta { margin-top: 20px; padding: 12px 20px; font-size: 10px; }
+  .hm-arrow { width: 38px; height: 38px; font-size: 20px; top: 42%; }
+  .hm-prev { left: 12px; }
+  .hm-next { right: 12px; }
+  .hm-hero-bottom { left: 20px; right: 20px; bottom: 20px; }
+  .hm-dot { width: 22px; }
+
+  .hm-products { padding-top: 42px; }
+  .hm-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .hm-card-body h3 { font-size: 12.5px; }
+  .hm-gate { margin: 40px auto 20px; padding: 22px; }
+  .hm-gate h1 { font-size: 24px; }
+  .hm-gate-form { flex-direction: column; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .hm-slide.is-active { animation: none; transform: none; }
+  .hm-slide, .hm-card, .hm-card-media img, .hm-cta { transition: none; }
+}

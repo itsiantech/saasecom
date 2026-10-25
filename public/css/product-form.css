@@ -1,0 +1,365 @@
+/* ==========================================================================
+   Add Product — embedded dashboard view (#view-add-product)
+   Uses the dashboard design tokens from style.css so it matches 1:1.
+   ========================================================================== */
+
+/* ---- page header / actions ---- */
+#view-add-product .pf-topbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+#view-add-product .pf-topbar h2 { font-size: clamp(24px, 3vw, 34px); font-weight: 600; }
+#view-add-product .pf-topbar .crumb { color: var(--muted); font-size: 13px; margin-top: 4px; }
+#view-add-product .pf-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+#view-add-product .pf-actions .btn-add { padding: 10px 18px; }
+
+/* ---- two column layout ---- */
+#view-add-product .pf-layout {
+  margin-top: 24px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 24px;
+  align-items: start;
+}
+#view-add-product .pf-col { display: grid; gap: 20px; min-width: 0; }
+#view-add-product .pf-side { position: sticky; top: 20px; }
+
+/* ---- cards (same surface treatment as .cat-form) ---- */
+#view-add-product .pf-card {
+  background: linear-gradient(180deg, var(--panel) 0%, var(--bg-2) 100%);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+  padding: 22px;
+  animation: fadeUp 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+#view-add-product .pf-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+#view-add-product .pf-card-head h3 {
+  font-family: "Inter", sans-serif;
+  font-size: 17px;
+  font-weight: 600;
+}
+#view-add-product .pf-card-head .hint { font-size: 12px; color: var(--muted); font-weight: 400; }
+
+/* ---- fields (consistent with dashboard inputs) ---- */
+#view-add-product .pf-field { margin-top: 16px; }
+#view-add-product .pf-field:first-of-type { margin-top: 12px; }
+#view-add-product .pf-field label {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 7px;
+}
+#view-add-product .pf-field label .req { color: var(--danger); }
+#view-add-product .pf-field input,
+#view-add-product .pf-field select,
+#view-add-product .pf-field textarea {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--line-soft);
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: var(--text);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.25s, box-shadow 0.25s;
+}
+#view-add-product .pf-field input::placeholder,
+#view-add-product .pf-field textarea::placeholder { color: #5d584c; }
+#view-add-product .pf-field input:focus,
+#view-add-product .pf-field select:focus,
+#view-add-product .pf-field textarea:focus,
+#view-add-product .pf-field [contenteditable]:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px var(--gold-soft);
+}
+#view-add-product .pf-field textarea { resize: vertical; min-height: 70px; }
+#view-add-product .pf-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+#view-add-product .pf-note {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 12px;
+  padding-left: 10px;
+  border-left: 2px solid var(--line);
+}
+#view-add-product .pf-error { display: none; color: var(--danger); font-size: 12px; margin-top: 5px; }
+#view-add-product .pf-error.show { display: block; }
+
+/* ---- rich text editor ---- */
+#view-add-product .rt-toolbar {
+  display: flex;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--line-soft);
+  border-bottom: none;
+  border-radius: 10px 10px 0 0;
+  background: rgba(255, 255, 255, 0.02);
+}
+#view-add-product .rt-toolbar button {
+  min-width: 32px;
+  height: 30px;
+  border: 1px solid transparent;
+  background: none;
+  color: var(--text);
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 13px;
+}
+#view-add-product .rt-toolbar button:hover { border-color: var(--line); background: var(--gold-soft); color: var(--gold); }
+#view-add-product .rt-editor {
+  min-height: 160px;
+  padding: 12px 14px;
+  border: 1px solid var(--line-soft);
+  border-radius: 0 0 10px 10px;
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.25s, box-shadow 0.25s;
+}
+#view-add-product .rt-editor:focus { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-soft); }
+#view-add-product .rt-editor:empty::before { content: attr(data-placeholder); color: #5d584c; }
+
+/* ---- chips ---- */
+#view-add-product .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+#view-add-product .chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: var(--gold-soft);
+  border: 1px solid var(--line);
+  color: var(--gold);
+  font-size: 12px;
+}
+#view-add-product .chip button {
+  border: none;
+  background: none;
+  color: var(--gold);
+  font-size: 15px;
+  line-height: 1;
+  opacity: 0.75;
+}
+#view-add-product .chip button:hover { opacity: 1; color: var(--danger); }
+
+/* ---- checkbox row ---- */
+#view-add-product .pf-check {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 14px;
+  cursor: pointer;
+}
+#view-add-product .pf-check input { width: 16px; height: 16px; accent-color: var(--gold); }
+
+/* ---- variation table ---- */
+#view-add-product .pf-table-wrap { margin-top: 14px; overflow-x: auto; }
+#view-add-product table.pf-table { width: 100%; border-collapse: collapse; min-width: 520px; }
+#view-add-product table.pf-table th {
+  text-align: left;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line-soft);
+}
+#view-add-product table.pf-table td { padding: 10px; border-bottom: 1px solid var(--line-soft); }
+#view-add-product table.pf-table input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  padding: 8px 10px;
+  color: var(--text);
+  font-size: 13px;
+  outline: none;
+}
+#view-add-product table.pf-table input:focus { border-color: var(--gold); }
+
+/* ---- image slots ---- */
+#view-add-product .pf-img-slot {
+  width: 56px;
+  height: 56px;
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  font-size: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+#view-add-product .pf-img-slot:hover { border-color: var(--gold); }
+#view-add-product .pf-img-slot img { width: 100%; height: 100%; object-fit: cover; }
+
+/* ---- swatches ---- */
+#view-add-product .pf-swatches {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 14px;
+  margin: 16px 0;
+}
+#view-add-product .pf-swatch {
+  border: 1px solid var(--line-soft);
+  border-radius: 12px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.02);
+  display: grid;
+  gap: 10px;
+}
+#view-add-product .pf-swatch-top { display: flex; align-items: center; justify-content: space-between; }
+#view-add-product .pf-swatch-top span { font-size: 12px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
+#view-add-product .pf-swatch-top strong { font-size: 12px; color: var(--danger); cursor: pointer; font-weight: 500; }
+#view-add-product .pf-swatch-top strong:hover { text-decoration: underline; }
+#view-add-product .pf-gallery { display: flex; flex-wrap: wrap; gap: 6px; }
+#view-add-product .pf-gallery .pf-img-slot { width: 44px; height: 44px; }
+
+/* ---- category tree ---- */
+#view-add-product .pf-tree {
+  max-height: 260px;
+  overflow: auto;
+  border: 1px solid var(--line-soft);
+  border-radius: 10px;
+  padding: 8px;
+  margin-top: 12px;
+  background: rgba(255, 255, 255, 0.02);
+}
+#view-add-product .pf-tree-node {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 6px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+#view-add-product .pf-tree-node:hover { background: var(--gold-soft); }
+#view-add-product .pf-tree-node label { display: flex; align-items: center; gap: 8px; cursor: pointer; width: 100%; }
+#view-add-product .pf-tree-node input { accent-color: var(--gold); width: 15px; height: 15px; }
+#view-add-product .pf-tree-children { margin-left: 18px; border-left: 1px solid var(--line-soft); padding-left: 8px; }
+
+/* ---- toggles ---- */
+#view-add-product .pf-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 0;
+  border-top: 1px solid var(--line-soft);
+}
+#view-add-product .pf-toggle-row:first-of-type { border-top: none; padding-top: 4px; }
+#view-add-product .pf-toggle-row strong { display: block; font-size: 13px; font-weight: 600; }
+#view-add-product .pf-toggle-row p { font-size: 12px; color: var(--muted); margin-top: 2px; }
+#view-add-product .pf-switch { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; }
+#view-add-product .pf-switch input { opacity: 0; width: 0; height: 0; }
+#view-add-product .pf-switch .slider {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  transition: background 0.2s;
+}
+#view-add-product .pf-switch .slider::before {
+  content: "";
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  left: 3px;
+  top: 3px;
+  background: #d9d4c8;
+  transition: transform 0.2s, background 0.2s;
+}
+#view-add-product .pf-switch input:checked + .slider { background: var(--gold); }
+#view-add-product .pf-switch input:checked + .slider::before { transform: translateX(20px); background: #17110a; }
+
+/* ---- small buttons ---- */
+#view-add-product .pf-btn-sm {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--line-soft);
+  background: none;
+  color: var(--muted);
+  font-size: 12px;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+#view-add-product .pf-btn-sm:hover { color: var(--gold); border-color: var(--gold); background: var(--gold-soft); }
+#view-add-product .pf-btn-danger { color: var(--danger); border-color: rgba(224, 112, 92, 0.35); }
+#view-add-product .pf-btn-danger:hover { color: var(--danger); border-color: var(--danger); background: rgba(224, 112, 92, 0.08); }
+
+/* ---- inline create-category form ---- */
+#view-add-product .pf-inline-form { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line-soft); }
+#view-add-product .pf-inline-form .pf-row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }
+
+/* ---- dashboard footer ---- */
+.dash-footer {
+  margin-top: 40px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line-soft);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--muted);
+}
+.dash-footer .f-links { display: flex; gap: 16px; flex-wrap: wrap; }
+.dash-footer a { color: var(--muted); text-decoration: none; }
+.dash-footer a:hover { color: var(--gold); }
+
+/* ---- responsive ---- */
+@media (max-width: 1150px) {
+  #view-add-product .pf-layout { grid-template-columns: 1fr; }
+  #view-add-product .pf-side { position: static; }
+}
+@media (max-width: 640px) {
+  #view-add-product .pf-grid-2 { grid-template-columns: 1fr; }
+  #view-add-product .pf-card { padding: 16px; }
+  #view-add-product .pf-actions { width: 100%; }
+  #view-add-product .pf-actions .btn-add { flex: 1; justify-content: center; }
+  #view-add-product .pf-actions .btn-ghost { flex: 1; }
+  .dash-footer { flex-direction: column; align-items: flex-start; }
+}
+
+/* ---- light theme fixes (Add Product scoped controls) ---- */
+html[data-theme="light"] #view-add-product .pf-field input,
+html[data-theme="light"] #view-add-product .pf-field textarea,
+html[data-theme="light"] #view-add-product .pf-field select,
+html[data-theme="light"] #view-add-product .pf-table input,
+html[data-theme="light"] #view-add-product .pf-table select { background: #fbf9f4; }
+html[data-theme="light"] #view-add-product .pf-field input::placeholder,
+html[data-theme="light"] #view-add-product .pf-field textarea::placeholder { color: #9a9384; }
+html[data-theme="light"] #view-add-product .pf-img-slot,
+html[data-theme="light"] #view-add-product .pf-swatch-img { background: #fbf9f4; }
+html[data-theme="light"] #view-add-product .pf-switch .slider { background: rgba(28, 24, 18, 0.18); }
+html[data-theme="light"] #view-add-product .chip { background: #f1ece1; }
+
+/* ---- wholesale quantity tiers ---- */
+#view-add-product #pfTiersCard .pf-note { margin-top: 6px; }
+#view-add-product #pfTierTarget { max-width: 320px; }
+#view-add-product .pf-tier-table { min-width: 460px; }
+#view-add-product .pf-tier-table input[readonly] { color: var(--muted); background: rgba(255, 255, 255, 0.03); }
+#view-add-product .pf-tier-table td:last-child { width: 90px; text-align: right; }
+#view-add-product #pfTierError { margin-top: 8px; }
+html[data-theme="light"] #view-add-product .pf-tier-table input[readonly] { background: #f4f0e7; }

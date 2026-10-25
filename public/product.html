@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Product — LUXE</title>
+  <link rel="stylesheet" href="/css/product.css" />
+</head>
+<body>
+  <div class="pd-shell">
+    <header class="pd-header">
+      <a class="pd-brand" id="pdBrandLink" href="/checkout.html">
+        <span id="pdStoreName">Store</span>
+      </a>
+      <div class="pd-header-right">
+        <span class="pd-badge" id="pdHeaderBadge" hidden>Wholesale</span>
+        <a class="pd-cart-link" id="pdCartLink" href="/checkout.html">
+          Cart <span class="pd-cart-count" id="pdCartCount">0</span>
+        </a>
+      </div>
+    </header>
+
+    <main class="pd-main">
+      <section id="pdGate" class="pd-card pd-gate" hidden>
+        <h1>Product khun</h1>
+        <p class="pd-muted">Store slug ebong product id / slug din (example: <code>demo-store</code>).</p>
+        <form id="pdGateForm" class="pd-gate-form">
+          <input id="pdGateStore" placeholder="demo-store" autocomplete="off" required />
+          <input id="pdGateProduct" placeholder="product id or slug" autocomplete="off" required />
+          <button class="pd-btn" type="submit">Open product</button>
+        </form>
+      </section>
+
+      <div id="pdLoading" class="pd-loading">Loading product…</div>
+      <p id="pdFatal" class="pd-error pd-fatal" hidden></p>
+
+      <article id="pdWrap" class="pd-grid" hidden>
+        <section class="pd-gallery">
+          <div class="pd-image-wrap">
+            <img id="pdImage" alt="" hidden />
+            <div id="pdImageEmpty" class="pd-image-empty">No image</div>
+            <span class="pd-badge-lg" id="pdBadge" hidden>Wholesale</span>
+          </div>
+        </section>
+
+        <section class="pd-info">
+          <p class="pd-eyebrow" id="pdSku"></p>
+          <h1 id="pdTitle">Product</h1>
+          <p class="pd-short" id="pdShort"></p>
+
+          <div class="pd-price-row">
+            <strong class="pd-price" id="pdPrice">৳0</strong>
+            <span class="pd-retail" id="pdRetail" hidden></span>
+            <span class="pd-save" id="pdSave" hidden></span>
+          </div>
+
+          <div class="pd-flash" id="pdFlash" hidden>
+            <span class="pd-flash-badge">⚡ Flash sale</span>
+            <span class="pd-flash-title" id="pdFlashTitle"></span>
+            <span class="pd-flash-timer" id="pdFlashTimer"></span>
+          </div>
+
+          <div class="pd-field" id="pdVariationWrap" hidden>
+            <label for="pdVariation">Choose variation</label>
+            <select id="pdVariation"></select>
+          </div>
+
+          <div class="pd-wholesale-box" id="pdWholesaleBox" hidden>
+            <div class="pd-wholesale-head">
+              <span class="pd-badge" id="pdWholesaleBadge">Wholesale</span>
+              <span class="pd-muted" id="pdMoq"></span>
+            </div>
+            <div class="pd-tier-wrap">
+              <table class="pd-tier-table">
+                <thead><tr><th>From qty</th><th>To qty</th><th>Price / unit</th></tr></thead>
+                <tbody id="pdTierRows"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="pd-buy">
+            <div class="pd-qty" role="group" aria-label="Quantity">
+              <button type="button" id="pdMinus" aria-label="Decrease quantity">−</button>
+              <input id="pdQty" type="number" min="1" step="1" value="1" aria-label="Quantity" />
+              <button type="button" id="pdPlus" aria-label="Increase quantity">+</button>
+            </div>
+            <button type="button" class="pd-btn pd-add" id="pdAdd">Add to cart</button>
+          </div>
+          <p class="pd-buy-note" id="pdBuyNote"></p>
+          <p id="pdError" class="pd-error" hidden></p>
+          <div class="pd-total-row">
+            <span>Line total</span>
+            <strong id="pdTotal">৳0</strong>
+          </div>
+
+          <div class="pd-desc" id="pdDesc"></div>
+        </section>
+      </article>
+    </main>
+
+    <footer class="pd-footer">
+      <span id="pdFooterStore">Store</span>
+      <a href="/checkout.html" id="pdFooterCheckout">Checkout</a>
+    </footer>
+  </div>
+
+  <script src="/js/product.js"></script>
+</body>
+</html>

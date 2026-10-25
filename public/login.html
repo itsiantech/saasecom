@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LUXE — Admin Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/auth.css" />
+</head>
+<body class="auth-body">
+  <main class="auth-wrap">
+    <section class="brand-panel">
+      <div class="brand-mark">L</div>
+      <h1>LUXE</h1>
+      <p class="tagline">Premium Commerce Suite</p>
+      <ul class="brand-points">
+        <li>সব প্রোডাক্ট এক ড্যাশবোর্ড থেকে নিয়ন্ত্রণ</li>
+        <li>স্টক আর দাম রিয়েল-টাইম আপডেট</li>
+        <li>সিকিউর অ্যাডমিন অ্যাক্সেস — JWT + Google</li>
+      </ul>
+      <p class="brand-foot">© 2026 LUXE COMMERCE</p>
+    </section>
+
+    <section class="form-panel">
+      <div class="card">
+        <h2 id="formTitle">Welcome back</h2>
+        <p class="sub" id="formSub">Admin dashboard e login korun</p>
+
+        <div class="g-wrap" id="gWrap">
+          <div id="gBtn"></div>
+        </div>
+
+        <div class="divider">or</div>
+
+        <form id="authForm" novalidate>
+          <div class="field" id="nameField" hidden>
+            <label for="name">Name</label>
+            <input id="name" type="text" autocomplete="name" placeholder="আপনার নাম" />
+          </div>
+          <div class="field">
+            <label for="email">Email</label>
+            <input id="email" type="email" autocomplete="email" placeholder="you@example.com" required />
+          </div>
+          <div class="field">
+            <label for="password">Password</label>
+            <input id="password" type="password" autocomplete="current-password" placeholder="••••••••" required />
+          </div>
+          <button class="btn-gold" id="submitBtn" type="submit">Login</button>
+        </form>
+
+        <p class="msg" id="msg"></p>
+        <p class="switch"><span id="switchLabel">নতুন অ্যাকাউন্ট?</span> <button type="button" id="toggleMode">রেজিস্টার করুন</button></p>
+
+        <button type="button" class="btn-demo" id="demoBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 3L4 14h6l-1 7 9-11h-6l1-7z"/></svg>
+          Demo অ্যাকাউন্টে ঢুকুন
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="/js/login.js"></script>
+</body>
+</html>
