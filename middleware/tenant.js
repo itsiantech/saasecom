@@ -4,6 +4,7 @@ const Store = require("../models/Store");
 const Plan = require("../models/Plan");
 const Settings = require("../models/Settings");
 const { tenantStorage } = require("../lib/tenantContext");
+const { resolveHostStore } = require("../lib/hostStore");
 
 // store chara kaj cholbe e api gulote (signup/setup er somoy)
 const STORELESS_OK = ["/api/auth", "/api/plans", "/api/settings", "/api/admin", "/api/stores"];
@@ -46,6 +47,10 @@ async function resolveStore(req, saas) {
     }
     return store;
   }
+
+  // saas mode 0: host nijei store bole dey (amar-dokan.platform.com ba dokan.com)
+  const hostStore = await resolveHostStore(req);
+  if (hostStore) return hostStore;
 
   // saas mode 1: explicitly slug deya thakle (frontend header/query diye pathay)
   const slug = req.headers["x-store-slug"] || req.query.store;

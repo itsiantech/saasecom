@@ -1,4 +1,5 @@
 require("dotenv").config();
+const path = require("path");
 const express = require("express");
 const cors = require("cors");
 
@@ -48,7 +49,39 @@ app.use("/api/promotions", require("./routes/promotions"));
 app.use("/api/flash-sales", require("./routes/flashSales"));
 app.use("/api/coupons", require("./routes/coupons"));
 app.use("/api/hero-slides", require("./routes/heroSlides"));
+// ---- tenant host (amar-dokan.platform.com ba dokan.com) — ekhane shudhu storefront cholbe
+const { resolveHostStore } = require("./lib/hostStore");
+const PANEL_PAGES = new Set(["/dashboard.html", "/admin.html", "/portal.html", "/setup.html", "/account.html", "/index.html"]);
+app.use(async (req, res, next) => {
+  if (req.method !== "GET" && req.method !== "HEAD") return next();
+  try {
+    const store = await resolveHostStore(req);
+    if (!store) return next();
+    if (PANEL_PAGES.has(req.path)) return res.status(404).send("এই ঠিকানায় প্যানেল নেই — দোকান ম্যানেজ করতে প্ল্যাটফর্মের ঠিকানা ব্যবহার করুন।");
+    if (req.path === "/") return res.sendFile(path.join(__dirname, "public", "shop.html"));
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
+
+// purano /?store=slug link ekhon /slug e jay, jate shared link ভাঙে না
+app.use((req, res, next) => {
+  const slug = String(req.query.store || "").trim().toLowerCase();
+  if (req.path === "/" && /^[a-z0-9][a-z0-9-]{0,62}$/.test(slug)) return res.redirect(302, "/" + slug);
+  next();
+});
+
 app.use(express.static("public"));
+
+// Store er folder address: /demo-store → storefront page ("/" ekhon SaaS landing)
+const RESERVED = new Set(["api", "css", "js", "uploads", "node_modules"]);
+app.use((req, res, next) => {
+  if (req.method !== "GET") return next();
+  const slug = decodeURIComponent(req.path.slice(1)).toLowerCase();
+  if (RESERVED.has(slug) || !/^[a-z0-9][a-z0-9-]{0,62}$/.test(slug)) return next();
+  res.sendFile(path.join(__dirname, "public", "shop.html"));
+});
 
 // Central error handler — catches multer (file type / size) and any thrown errors.
 app.use((err, req, res, next) => {
