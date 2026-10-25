@@ -184,7 +184,7 @@
       if (!Array.isArray(stores) || !stores.length || !stores[0].slug) return;
       state.storeSlug = stores[0].slug;
       const link = $("hsStorefrontLink");
-      link.href = "/?store=" + encodeURIComponent(state.storeSlug);
+      link.href = "/" + encodeURIComponent(state.storeSlug);
     } catch {
       // preview link optional
     }

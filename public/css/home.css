@@ -62,6 +62,10 @@ img { display: block; max-width: 100%; }
   overflow-wrap: anywhere;
 }
 
+/* store er nijer logo (settings theke) — na thakle brand text-i thake */
+.hm-logo { display: block; object-fit: contain; }
+.hm-footer-logo { height: 26px; width: auto; object-fit: contain; }
+
 .hm-nav {
   display: flex;
   align-items: center;

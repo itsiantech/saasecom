@@ -5,6 +5,8 @@ const ProductPriceTier = require("../models/ProductPriceTier");
 const Store = require("../models/Store");
 const HeroSlide = require("../models/HeroSlide");
 const InternationalSettings = require("../models/InternationalSettings");
+const SiteSetting = require("../models/SiteSetting");
+const ShopFavicon = require("../models/ShopFavicon");
 const { publicSlide, sortForPublic } = require("../lib/heroSlides");
 const { defaultSettings, normalizeSettings } = require("../lib/internationalDefaults");
 const { getWholesaleSettings } = require("../lib/wholesaleSettings");
@@ -59,11 +61,30 @@ async function getStorefront(req, res, next) {
   try {
     const store = await findStore(req.params.slug);
     if (!store) return res.status(404).json({ message: "Store pawa jayni" });
-    const international = await loadSettings(store._id);
-    res.json({ store, international });
+    const [international, site, faviconDoc] = await Promise.all([
+      loadSettings(store._id),
+      SiteSetting.findOne({ store: store._id }).lean(),
+      ShopFavicon.findOne({ store: store._id }).lean(),
+    ]);
+    res.json({ store, international, branding: brandingFor(store, site, faviconDoc) });
   } catch (err) {
     next(err);
   }
+}
+
+// dokaner nijer branding; kichu set na korle shudhu dokan er naam
+function brandingFor(store, site, faviconDoc) {
+  const doc = site || {};
+  return {
+    logo: doc.logo || "",
+    logoWidth: Number(doc.logoWidth) || 120,
+    logoHeight: Number(doc.logoHeight) || 40,
+    title: String(doc.siteTitle || "").trim() || store.name,
+    favicon: (faviconDoc && faviconDoc.icon) || doc.favicon || "",
+    footerLogo: doc.footerLogo || "",
+    footerCopyright:
+      String(doc.footerCopyright || "").trim() || "© " + new Date().getFullYear() + " " + store.name,
+  };
 }
 
 async function listHeroSlides(req, res, next) {

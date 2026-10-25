@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Curated pieces for everyday living." />
+  <title>Storefront</title>
+  <link rel="stylesheet" href="/css/home.css?v=3" />
+</head>
+<body>
+  <div class="hm-shell">
+    <header class="hm-header">
+      <a class="hm-brand" id="hmBrand" href="/">Store</a>
+      <nav class="hm-nav" aria-label="Store navigation">
+        <a href="#hmHero" class="hm-nav-link">Home</a>
+        <a href="#hmProducts" class="hm-nav-link">New arrivals</a>
+        <a href="/checkout.html" class="hm-cart" id="hmCart">Cart</a>
+      </nav>
+    </header>
+
+    <main class="hm-main">
+      <section class="hm-gate" id="hmGate" hidden>
+        <span class="hm-kicker">Storefront</span>
+        <h1>Apnar store khun</h1>
+        <p>Store slug diye storefront khulun. Example: <code>demo-store</code></p>
+        <form class="hm-gate-form" id="hmGateForm">
+          <input id="hmGateStore" placeholder="demo-store" autocomplete="off" required />
+          <button type="submit">Open store</button>
+        </form>
+        <p class="hm-error" id="hmGateError" hidden></p>
+      </section>
+
+      <div class="hm-boot" id="hmBoot">Loading store…</div>
+      <p class="hm-error hm-fatal" id="hmFatal" hidden></p>
+
+      <div id="hmContent" hidden>
+        <section
+          class="hm-hero"
+          id="hmHero"
+          role="region"
+          aria-roledescription="carousel"
+          aria-label="Featured collections"
+          tabindex="0"
+        >
+          <div class="hm-slides" id="hmSlides"></div>
+          <div class="hm-scrim"></div>
+          <div class="hm-copy" id="hmCopy">
+            <span class="hm-kicker" id="hmKicker"></span>
+            <h1 class="hm-title" id="hmTitle"></h1>
+            <p class="hm-sub" id="hmSub" hidden></p>
+            <a class="hm-cta" id="hmCta" hidden>Shop now</a>
+          </div>
+          <button class="hm-arrow hm-prev" id="hmPrev" type="button" aria-label="Previous slide" hidden>‹</button>
+          <button class="hm-arrow hm-next" id="hmNext" type="button" aria-label="Next slide" hidden>›</button>
+          <div class="hm-hero-bottom">
+            <div class="hm-dots" id="hmDots" role="tablist" aria-label="Choose slide"></div>
+            <span class="hm-count" id="hmCount"></span>
+          </div>
+        </section>
+
+        <section class="hm-products" id="hmProducts">
+          <div class="hm-section-head">
+            <div>
+              <span class="hm-kicker">The collection</span>
+              <h2>New arrivals</h2>
+            </div>
+          </div>
+          <div class="hm-grid" id="hmProductGrid"></div>
+          <p class="hm-empty" id="hmProductsEmpty" hidden>Ekhono kono product publish hoyni.</p>
+        </section>
+      </div>
+    </main>
+
+    <footer class="hm-footer">
+      <img class="hm-footer-logo" id="hmFooterLogo" alt="" hidden />
+      <span id="hmFooterStore">Store</span>
+      <span class="hm-footer-right">
+        <a href="/checkout.html" id="hmFooterCheckout">Checkout</a>
+      </span>
+    </footer>
+  </div>
+
+  <script src="/js/home.js?v=7"></script>
+</body>
+</html>

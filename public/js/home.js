@@ -12,9 +12,12 @@
     maximumFractionDigits: 2,
   });
 
-  let storeSlug = String(
-    new URLSearchParams(location.search).get("store") || localStorage.getItem(STORE_KEY) || ""
-  ).trim();
+  // folder address (/demo-store) primary, tarpor ?store=, tarpor last used
+  const pathSlug = decodeURIComponent(location.pathname.split("/").filter(Boolean)[0] || "");
+  const querySlug = new URLSearchParams(location.search).get("store") || "";
+  // kono slug-i nei na mane domain theke asche — store ta server thik korbe, localStorage chole na
+  const hosted = !pathSlug && !querySlug;
+  let storeSlug = String(querySlug || pathSlug || (hosted ? "" : localStorage.getItem(STORE_KEY) || "")).trim();
   let store = null;
   let slides = [];
   let slideIndex = 0;
@@ -42,9 +45,47 @@
 
   function setLinks() {
     const q = "?store=" + encodeURIComponent(storeSlug);
-    $("hmBrand").href = "/" + q;
+    $("hmBrand").href = "/" + encodeURIComponent(storeSlug);
     $("hmCart").href = "/checkout.html" + q;
     $("hmFooterCheckout").href = "/checkout.html" + q;
+  }
+
+  /* ---------------------------------------------------------------- branding */
+  function applyBranding(branding) {
+    const b = branding || {};
+    const title = b.title || store.name;
+
+    document.title = title;
+    if (b.favicon) {
+      let link = document.querySelector('link[rel="icon"]');
+      if (!link) {
+        link = document.createElement("link");
+        link.rel = "icon";
+        document.head.appendChild(link);
+      }
+      link.href = b.favicon;
+    }
+
+    const brand = $("hmBrand");
+    if (b.logo) {
+      brand.textContent = "";
+      const img = document.createElement("img");
+      img.className = "hm-logo";
+      img.src = b.logo;
+      img.alt = title;
+      img.style.maxWidth = (Number(b.logoWidth) || 120) + "px";
+      img.style.maxHeight = (Number(b.logoHeight) || 40) + "px";
+      brand.appendChild(img);
+    } else {
+      brand.textContent = title;
+    }
+
+    const footerLogo = $("hmFooterLogo");
+    if (footerLogo) {
+      footerLogo.hidden = !b.footerLogo;
+      if (b.footerLogo) footerLogo.src = b.footerLogo;
+    }
+    $("hmFooterStore").textContent = b.footerCopyright || "© " + new Date().getFullYear() + " " + store.name;
   }
 
   /* ------------------------------------------------------------------ gate */
@@ -66,7 +107,7 @@
     if (!slug) return;
     storeSlug = slug;
     localStorage.setItem(STORE_KEY, slug);
-    location.href = "/?store=" + encodeURIComponent(slug);
+    location.href = "/" + encodeURIComponent(slug);
   });
 
   /* ------------------------------------------------------------------ boot */
@@ -77,7 +118,13 @@
 
     let info;
     try {
-      info = await api("/api/storefront/" + encodeURIComponent(storeSlug));
+      if (storeSlug) {
+        info = await api("/api/storefront/" + encodeURIComponent(storeSlug));
+      } else {
+        // domain theke asche (mystore.com/) — server nije thik dokan ta bojhe
+        const res = await fetch("/api/storefront/current");
+        info = { res, data: await res.json().catch(() => ({})) };
+      }
     } catch {
       $("hmBoot").hidden = true;
       $("hmFatal").textContent = "Store load korte parlam na. Internet connection check korun.";
@@ -96,12 +143,10 @@
     }
 
     store = info.data.store;
+    if (!storeSlug) storeSlug = store.slug;
     localStorage.setItem(STORE_KEY, store.slug);
     setLinks();
-
-    document.title = store.name + " — Storefront";
-    $("hmBrand").textContent = store.name;
-    $("hmFooterStore").textContent = "© " + new Date().getFullYear() + " " + store.name;
+    applyBranding(info.data.branding);
 
     const [slideRes, productRes] = await Promise.all([
       api("/api/storefront/" + encodeURIComponent(store.slug) + "/hero-slides"),
@@ -377,8 +422,6 @@
     });
   }
 
-  $("hmYear").textContent = "© " + new Date().getFullYear();
-
-  if (!storeSlug) showGate("");
+  if (!storeSlug && !hosted) showGate("");
   else boot();
 })();

@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const Settings = require("../models/Settings");
 const SocialLink = require("../models/SocialLink");
 const ShopFavicon = require("../models/ShopFavicon");
+const SiteSetting = require("../models/SiteSetting");
 const ShippingManual = require("../models/ShippingManual");
 const ShippingArea = require("../models/ShippingArea");
 const ShippingClass = require("../models/ShippingClass");
@@ -129,10 +130,30 @@ const DEFAULTS = {
   flash_sales_enabled: "true",
 };
 
+// je branding key gulo prottek dokan alada rakhbe — SiteSetting er field er sathe mapping
+const BRANDING_FIELD = {
+  logo: "logo",
+  logo_width: "logoWidth",
+  logo_height: "logoHeight",
+  site_title: "siteTitle",
+  favicon: "favicon",
+  footer_copyright: "footerCopyright",
+  footer_logo: "footerLogo",
+};
+const BRANDING_KEYS = Object.keys(BRANDING_FIELD);
+
 async function getSettingsMap() {
   const docs = await Settings.find({ key: { $in: SETTING_KEYS } }).lean();
   const map = { ...DEFAULTS };
   docs.forEach((d) => { map[d.key] = d.value; });
+
+  // tenant thakle branding shudhu store er nijer row theke — global row kakhon-i
+  // onno store ke Deko Store er logo dekhate parbe na. row na thakle khali (name fallback caller e).
+  const storeId = getStoreId();
+  if (storeId) {
+    const own = await SiteSetting.findOne({ store: storeId }).lean();
+    Object.entries(BRANDING_FIELD).forEach(([key, field]) => { map[key] = String((own && own[field]) ?? ""); });
+  }
   return map;
 }
 
@@ -457,6 +478,7 @@ async function adminSave(req, res) {
 
   // ---- settings (key/value) ----
   const ops = [];
+  const branding = {};
   SETTING_KEYS.forEach((key) => {
     if (settings[key] === undefined) return;
     let value = settings[key];
@@ -466,11 +488,20 @@ async function adminSave(req, res) {
       const n = Number(value);
       value = Number.isFinite(n) && n > 0 ? String(Math.min(2000, Math.round(n))) : DEFAULTS[key];
     }
+    // branding gulo prottek dokan er nijer — global Settings e dhukbe na
+    if (BRANDING_KEYS.includes(key)) {
+      const field = BRANDING_FIELD[key];
+      branding[field] = field === "logoWidth" || field === "logoHeight" ? Number(value) : value;
+      return;
+    }
     ops.push({
       updateOne: { filter: { key }, update: { $set: { key, value } }, upsert: true },
     });
   });
   if (ops.length) await Settings.bulkWrite(ops);
+  if (Object.keys(branding).length) {
+    await SiteSetting.updateOne({ store: storeId }, { $set: branding }, { upsert: true });
+  }
 
   // ---- social links ----
   if (Array.isArray(body.social)) {
@@ -798,20 +829,22 @@ async function adminSave(req, res) {
  * ------------------------------------------------------------------ */
 async function siteGet(req, res) {
   const storeId = storeIdOf(req);
+  const storeName = (req.store && req.store.name) || "";
   const map = await getSettingsMap();
   let favicon = map.favicon;
   if (storeId) {
     const own = await ShopFavicon.findOne({ store: storeId }).lean();
     if (own && own.icon) favicon = own.icon;
   }
+  const fallbackName = storeName || PROJECT_NAME;
   res.json({
     logo: map.logo,
     logoWidth: Number(map.logo_width) || 120,
     logoHeight: Number(map.logo_height) || 40,
     siteTitle: map.site_title,
-    siteTitleResolved: map.site_title.trim() || PROJECT_NAME,
+    siteTitleResolved: map.site_title.trim() || fallbackName,
     favicon,
-    footerCopyright: map.footer_copyright || "© " + new Date().getFullYear() + " " + (map.site_title.trim() || PROJECT_NAME),
+    footerCopyright: map.footer_copyright || "© " + new Date().getFullYear() + " " + fallbackName,
     footerLogo: map.footer_logo,
   });
 }
