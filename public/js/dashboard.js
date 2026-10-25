@@ -209,11 +209,21 @@ async function loadStoreInfo() {
     const res = await api("/api/stores/mine");
     const stores = await res.json();
     const el = document.getElementById("storeName");
+    const siteBtn = document.getElementById("siteViewBtn");
     if (stores.length) {
       const plan = stores[0].plan;
       const planName = plan && typeof plan === "object" ? plan.name : plan;
-      el.innerHTML = "<b>" + esc(stores[0].name) + "</b> · " + esc(planName);
+      const addr = "/" + encodeURIComponent(stores[0].slug);
+      el.innerHTML =
+        "<b>" + esc(stores[0].name) + "</b> · " + esc(planName) +
+        ' · <a href="' + esc(addr) + '" target="_blank" rel="noopener" title="আপনার দোকানের ঠিকানা">' +
+        esc(location.host + addr) + "</a>";
       el.hidden = false;
+      if (siteBtn) {
+        siteBtn.href = addr;
+        siteBtn.title = location.host + addr;
+        siteBtn.hidden = false;
+      }
       if (banner) banner.hidden = true;
     } else if (banner) {
       banner.hidden = false;

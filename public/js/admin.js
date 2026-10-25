@@ -1,7 +1,8 @@
 const TOKEN_KEY = "luxe_token";
 const token = localStorage.getItem(TOKEN_KEY);
+const LOGIN_URL = "/login.html?next=" + encodeURIComponent("/admin.html");
 
-if (!token) location.href = "/login.html";
+if (!token) location.href = LOGIN_URL;
 
 const $ = (id) => document.getElementById(id);
 
@@ -43,7 +44,7 @@ const fmtLimit = (n) => (n === 0 ? "∞" : Number(n || 0).toLocaleString("en-IN"
     me = await api("/api/auth/me");
   } catch {
     localStorage.removeItem(TOKEN_KEY);
-    location.href = "/login.html";
+    location.href = LOGIN_URL;
     return;
   }
 
@@ -55,8 +56,13 @@ const fmtLimit = (n) => (n === 0 ? "∞" : Number(n || 0).toLocaleString("en-IN"
     document.body.innerHTML =
       '<div style="min-height:100vh;display:grid;place-items:center;text-align:center;padding:24px;">' +
       '<div><h1 style="font-size:28px;">403 — অনুমতি নেই</h1>' +
-      '<p style="color:#98917f;margin:12px 0 24px;">এই পেজে শুধু Super Admin ঢুকতে পারবেন।</p>' +
-      '<a href="/dashboard.html" style="color:#d4af7a;">← ড্যাশবোর্ডে ফিরুন</a></div></div>';
+      '<p style="color:#98917f;margin:12px 0 24px;">এই পেজে শুধু Super Admin ঢুকতে পারবেন।<br>' +
+      'এখন <strong style="color:#e8e2d5;">' + esc(me.email || me.name) + '</strong> (' + esc(me.role) + ') দিয়ে লগ-ইন করা আছে।</p>' +
+      '<a id="switchSuperAdmin" href="' + LOGIN_URL + '" style="display:inline-block;padding:10px 20px;border:1px solid #d4af7a;border-radius:999px;color:#d4af7a;text-decoration:none;font-size:14px;">Super Admin দিয়ে লগ-ইন করুন</a>' +
+      '<div style="margin-top:16px;"><a href="/dashboard.html" style="color:#98917f;font-size:13px;">← ড্যাশবোর্ডে ফিরুন</a></div></div>';
+    document.getElementById("switchSuperAdmin").addEventListener("click", () => {
+      localStorage.removeItem(TOKEN_KEY);
+    });
     return;
   }
 

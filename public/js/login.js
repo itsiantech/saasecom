@@ -11,7 +11,24 @@ const msg = document.getElementById("msg");
 
 let mode = "login";
 
-// age theke valid token thakle direct dashboard
+function safeNext() {
+  const next = new URLSearchParams(location.search).get("next");
+  if (!next || !next.startsWith("/") || next.startsWith("//") || next.includes("\\")) return null;
+  return next;
+}
+
+// ?next thakle seta (panel chara), na hole role onujayi — superadmin panel e, customer portal e
+function landingFor(user) {
+  const isSuper = !!user && user.role === "superadmin";
+  const next = safeNext();
+  if (next && (isSuper || !next.startsWith("/admin"))) return next;
+  return isSuper ? "/admin.html" : "/portal.html";
+}
+
+const landingLabel = (dest) =>
+  dest === "/admin.html" ? "সুপার অ্যাডমিন প্যানেলে" : dest === "/portal.html" ? "আপনার অ্যাকাউন্টে" : "ড্যাশবোর্ডে";
+
+// age theke valid token thakle role onujayi page e chole jay
 (async function checkSession() {
   const token = localStorage.getItem(TOKEN_KEY);
   if (!token) return;
@@ -19,7 +36,7 @@ let mode = "login";
     const res = await fetch("/api/auth/me", {
       headers: { Authorization: "Bearer " + token },
     });
-    if (res.ok) location.href = "/dashboard.html";
+    if (res.ok) location.href = landingFor(await res.json());
     else localStorage.removeItem(TOKEN_KEY);
   } catch { /* offline thakle login page e thako */ }
 })();
@@ -73,8 +90,9 @@ form.addEventListener("submit", async (e) => {
     if (!res.ok) throw new Error(data.message || "কিছু একটা ভুল হয়েছে");
 
     localStorage.setItem(TOKEN_KEY, data.token);
-    showMsg("সফল! ড্যাশবোর্ডে নিয়ে যাওয়া হচ্ছে...", "ok");
-    setTimeout(() => (location.href = "/dashboard.html"), 400);
+    const dest = landingFor(data.user);
+    showMsg("সফল! " + landingLabel(dest) + " নিয়ে যাওয়া হচ্ছে...", "ok");
+    setTimeout(() => (location.href = dest), 400);
   } catch (err) {
     showMsg(err.message, "err");
     submitBtn.disabled = false;
@@ -123,8 +141,9 @@ async function handleGoogle(response) {
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || "Google login fail");
     localStorage.setItem(TOKEN_KEY, data.token);
-    showMsg("সফল! ড্যাশবোর্ডে নিয়ে যাওয়া হচ্ছে...", "ok");
-    setTimeout(() => (location.href = "/dashboard.html"), 400);
+    const dest = landingFor(data.user);
+    showMsg("সফল! " + landingLabel(dest) + " নিয়ে যাওয়া হচ্ছে...", "ok");
+    setTimeout(() => (location.href = dest), 400);
   } catch (err) {
     showMsg(err.message, "err");
   }

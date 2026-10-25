@@ -94,11 +94,14 @@ function renderPlans(plans) {
     });
   });
 
-  // ডিফল্ট: প্রথম প্ল্যান select
-  const first = planList.querySelector(".plan-card");
-  if (first) {
-    first.classList.add("active");
-    selectedPlan = first.dataset.slug;
+  // ডিফল্ট: ?plan= থেকে প্রি-সিলেক্ট, না থাকলে প্রথম প্ল্যান
+  const wanted = String(new URLSearchParams(location.search).get("plan") || "").toLowerCase();
+  const initial =
+    (wanted && planList.querySelector('.plan-card[data-slug="' + CSS.escape(wanted) + '"]')) ||
+    planList.querySelector(".plan-card");
+  if (initial) {
+    initial.classList.add("active");
+    selectedPlan = initial.dataset.slug;
   }
 }
 
@@ -124,8 +127,8 @@ form.addEventListener("submit", async (e) => {
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || "দোকান তৈরি হয়নি");
 
-    showMsg("দোকান তৈরি হয়েছে! ড্যাশবোর্ডে নিয়ে যাওয়া হচ্ছে...", "ok");
-    setTimeout(() => (location.href = "/dashboard.html"), 500);
+    showMsg("দোকান তৈরি হয়েছে! আপনার অ্যাকাউন্টে নিয়ে যাওয়া হচ্ছে...", "ok");
+    setTimeout(() => (location.href = "/portal.html"), 500);
   } catch (err) {
     showMsg(err.message, "err");
     submitBtn.disabled = false;

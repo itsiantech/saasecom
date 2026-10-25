@@ -69,8 +69,8 @@ router.post("/register", async (req, res) => {
     const isFirst = (await User.countDocuments()) === 0;
     const user = await User.create({
       name,
-      email,
-      phone,
+      email: email || undefined,
+      phone: phone || undefined,
       password: hash,
       role: isFirst ? "admin" : "customer",
     });

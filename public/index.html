@@ -1,85 +1,123 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="bn">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Curated pieces for everyday living." />
-  <title>Storefront</title>
-  <link rel="stylesheet" href="/css/home.css?v=1" />
+  <meta name="description" content="LUXE — নিজের অনলাইন দোকান খুলুন মিনিটে। প্যাকেজ বেছে নিন, দোকানের নাম দিন, আর আপনার নিজের ঠিকানায় (luxe.shop/apnar-dokan) দোকান চালু করুন।" />
+  <title>LUXE — নিজের অনলাইন দোকান, মিনিটে</title>
+  <link rel="stylesheet" href="/css/landing.css?v=1" />
 </head>
 <body>
-  <div class="hm-shell">
-    <header class="hm-header">
-      <a class="hm-brand" id="hmBrand" href="/">Store</a>
-      <nav class="hm-nav" aria-label="Store navigation">
-        <a href="#hmHero" class="hm-nav-link">Home</a>
-        <a href="#hmProducts" class="hm-nav-link">New arrivals</a>
-        <a href="/checkout.html" class="hm-cart" id="hmCart">Cart</a>
+  <header class="ld-header">
+    <div class="ld-wrap ld-header-in">
+      <a class="ld-brand" href="/">LUXE<span class="ld-brand-dot">.</span></a>
+      <nav class="ld-nav" aria-label="প্রধান মেনু">
+        <a href="#plans">প্যাকেজ</a>
+        <a href="#address">দোকানের ঠিকানা</a>
       </nav>
-    </header>
+      <div class="ld-actions">
+        <a class="ld-link" id="ldLogin" href="/login.html">লগ-ইন</a>
+        <a class="ld-btn ld-btn-primary" id="ldStart" href="/login.html?next=%2Fportal.html">দোকান খুলুন</a>
+      </div>
+    </div>
+  </header>
 
-    <main class="hm-main">
-      <section class="hm-gate" id="hmGate" hidden>
-        <span class="hm-kicker">Storefront</span>
-        <h1>Apnar store khun</h1>
-        <p>Store slug diye storefront khulun. Example: <code>demo-store</code></p>
-        <form class="hm-gate-form" id="hmGateForm">
-          <input id="hmGateStore" placeholder="demo-store" autocomplete="off" required />
-          <button type="submit">Open store</button>
-        </form>
-        <p class="hm-error" id="hmGateError" hidden></p>
-      </section>
-
-      <div class="hm-boot" id="hmBoot">Loading store…</div>
-      <p class="hm-error hm-fatal" id="hmFatal" hidden></p>
-
-      <div id="hmContent" hidden>
-        <section
-          class="hm-hero"
-          id="hmHero"
-          role="region"
-          aria-roledescription="carousel"
-          aria-label="Featured collections"
-          tabindex="0"
-        >
-          <div class="hm-slides" id="hmSlides"></div>
-          <div class="hm-scrim"></div>
-          <div class="hm-copy" id="hmCopy">
-            <span class="hm-kicker" id="hmKicker"></span>
-            <h1 class="hm-title" id="hmTitle"></h1>
-            <p class="hm-sub" id="hmSub" hidden></p>
-            <a class="hm-cta" id="hmCta" hidden>Shop now</a>
+  <main>
+    <section class="ld-hero">
+      <div class="ld-wrap ld-hero-in">
+        <div class="ld-hero-copy">
+          <span class="ld-kicker">SaaS স্টোর প্ল্যাটফর্ম</span>
+          <h1>আপনার দোকান,<br />আপনার নিজের ঠিকানায়।</h1>
+          <p>
+            প্যাকেজ বেছে নিন, দোকানের নাম লিখুন — ব্যস। প্রোডাক্ট, অর্ডার, কাস্টমার,
+            রিপোর্ট সব এক জায়গায়। কোডিং লাগবে না, সার্ভার ভাড়া লাগবে না।
+          </p>
+          <div class="ld-hero-cta">
+            <a class="ld-btn ld-btn-primary" href="/login.html?next=%2Fportal.html">ফ্রি দোকান খুলুন</a>
+            <a class="ld-btn ld-btn-ghost" href="#plans">প্যাকেজ দেখুন</a>
           </div>
-          <button class="hm-arrow hm-prev" id="hmPrev" type="button" aria-label="Previous slide" hidden>‹</button>
-          <button class="hm-arrow hm-next" id="hmNext" type="button" aria-label="Next slide" hidden>›</button>
-          <div class="hm-hero-bottom">
-            <div class="hm-dots" id="hmDots" role="tablist" aria-label="Choose slide"></div>
-            <span class="hm-count" id="hmCount"></span>
-          </div>
-        </section>
+          <p class="ld-hero-note">ফ্রি প্যাকেজে শুরু করুন — যেকোনো সময় আপগ্রেড।</p>
+        </div>
 
-        <section class="hm-products" id="hmProducts">
-          <div class="hm-section-head">
-            <div>
-              <span class="hm-kicker">The collection</span>
-              <h2>New arrivals</h2>
+        <div class="ld-mock" aria-hidden="true">
+          <div class="ld-mock-bar">
+            <span></span><span></span><span></span>
+            <div class="ld-mock-url">luxe.shop/<b>amar-dokan</b></div>
+          </div>
+          <div class="ld-mock-body">
+            <div class="ld-mock-hero"></div>
+            <div class="ld-mock-row">
+              <i></i><i></i><i></i>
+            </div>
+            <div class="ld-mock-row ld-mock-row-sm">
+              <i></i><i></i>
             </div>
           </div>
-          <div class="hm-grid" id="hmProductGrid"></div>
-          <p class="hm-empty" id="hmProductsEmpty" hidden>Ekhono kono product publish hoyni.</p>
-        </section>
+          <div class="ld-mock-badge">আপনার ঠিকানা প্রস্তুত</div>
+        </div>
       </div>
-    </main>
+    </section>
 
-    <footer class="hm-footer">
-      <span id="hmFooterStore">Store</span>
-      <span class="hm-footer-right">
-        <a href="/checkout.html" id="hmFooterCheckout">Checkout</a>
-        <span id="hmYear"></span>
-      </span>
-    </footer>
-  </div>
+    <section class="ld-plans" id="plans">
+      <div class="ld-wrap">
+        <div class="ld-sec-head">
+          <span class="ld-kicker">প্যাকেজ</span>
+          <h2>আপনার কাজের মাপে বেছে নিন</h2>
+          <p>সব প্যাকেজেই অসীম কাস্টমার, অর্ডার প্রসেসিং আর মোবাইল-ফ্রেন্ডলি দোকান।</p>
+        </div>
+        <div class="ld-plan-grid" id="ldPlanGrid">
+          <div class="ld-plan-skeleton">প্যাকেজ লোড হচ্ছে…</div>
+        </div>
+        <p class="ld-plans-foot" id="ldPlansFoot"></p>
+      </div>
+    </section>
 
-  <script src="/js/home.js?v=1"></script>
+    <section class="ld-address" id="address">
+      <div class="ld-wrap ld-address-in">
+        <div>
+          <span class="ld-kicker">দোকানের ঠিকানা</span>
+          <h2>প্রতিটি দোকান পায় নিজস্ব ঠিকানা</h2>
+          <p>
+            দোকান খুললেই <code>luxe.shop/আপনার-নাম</code> ধরনের একটা ঠিকানা পাবেন —
+            কাস্টমার সেই লিংক দিয়েই আপনার প্রোডাক্ট দেখবে, কার্টে দেবে, অর্ডার করবে।
+            পেছনে প্রতিটি দোকানের ডেটা আলাদা থাকে, অন্য দোকান কিছুই দেখে না।
+          </p>
+          <ul class="ld-ticks">
+            <li>আপনার পছন্দের slug (যেমন: <code>sadia-fashion</code>)</li>
+            <li>প্রোডাক্ট, অর্ডার, কাস্টমার — সব আলাদা দোকানে আলাদা</li>
+            <li>একই অ্যাকাউন্টে একাধিক দোকান</li>
+          </ul>
+        </div>
+        <div class="ld-address-card">
+          <span class="ld-address-label">যেমন</span>
+          <div class="ld-address-line">luxe.shop/<b>sadia-fashion</b></div>
+          <div class="ld-address-line">luxe.shop/<b>karigar-hat</b></div>
+          <div class="ld-address-line">luxe.shop/<b>tech-bazar</b></div>
+          <span class="ld-address-note">প্রতিটি = আলাদা দোকান, আলাদা মালিক</span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="ld-footer">
+    <div class="ld-wrap ld-footer-in">
+      <div>
+        <a class="ld-brand" href="/">LUXE<span class="ld-brand-dot">.</span></a>
+        <p class="ld-footer-tag">ছোট ব্যবসার জন্য সহজ অনলাইন দোকান।</p>
+      </div>
+      <nav class="ld-footer-nav" aria-label="ফুটার মেনু">
+        <a href="#plans">প্যাকেজ</a>
+        <a href="#address">দোকানের ঠিকানা</a>
+        <a href="/login.html">লগ-ইন</a>
+        <a href="/login.html?next=%2Fportal.html">দোকান খুলুন</a>
+      </nav>
+    </div>
+    <div class="ld-wrap ld-footer-bottom">
+      <span>© <span id="ldYear"></span> LUXE — সর্বস্বত্ব সংরক্ষিত</span>
+      <span>Made for small shops in Bangladesh</span>
+    </div>
+  </footer>
+
+  <script src="/js/landing.js?v=2"></script>
 </body>
 </html>

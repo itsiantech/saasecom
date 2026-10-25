@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LUXE — আমার অ্যাকাউন্ট</title>
+  <link rel="stylesheet" href="/css/portal.css?v=3" />
+</head>
+<body>
+  <header class="pt-header">
+    <div class="pt-wrap pt-header-in">
+      <a class="pt-brand" href="/">LUXE<span class="pt-dot">.</span></a>
+      <nav class="pt-nav" aria-label="প্রধান মেনু">
+        <a href="/">ল্যান্ডিং</a>
+        <a href="#stores">আমার দোকান</a>
+      </nav>
+      <div class="pt-actions">
+        <span class="pt-who" id="ptWho">—</span>
+        <a class="pt-btn pt-btn-ghost" href="/dashboard.html">দোকান অ্যাডমিন</a>
+        <button class="pt-btn pt-btn-quiet" id="ptLogout" type="button">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="pt-main">
+    <div class="pt-wrap">
+      <section class="pt-hero">
+        <span class="pt-kicker">আমার অ্যাকাউন্ট</span>
+        <h1>দোকান, প্যাকেজ আর ঠিকানা — এক জায়গায়</h1>
+        <p id="ptTagline">এখান থেকে প্যাকেজ বদলান, দোকানের ঠিকানা ঠিক করুন, আর অ্যাডমিন প্যানেলে গিয়ে পুরো দোকান সামলান।</p>
+      </section>
+
+      <div class="pt-notice" id="ptNotice" hidden></div>
+
+      <section class="pt-empty" id="ptEmpty" hidden>
+        <h2>এখনো কোনো দোকান খোলা হয়নি</h2>
+        <p>একটা প্যাকেজ বেছে দোকান খুলুন — সঙ্গে সঙ্গেই আপনার নিজস্ব ঠিকানা তৈরি হবে।</p>
+        <a class="pt-btn pt-btn-primary" id="ptEmptyCta" href="/setup.html">দোকান খুলুন</a>
+      </section>
+
+      <section class="pt-stores" id="stores">
+        <div class="pt-sec-head">
+          <h2>আমার দোকান</h2>
+          <span class="pt-count" id="ptCount"></span>
+        </div>
+        <div class="pt-grid" id="ptCards">
+          <div class="pt-loading">লোড হচ্ছে…</div>
+        </div>
+        <div class="pt-new">
+          <a class="pt-btn pt-btn-ghost" href="/setup.html">+ নতুন দোকান খুলুন</a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="pt-footer">
+    <div class="pt-wrap pt-footer-in">
+      <span>© <span id="ptYear"></span> LUXE</span>
+      <a href="/">ল্যান্ডিং পেজ</a>
+    </div>
+  </footer>
+
+  <!-- plan picker -->
+  <div class="pt-modal" id="ptModal" hidden>
+    <div class="pt-modal-back" id="ptModalBack"></div>
+    <div class="pt-modal-box" role="dialog" aria-modal="true" aria-labelledby="ptModalTitle">
+      <div class="pt-modal-head">
+        <h3 id="ptModalTitle">প্যাকেজ পরিবর্তন</h3>
+        <button class="pt-x" id="ptModalClose" type="button" aria-label="বন্ধ করুন">✕</button>
+      </div>
+      <p class="pt-modal-sub" id="ptModalSub"></p>
+      <div class="pt-modal-list" id="ptModalList"></div>
+      <p class="pt-modal-note">পেমেন্ট গেটওয়ে এখনো যুক্ত হয়নি — নিশ্চিত করলেই প্যাকেজটি সাথে সাথে চালু হবে।</p>
+    </div>
+  </div>
+
+  <div class="pt-toast" id="ptToast" role="status" aria-live="polite"></div>
+
+  <script src="/js/portal.js?v=4"></script>
+</body>
+</html>
