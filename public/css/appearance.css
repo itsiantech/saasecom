@@ -1,0 +1,340 @@
+/* Appearance tab: theme cards, token editor, live storefront mock, revisions */
+
+.theme-choices {
+  display: grid;
+  gap: 12px;
+}
+
+.theme-choice {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--line-soft);
+  border-radius: 12px;
+  background: var(--panel-2);
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.theme-choice:hover {
+  border-color: var(--line);
+}
+
+.theme-choice.selected {
+  border-color: var(--gold);
+  background: var(--gold-soft);
+}
+
+.theme-choice input {
+  margin-top: 3px;
+  accent-color: var(--gold);
+}
+
+.theme-choice span {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.theme-choice b {
+  font-size: 15px;
+  color: var(--text);
+}
+
+.theme-choice small {
+  font-size: 12.5px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.theme-choice em {
+  font-style: normal;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gold-2);
+}
+
+.ap-hint {
+  margin: 0 0 12px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.token-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px 18px;
+}
+
+.token-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.token-label {
+  display: flex;
+  flex-direction: column;
+  font-size: 12.5px;
+  color: var(--text);
+}
+
+.token-label em {
+  font-style: normal;
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.token-field input[type="text"] {
+  width: 100%;
+  padding: 9px 11px;
+  border: 1px solid var(--line-soft);
+  border-radius: 9px;
+  background: var(--bg-2);
+  color: var(--text);
+  font-size: 12.5px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.token-field input[type="text"]:focus {
+  outline: none;
+  border-color: var(--gold);
+}
+
+.token-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.token-row input[type="color"] {
+  width: 40px;
+  height: 36px;
+  padding: 2px;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  background: var(--bg-2);
+  cursor: pointer;
+}
+
+/* live mock — every value comes from the draft tokens as CSS vars */
+.ap-preview {
+  --pv-primary: #e1251b;
+  --pv-primary-dark: #b81c15;
+  --pv-accent: #ff8a00;
+  --pv-announce-bg: #23272f;
+  --pv-announce-text: #f4f5f7;
+  --pv-bg: #f6f7f8;
+  --pv-surface: #ffffff;
+  --pv-ink: #1f2328;
+  --pv-muted: #6b7280;
+  --pv-line: #e6e8eb;
+  --pv-radius: 10px;
+  --pv-radius-control: 9999px;
+  --pv-font: sans-serif;
+  --pv-heading: sans-serif;
+  --pv-shadow: 0 1px 3px rgba(16, 24, 40, 0.08);
+  background: var(--pv-bg);
+  color: var(--pv-ink);
+  border: 1px solid var(--line-soft);
+  border-radius: 12px;
+  overflow: hidden;
+  font-size: 12px;
+}
+
+.ap-pv-announce {
+  background: var(--pv-announce-bg);
+  color: var(--pv-announce-text);
+  text-align: center;
+  padding: 6px 10px;
+  font-size: 11px;
+}
+
+.ap-pv-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--pv-surface);
+  border-bottom: 1px solid var(--pv-line);
+}
+
+.ap-pv-logo {
+  font-family: var(--pv-heading);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--pv-primary);
+  white-space: nowrap;
+}
+
+.ap-pv-search {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 6px 6px 12px;
+  border: 2px solid var(--pv-primary);
+  border-radius: var(--pv-radius-control);
+  color: var(--pv-muted);
+  font-size: 11px;
+  min-width: 0;
+}
+
+.ap-pv-search i {
+  font-style: normal;
+  background: var(--pv-primary);
+  color: #fff;
+  border-radius: var(--pv-radius-control);
+  padding: 3px 10px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.ap-pv-strip {
+  background: var(--pv-surface);
+  border-bottom: 1px solid var(--pv-line);
+  padding: 7px 14px;
+  color: var(--pv-ink);
+  font-size: 11px;
+}
+
+.ap-pv-hero {
+  margin: 12px 14px 0;
+  border-radius: var(--pv-radius);
+  background: linear-gradient(120deg, var(--pv-primary), var(--pv-accent));
+  color: #fff;
+  padding: 18px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: var(--pv-shadow);
+}
+
+.ap-pv-hero strong {
+  font-family: var(--pv-heading);
+  font-size: 16px;
+}
+
+.ap-pv-hero span {
+  font-size: 11px;
+  opacity: 0.9;
+}
+
+.ap-pv-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 12px 14px 16px;
+}
+
+.ap-pv-card {
+  background: var(--pv-surface);
+  border: 1px solid var(--pv-line);
+  border-radius: var(--pv-radius);
+  box-shadow: var(--pv-shadow);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ap-pv-card b {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--pv-ink);
+}
+
+.ap-pv-card span {
+  font-weight: 700;
+  color: var(--pv-primary);
+  font-size: 12.5px;
+}
+
+.ap-pv-card em {
+  align-self: flex-start;
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--pv-primary);
+  border: 1px solid var(--pv-primary);
+  border-radius: var(--pv-radius-control);
+  padding: 2px 8px;
+}
+
+.ap-pv-thumb {
+  height: 58px;
+  border-radius: calc(var(--pv-radius) - 4px);
+  background: linear-gradient(135deg, var(--pv-line), var(--pv-bg));
+}
+
+.ap-actions {
+  flex-wrap: wrap;
+}
+
+.ap-status {
+  margin: 14px 0 0;
+  font-size: 12.5px;
+  color: var(--muted);
+  min-height: 18px;
+}
+
+.ap-status.ap-ok {
+  color: var(--ok);
+}
+
+.ap-status.ap-warn {
+  color: var(--gold);
+}
+
+.ap-status.ap-error {
+  color: var(--danger);
+}
+
+.ap-revision-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ap-revision-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--line-soft);
+  border-radius: 10px;
+  background: var(--panel-2);
+}
+
+.ap-revision-list li div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ap-revision-list b {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.ap-revision-list span {
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.ap-revision-list .ap-empty {
+  justify-content: flex-start;
+  color: var(--muted);
+  font-size: 12.5px;
+}

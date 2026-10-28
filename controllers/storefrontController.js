@@ -252,4 +252,14 @@ async function getProduct(req, res, next) {
   }
 }
 
-module.exports = { getStorefront, listHeroSlides, listProducts, getProduct };
+module.exports = {
+  getStorefront,
+  listHeroSlides,
+  listProducts,
+  getProduct,
+  // reused by controllers/publicCatalogController (the /public/* API)
+  escapeRegex,
+  toCard,
+  brandingFor,
+  loadSettings,
+};

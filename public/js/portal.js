@@ -248,7 +248,8 @@
           ${domainPanel(store)}
           <div class="pt-card-actions">
             <button class="pt-btn pt-btn-primary" type="button" data-plan="${esc(store._id)}">প্যাকেজ পরিবর্তন</button>
-            <a class="pt-btn pt-btn-ghost" href="/dashboard.html">অ্যাডমিন প্যানেল →</a>
+            <a class="pt-btn pt-btn-ghost" href="/dashboard.html?store=${encodeURIComponent(store.slug)}">অ্যাডমিন প্যানেল →</a>
+            <a class="pt-btn pt-btn-ghost" href="/settings.html?store=${encodeURIComponent(store.slug)}">Store Settings</a>
             <button class="pt-btn pt-btn-quiet" type="button" data-dom-toggle="${esc(store._id)}">${openDomains.has(store._id) ? "ডোমেইন সংযোগ বন্ধ" : "ডোমেইন সংযোগ"}</button>
           </div>
         </article>`;

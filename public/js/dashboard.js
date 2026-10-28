@@ -12,11 +12,14 @@ const api = async (url, options = {}) => {
       ...(options.headers || {}),
     },
   });
-  if (res.status === 401 || res.status === 403) {
+  if (res.status === 401) {
     localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem("luxe_store_slug");
     location.href = "/login.html";
     return;
   }
+  // 403 = onno dokaner data er onumoti nei — session rakhi, logout kori na
+  if (res.status === 403) toast("এই দোকানের ডেটা দেখার অনুমতি নেই", "err");
   return res;
 };
 
@@ -103,9 +106,10 @@ function switchView(viewName) {
 // Navigation click handlers
 document.querySelectorAll(".nav-item").forEach((item) => {
   item.addEventListener("click", (e) => {
-    e.preventDefault();
     const view = item.dataset.view;
-    if (view) switchView(view);
+    if (!view) return;
+    e.preventDefault();
+    switchView(view);
   });
 });
 
@@ -211,17 +215,32 @@ async function loadStoreInfo() {
     const el = document.getElementById("storeName");
     const siteBtn = document.getElementById("siteViewBtn");
     if (stores.length) {
-      const plan = stores[0].plan;
+      const wanted =
+        new URLSearchParams(location.search).get("store") ||
+        localStorage.getItem("luxe_store_slug") ||
+        "";
+      const store = stores.find((s) => s.slug === wanted) || stores[0];
+      localStorage.setItem("luxe_store_slug", store.slug);
+      const settingsNav = [...document.querySelectorAll(".nav-item")].find((a) =>
+        String(a.getAttribute("href") || "").startsWith("/settings.html")
+      );
+      if (settingsNav) settingsNav.href = "/settings.html?store=" + encodeURIComponent(store.slug);
+      const plan = store.plan;
       const planName = plan && typeof plan === "object" ? plan.name : plan;
-      const addr = "/" + encodeURIComponent(stores[0].slug);
+      // themed Next site (Store Settings → Appearance); folder address is the fallback
+      const addr = store.storefrontUrl || "/" + encodeURIComponent(store.slug);
+      let label = addr;
+      try {
+        label = new URL(addr, location.origin).host + (new URL(addr, location.origin).pathname === "/" ? "" : new URL(addr, location.origin).pathname);
+      } catch {}
       el.innerHTML =
-        "<b>" + esc(stores[0].name) + "</b> · " + esc(planName) +
-        ' · <a href="' + esc(addr) + '" target="_blank" rel="noopener" title="আপনার দোকানের ঠিকানা">' +
-        esc(location.host + addr) + "</a>";
+        "<b>" + esc(store.name) + "</b> · " + esc(planName) +
+        ' · <a href="' + esc(addr) + '" target="_blank" rel="noopener" title="আপনার দোকানের আসল সাইট (থিমসহ)">' +
+        esc(label) + "</a>";
       el.hidden = false;
       if (siteBtn) {
         siteBtn.href = addr;
-        siteBtn.title = location.host + addr;
+        siteBtn.title = addr;
         siteBtn.hidden = false;
       }
       if (banner) banner.hidden = true;
@@ -237,7 +256,7 @@ async function loadStoreInfo() {
 let products = [];
 
 async function loadProducts() {
-  const res = await api("/api/products");
+  const res = await api("/api/products?limit=1000");
   const data = await res.json();
   // server error howle array na ashte pare — crash bondho
   products = Array.isArray(data) ? data : (Array.isArray(data.products) ? data.products : []);
@@ -479,6 +498,7 @@ window.addEventListener("settings:saved", (e) => {
 
 document.getElementById("logoutBtn").addEventListener("click", () => {
   localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem("luxe_store_slug");
   location.href = "/login.html";
 });
 

@@ -94,6 +94,8 @@ const productSchema = new mongoose.Schema(
     sku: { type: String, default: "" },
     status: { type: String, enum: ["draft", "published"], default: "draft" },
     images: [{ type: String, default: [] }],
+    // product walkthrough — a YouTube/Vimeo/direct mp4 link, never an upload
+    videoUrl: { type: String, default: "" },
 
     // ---- relations ----
     brand: { type: mongoose.Schema.Types.ObjectId, ref: "Brand", default: null },

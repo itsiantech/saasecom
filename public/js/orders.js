@@ -1086,7 +1086,7 @@ let productsCache = null;
 async function openCreateModal() {
   if (!productsCache) {
     try {
-      const res = await api("/api/products");
+      const res = await api("/api/products?limit=1000");
       const data = await res.json();
       productsCache = (Array.isArray(data) ? data : data.products || []).filter((p) => p.status !== "draft" || true).slice(0, 200);
     } catch {

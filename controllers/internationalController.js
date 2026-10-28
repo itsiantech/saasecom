@@ -51,11 +51,13 @@ function parseSettings(body, current) {
     label: readLabel(airInput.label, current.air.label),
     minDays: readInt(airInput.minDays, current.air.minDays),
     maxDays: readInt(airInput.maxDays, current.air.maxDays),
+    ratePerKg: readNumber(airInput.ratePerKg, current.air.ratePerKg),
   };
   const sea = {
     label: readLabel(seaInput.label, current.sea.label),
     minDays: readInt(seaInput.minDays, current.sea.minDays),
     maxDays: readInt(seaInput.maxDays, current.sea.maxDays),
+    ratePerKg: readNumber(seaInput.ratePerKg, current.sea.ratePerKg),
   };
   for (const rule of [air, sea]) {
     if (!Number.isFinite(rule.minDays) || !Number.isFinite(rule.maxDays)) {
@@ -64,6 +66,11 @@ function parseSettings(body, current) {
     if (rule.minDays < 0 || rule.maxDays < 0 || rule.minDays > rule.maxDays || rule.maxDays > 365) {
       return { error: "Delivery days 0-365 er moddhe ebong min <= max hote hobe" };
     }
+    // 0 = keep the old flat charge behaviour (the rate line stays hidden)
+    if (!Number.isFinite(rule.ratePerKg) || rule.ratePerKg < 0 || rule.ratePerKg > 100000) {
+      return { error: "Per-kg rate 0-100000 er moddhe hote hobe" };
+    }
+    rule.ratePerKg = round2(rule.ratePerKg);
   }
 
   return {

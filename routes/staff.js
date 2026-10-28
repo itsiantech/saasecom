@@ -1,15 +1,20 @@
 const express = require("express");
 const router = express.Router();
 const Staff = require("../models/Staff");
+const { auth, requireAdmin } = require("../middleware/auth");
+const requireTenant = require("../middleware/requireTenant");
+
+// staff list ekhane email/permission ache — shudhu oei dokan er admin
+const guard = [requireTenant, auth, requireAdmin];
 
 // shob staff dekha
-router.get("/", async (req, res) => {
+router.get("/", guard, async (req, res) => {
   const staff = await Staff.find();
   res.json(staff);
 });
 
 // ekta staff dekha
-router.get("/:id", async (req, res) => {
+router.get("/:id", guard, async (req, res) => {
   try {
     const staff = await Staff.findById(req.params.id);
     if (!staff) return res.status(404).json({ message: "Staff pawa jayni" });
@@ -20,7 +25,7 @@ router.get("/:id", async (req, res) => {
 });
 
 // notun staff add kora
-router.post("/", async (req, res) => {
+router.post("/", guard, async (req, res) => {
   try {
     const staff = await Staff.create(req.body);
     res.status(201).json(staff);
@@ -30,7 +35,7 @@ router.post("/", async (req, res) => {
 });
 
 // staff update kora (admin only)
-router.put("/:id", require("../middleware/auth").auth, require("../middleware/auth").requireAdmin, async (req, res) => {
+router.put("/:id", guard, async (req, res) => {
   try {
     const staff = await Staff.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
@@ -44,7 +49,7 @@ router.put("/:id", require("../middleware/auth").auth, require("../middleware/au
 });
 
 // staff delete kora (admin only)
-router.delete("/:id", require("../middleware/auth").auth, require("../middleware/auth").requireAdmin, async (req, res) => {
+router.delete("/:id", guard, async (req, res) => {
   try {
     const staff = await Staff.findByIdAndDelete(req.params.id);
     if (!staff) return res.status(404).json({ message: "Staff pawa jayni" });

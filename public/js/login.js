@@ -90,6 +90,8 @@ form.addEventListener("submit", async (e) => {
     if (!res.ok) throw new Error(data.message || "কিছু একটা ভুল হয়েছে");
 
     localStorage.setItem(TOKEN_KEY, data.token);
+    // purono account er dokan slug notun account e carry kori na
+    localStorage.removeItem("luxe_store_slug");
     const dest = landingFor(data.user);
     showMsg("সফল! " + landingLabel(dest) + " নিয়ে যাওয়া হচ্ছে...", "ok");
     setTimeout(() => (location.href = dest), 400);
@@ -141,6 +143,8 @@ async function handleGoogle(response) {
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || "Google login fail");
     localStorage.setItem(TOKEN_KEY, data.token);
+    // purono account er dokan slug notun account e carry kori na
+    localStorage.removeItem("luxe_store_slug");
     const dest = landingFor(data.user);
     showMsg("সফল! " + landingLabel(dest) + " নিয়ে যাওয়া হচ্ছে...", "ok");
     setTimeout(() => (location.href = dest), 400);

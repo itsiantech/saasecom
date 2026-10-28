@@ -3,27 +3,40 @@ const mongoose = require("mongoose");
 const router = express.Router();
 const Order = require("../models/Order");
 const Store = require("../models/Store");
-const Settings = require("../models/Settings");
+const SiteSetting = require("../models/SiteSetting");
 const InvoiceSetting = require("../models/InvoiceSetting");
 const { buildInvoiceHtml } = require("../lib/invoice");
 const { buildPackingSlipHtml } = require("../lib/packingSlip");
 const { auth, requireAdmin } = require("../middleware/auth");
+const requireTenant = require("../middleware/requireTenant");
 const ctrl = require("../controllers/orderCatalogController");
 const { changeOrderStatus, OrderStatusError } = require("../services/orderStatusChange");
+
+// tenant context chara Query gulo filter-hinno hoye sob dokan er order fenle
+const guard = [requireTenant, auth, requireAdmin];
 
 /* =============================== ADMIN ORDER LIST =============================== */
 
 // order list page — tabs, search, advanced search, pagination (admin only)
-router.get("/list", auth, requireAdmin, ctrl.list);
+router.get("/list", guard, ctrl.list);
 // per-tab counts that follow the current search / advanced filters
-router.get("/counts", auth, requireAdmin, ctrl.counts);
+router.get("/counts", guard, ctrl.counts);
 // bulk status change + delete
-router.post("/bulk", auth, requireAdmin, ctrl.bulk);
+router.post("/bulk", guard, ctrl.bulk);
 
 // old raw list — admin restricted as well (ekhane customer data o ache)
-router.get("/", auth, requireAdmin, async (req, res) => {
-  const orders = await Order.find().populate("items.product");
-  res.json(orders);
+router.get("/", guard, async (req, res) => {
+  const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+  const limit = Math.min(500, Math.max(1, parseInt(req.query.limit, 10) || 100));
+
+  const total = await Order.countDocuments({});
+  const orders = await Order.find({})
+    .sort({ createdAt: -1 })
+    .skip((page - 1) * limit)
+    .limit(limit)
+    .populate("items.product");
+
+  res.json({ orders, total, page, limit, pages: Math.max(1, Math.ceil(total / limit)) });
 });
 
 /* =============================== SINGLE ORDER =============================== */
@@ -38,17 +51,17 @@ router.get("/:id/invoice", async (req, res) => {
 
     if (!order) return res.status(404).json({ message: "Order pawa jayni" });
 
-    const [setting, store, logoDoc] = await Promise.all([
+    const [setting, store, site] = await Promise.all([
       InvoiceSetting.findOne({ store: order.store }).lean(),
       Store.findById(order.store).select("name").lean(),
-      Settings.findOne({ key: "logo" }).lean(),
+      SiteSetting.findOne({ store: order.store }).lean(),
     ]);
 
     const html = buildInvoiceHtml({
       order,
       setting: setting || {},
       storeName: (store && store.name) || "Store",
-      logo: (logoDoc && logoDoc.value) || "",
+      logo: (site && site.logo) || "",
     });
     res.type("html").send(html);
   } catch (err) {
@@ -66,17 +79,17 @@ router.get("/:id/packing-slip", async (req, res) => {
 
     if (!order) return res.status(404).json({ message: "Order pawa jayni" });
 
-    const [setting, store, logoDoc] = await Promise.all([
+    const [setting, store, site] = await Promise.all([
       InvoiceSetting.findOne({ store: order.store }).lean(),
       Store.findById(order.store).select("name").lean(),
-      Settings.findOne({ key: "logo" }).lean(),
+      SiteSetting.findOne({ store: order.store }).lean(),
     ]);
 
     const html = buildPackingSlipHtml({
       order,
       setting: setting || {},
       storeName: (store && store.name) || "Store",
-      logo: (logoDoc && logoDoc.value) || "",
+      logo: (site && site.logo) || "",
     });
     res.type("html").send(html);
   } catch (err) {
@@ -85,16 +98,16 @@ router.get("/:id/packing-slip", async (req, res) => {
 });
 
 // shaped order details (admin dashboard)
-router.get("/:id/detail", auth, requireAdmin, ctrl.detail);
+router.get("/:id/detail", guard, ctrl.detail);
 
 // status history (admin)
-router.get("/:id/status-history", auth, requireAdmin, ctrl.history);
+router.get("/:id/status-history", guard, ctrl.history);
 
 // quick edit — status / courier / note (admin)
-router.patch("/:id", auth, requireAdmin, ctrl.quickEdit);
+router.patch("/:id", guard, ctrl.quickEdit);
 
-// ekta order dekha
-router.get("/:id", async (req, res) => {
+// ekta order dekha (admin only — customer er naam/phone/thikan ache)
+router.get("/:id", guard, async (req, res) => {
   try {
     const order = await Order.findById(req.params.id).populate("items.product");
     if (!order) return res.status(404).json({ message: "Order pawa jayni" });
@@ -104,8 +117,8 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// notun order create kora
-router.post("/", async (req, res) => {
+// notun order create kora (admin er manual order; customer checkout /api/cart/checkout diye kore)
+router.post("/", guard, async (req, res) => {
   try {
     const order = await Order.create(req.body);
     res.status(201).json(order);
@@ -115,7 +128,7 @@ router.post("/", async (req, res) => {
 });
 
 // full order update kora (admin only)
-router.put("/:id", auth, requireAdmin, async (req, res) => {
+router.put("/:id", guard, async (req, res) => {
   try {
     const before = await Order.findById(req.params.id).lean();
     if (!before) return res.status(404).json({ message: "Order pawa jayni" });
@@ -161,7 +174,7 @@ router.put("/:id", auth, requireAdmin, async (req, res) => {
 });
 
 // order delete kora (admin only)
-router.delete("/:id", auth, requireAdmin, async (req, res) => {
+router.delete("/:id", guard, async (req, res) => {
   try {
     const order = await Order.findByIdAndDelete(req.params.id);
     if (!order) return res.status(404).json({ message: "Order pawa jayni" });

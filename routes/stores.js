@@ -7,6 +7,7 @@ const Subscription = require("../models/Subscription");
 const dns = require("dns").promises;
 const { auth } = require("../middleware/auth");
 const { RESERVED_SUBS, SUB_RE, normalizeDomain, platformDomain, platformTarget } = require("../lib/hostStore");
+const { storefrontUrl } = require("../lib/storefrontUrl");
 
 // notun dokan khola (saas mode e plan soho)
 router.post("/", auth, async (req, res) => {
@@ -74,7 +75,11 @@ router.get("/mine", auth, async (req, res) => {
   const stores = await Store.find({ owner: req.user.id }).populate("plan").sort({ createdAt: 1 });
   const subs = await Subscription.find({ store: { $in: stores.map((s) => s._id) } });
   const byStore = new Map(subs.map((s) => [String(s.store), s]));
-  res.json(stores.map((s) => ({ ...s.toObject(), subscription: byStore.get(String(s._id)) || null })));
+  const rows = stores.map((s) => ({ ...s.toObject(), subscription: byStore.get(String(s._id)) || null }));
+  // panel er "ওয়েবসাইট দেখুন" link — themed Next site, legacy page na
+  const urls = await Promise.all(stores.map((s) => storefrontUrl(s)));
+  rows.forEach((row, i) => (row.storefrontUrl = urls[i]));
+  res.json(rows);
 });
 
 // je slug gulo app er nijer path — dokaner thikana e use kora jabe na

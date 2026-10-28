@@ -31,8 +31,8 @@ function optionalAuth(req, res, next) {
 async function requireAdmin(req, res, next) {
   const user = await User.findById(req.user.id).select("role");
   if (!user) return res.status(403).json({ message: "Admin access lagbe" });
-  if (user.role === "admin" || user.role === "superadmin") return next();
-  // saas mode: nijer dokan er owner der nijer dokane admin adhikar
+  // platform owner shob dokan dekhte pare; baki ke shudhu nijer dokan
+  if (user.role === "superadmin") return next();
   if (req.store && req.store.owner && String(req.store.owner.toString()) === String(req.user.id)) {
     return next();
   }

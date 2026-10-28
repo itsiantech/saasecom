@@ -6,6 +6,8 @@ const deliveryRangeSchema = new mongoose.Schema(
     label: { type: String, default: "", trim: true, maxlength: 80 },
     minDays: { type: Number, default: 0, min: 0 },
     maxDays: { type: Number, default: 0, min: 0 },
+    // 0 = store does not charge per kg, so the storefront hides the rate line
+    ratePerKg: { type: Number, default: 0, min: 0 },
   },
   { _id: false }
 );

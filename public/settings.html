@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Store Settings — Admin Panel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/admin.css?v=2" />
+  <link rel="stylesheet" href="/css/settings.css" />
+  <link rel="stylesheet" href="/css/appearance.css" />
+</head>
+<body>
+  <div class="dash">
+    <aside class="sidebar">
+      <div class="sb-brand">
+        <div class="mark" id="sbMark">L</div>
+        <div>
+          <div class="name" id="sbName">LUXE</div>
+          <div class="role" id="sbRole">দোকান মালিক</div>
+        </div>
+      </div>
+      <nav class="sb-nav">
+        <a href="/dashboard.html">ড্যাশবোর্ড</a>
+        <a href="/settings.html" class="active">সেটিংস</a>
+      </nav>
+      <div class="sb-bottom">
+        <div class="sb-user">
+          <div class="avatar" id="avatar">A</div>
+          <div>
+            <div class="u-name" id="uName">—</div>
+            <div class="u-email" id="uEmail">—</div>
+          </div>
+        </div>
+        <button class="logout-btn" id="logoutBtn">Logout</button>
+      </div>
+    </aside>
+    <div class="sb-overlay" id="sbOverlay"></div>
+
+    <main class="main">
+      <div class="topbar">
+        <div>
+          <h2>Store Settings</h2>
+          <p class="crumb" id="storeContext">সব সেটিংস এখান থেকে কন্ট্রোল করুন</p>
+        </div>
+      </div>
+
+      <!-- Settings Container -->
+      <div class="settings-container">
+        <!-- Tabs -->
+        <div class="settings-tabs">
+          <button class="tab-btn active" data-tab="basic">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+            Basic Settings
+          </button>
+          <button class="tab-btn" data-tab="business">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+              <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+            </svg>
+            Business Settings
+          </button>
+          <button class="tab-btn" data-tab="contact">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+            </svg>
+            Contact Settings
+          </button>
+          <button class="tab-btn" data-tab="social">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
+            </svg>
+            Social Media
+          </button>
+          <button class="tab-btn" data-tab="seo">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            SEO Settings
+          </button>
+          <button class="tab-btn" data-tab="appearance">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="13.5" cy="6.5" r="2.5"></circle>
+              <circle cx="17.5" cy="14.5" r="2.5"></circle>
+              <circle cx="8.5" cy="7.5" r="2.5"></circle>
+              <circle cx="6.5" cy="14.5" r="2.5"></circle>
+              <path d="M12 22a10 10 0 1 1 0-20 10 10 0 0 1 0 20z"></path>
+            </svg>
+            Appearance
+          </button>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="settings-content">
+          <!-- Basic Settings -->
+          <div class="tab-pane active" id="basic">
+            <div class="panel">
+              <div class="panel-head">
+                <h3>Basic Settings</h3>
+                <p class="count">ওয়েবসাইটের মৌলিক তথ্য</p>
+              </div>
+              <form id="basicForm" class="settings-form">
+                <div class="form-section">
+                  <h4>General Information</h4>
+                  <div class="field">
+                    <label for="websiteTitle">Website Title</label>
+                    <input type="text" id="websiteTitle" name="websiteTitle" placeholder="My Awesome Store" />
+                    <small>Browser tab title</small>
+                  </div>
+                  <div class="field">
+                    <label for="storeTitle">Store Title</label>
+                    <input type="text" id="storeTitle" name="storeTitle" placeholder="My Awesome Store" />
+                    <small>Display name on website</small>
+                  </div>
+                </div>
+
+                <div class="form-section">
+                  <h4>Branding</h4>
+                  <div class="field upload-field">
+                    <label>Website/Store Logo</label>
+                    <div class="upload-area" id="logoUploadArea">
+                      <div class="upload-preview" id="logoPreview">
+                        <img id="logoImg" src="" alt="Logo" style="display: none;" />
+                        <div class="upload-placeholder" id="logoPlaceholder">
+                          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                            <polyline points="21 15 16 10 5 21"></polyline>
+                          </svg>
+                          <p>Click or drag to upload logo</p>
+                          <small>PNG, JPG, SVG (Max 5MB)</small>
+                        </div>
+                      </div>
+                      <input type="file" id="logoInput" accept="image/*" style="display: none;" />
+                      <div class="upload-actions">
+                        <button type="button" class="btn-ghost" id="uploadLogoBtn">Upload Logo</button>
+                        <button type="button" class="btn-ghost btn-danger" id="deleteLogoBtn" style="display: none;">Delete</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="field upload-field">
+                    <label>Favicon</label>
+                    <div class="upload-area" id="faviconUploadArea">
+                      <div class="upload-preview" id="faviconPreview">
+                        <img id="faviconImg" src="" alt="Favicon" style="display: none;" />
+                        <div class="upload-placeholder" id="faviconPlaceholder">
+                          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                            <polyline points="21 15 16 10 5 21"></polyline>
+                          </svg>
+                          <p>Click or drag to upload favicon</p>
+                          <small>ICO, PNG (32x32 recommended, Max 5MB)</small>
+                        </div>
+                      </div>
+                      <input type="file" id="faviconInput" accept="image/*" style="display: none;" />
+                      <div class="upload-actions">
+                        <button type="button" class="btn-ghost" id="uploadFaviconBtn">Upload Favicon</button>
+                        <button type="button" class="btn-ghost btn-danger" id="deleteFaviconBtn" style="display: none;">Delete</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-section">
+                  <h4>Google Location</h4>
+                  <div class="field">
+                    <label for="googleAddress">Address</label>
+                    <input type="text" id="googleAddress" name="googleLocation.address" placeholder="123 Main Street, City, Country" />
+                  </div>
+                  <div class="grid-2">
+                    <div class="field">
+                      <label for="googleLatitude">Latitude</label>
+                      <input type="number" step="any" id="googleLatitude" name="googleLocation.latitude" placeholder="23.8103" />
+                    </div>
+                    <div class="field">
+                      <label for="googleLongitude">Longitude</label>
+                      <input type="number" step="any" id="googleLongitude" name="googleLocation.longitude" placeholder="90.4125" />
+                    </div>
+                  </div>
+                  <div class="field">
+                    <label for="googleEmbedUrl">Google Maps Embed URL</label>
+                    <input type="text" id="googleEmbedUrl" name="googleLocation.embedUrl" placeholder="https://www.google.com/maps/embed?pb=..." />
+                    <small>Get embed URL from Google Maps → Share → Embed a map</small>
+                  </div>
+                </div>
+
+                <div class="form-actions">
+                  <button type="submit" class="btn-gold">Save Changes</button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <!-- Business Settings -->
+          <div class="tab-pane" id="business">
+            <div class="panel">
+              <div class="panel-head">
+                <h3>Business Settings</h3>
+                <p class="count">ব্যবসায়িক সেটিংস কনফিগার করুন</p>
+              </div>
+              <form id="businessForm" class="settings-form">
+                <div class="form-section">
+                  <h4>Currency Settings</h4>
+                  <div class="field">
+                    <label for="currencyCode">Currency</label>
+                    <select id="currencyCode" name="currency.code">
+                      <option value="">Select Currency</option>
+                    </select>
+                    <small>Auto-selected based on country</small>
+                  </div>
+                  <div class="field">
+                    <label class="check">
+                      <input type="checkbox" id="autoCountry" name="currency.autoCountry" checked />
+                      Auto-detect country
+                    </label>
+                  </div>
+                  <div class="grid-2">
+                    <div class="field">
+                      <label for="currencySymbol">Symbol</label>
+                      <input type="text" id="currencySymbol" name="currency.symbol" placeholder="$" />
+                    </div>
+                    <div class="field">
+                      <label for="currencyPosition">Position</label>
+                      <select id="currencyPosition" name="currency.position">
+                        <option value="before">Before price ($100)</option>
+                        <option value="after">After price (100$)</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-section">
+                  <h4>Language & Regional</h4>
+                  <div class="field">
+                    <label for="language">Language</label>
+                    <select id="language" name="language">
+                      <option value="">Select Language</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="form-section">
+                  <h4>Footer</h4>
+                  <div class="field">
+                    <label for="footerCopyright">Copyright Text</label>
+                    <input type="text" id="footerCopyright" name="footerCopyright" placeholder="© 2024 My Store. All rights reserved." />
+                  </div>
+                </div>
+
+                <div class="form-actions">
+                  <button type="submit" class="btn-gold">Save Changes</button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <!-- Contact Settings -->
+          <div class="tab-pane" id="contact">
+            <div class="panel">
+              <div class="panel-head">
+                <h3>Contact Settings</h3>
+                <p class="count">যোগাযোগের তথ্য কনফিগার করুন</p>
+              </div>
+              <form id="contactForm" class="settings-form">
+                <div class="form-section">
+                  <h4>Phone Numbers</h4>
+                  <div class="field">
+                    <label for="phone">Primary Phone</label>
+                    <input type="tel" id="phone" name="contact.phone" placeholder="+880 1234-567890" />
+                  </div>
+                  <div class="field">
+                    <label for="alternatePhone">Alternate Phone</label>
+                    <input type="tel" id="alternatePhone" name="contact.alternatePhone" placeholder="+880 0987-654321" />
+                  </div>
+                </div>
+
+                <div class="form-section">
+                  <h4>Email Addresses</h4>
+                  <div class="field">
+                    <label for="email">Primary Email</label>
+                    <input type="email" id="email" name="contact.email" placeholder="info@mystore.com" />
+                  </div>
+                  <div class="field">
+                    <label for="alternateEmail">Alternate Email</label>
+                    <input type="email" id="alternateEmail" name="contact.alternateEmail" placeholder="support@mystore.com" />
+                  </div>
+                </div>
+
+                <div class="form-section">
+                  <h4>Address</h4>
+                  <div class="field">
+                    <label for="address">Street Address</label>
+                    <input type="text" id="address" name="contact.address" placeholder="123 Main Street" />
+                  </div>
+                  <div class="grid-2">
+                    <div class="field">
+                      <label for="city">City</label>
+                      <input type="text" id="city" name="contact.city" placeholder="Dhaka" />
+                    </div>
+                    <div class="field">
+                      <label for="state">State/Province</label>
+                      <input type="text" id="state" name="contact.state" placeholder="Dhaka" />
+                    </div>
+                  </div>
+                  <div class="grid-2">
+                    <div class="field">
+                      <label for="country">Country</label>
+                      <input type="text" id="country" name="contact.country" placeholder="Bangladesh" />
+                    </div>
+                    <div class="field">
+                      <label for="postalCode">Postal Code</label>
+                      <input type="text" id="postalCode" name="contact.postalCode" placeholder="1205" />
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-section">
+                  <h4>Business Hours</h4>
+                  <div id="businessHoursContainer">
+                    <!-- Hours will be generated by JS -->
+                  </div>
+                  <small class="hint">Set your store opening and closing hours for each day</small>
+                </div>
+
+                <div class="form-actions">
+                  <button type="submit" class="btn-gold">Save Changes</button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <!-- Social Media -->
+          <div class="tab-pane" id="social">
+            <div class="panel">
+              <div class="panel-head">
+                <h3>Social Media</h3>
+                <p class="count">সোশ্যাল মিডিয়া লিংক কনফিগার করুন</p>
+              </div>
+              <form id="socialForm" class="settings-form">
+                <div class="form-section">
+                  <div class="field">
+                    <label for="facebook">Facebook</label>
+                    <input type="url" id="facebook" name="social.facebook" placeholder="https://facebook.com/yourstore" />
+                  </div>
+                  <div class="field">
+                    <label for="instagram">Instagram</label>
+                    <input type="url" id="instagram" name="social.instagram" placeholder="https://instagram.com/yourstore" />
+                  </div>
+                  <div class="field">
+                    <label for="twitter">Twitter / X</label>
+                    <input type="url" id="twitter" name="social.twitter" placeholder="https://twitter.com/yourstore" />
+                  </div>
+                  <div class="field">
+                    <label for="youtube">YouTube</label>
+                    <input type="url" id="youtube" name="social.youtube" placeholder="https://youtube.com/@yourstore" />
+                  </div>
+                  <div class="field">
+                    <label for="linkedin">LinkedIn</label>
+                    <input type="url" id="linkedin" name="social.linkedin" placeholder="https://linkedin.com/company/yourstore" />
+                  </div>
+                </div>
+
+                <div class="form-actions">
+                  <button type="submit" class="btn-gold">Save Changes</button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <!-- SEO Settings -->
+          <div class="tab-pane" id="seo">
+            <div class="panel">
+              <div class="panel-head">
+                <h3>SEO Settings</h3>
+                <p class="count">SEO মেটা ট্যাগ কনফিগার করুন</p>
+              </div>
+              <form id="seoForm" class="settings-form">
+                <div class="form-section">
+                  <div class="field">
+                    <label for="metaTitle">Meta Title</label>
+                    <input type="text" id="metaTitle" name="seo.metaTitle" placeholder="My Awesome Store - Best Products" />
+                    <small>Recommended: 50-60 characters</small>
+                  </div>
+                  <div class="field">
+                    <label for="metaDescription">Meta Description</label>
+                    <textarea id="metaDescription" name="seo.metaDescription" rows="3" placeholder="Discover the best products at affordable prices..."></textarea>
+                    <small>Recommended: 150-160 characters</small>
+                  </div>
+                  <div class="field">
+                    <label for="metaKeywords">Meta Keywords</label>
+                    <input type="text" id="metaKeywords" name="seo.metaKeywords" placeholder="store, shop, products, ecommerce" />
+                    <small>Comma-separated keywords</small>
+                  </div>
+                </div>
+
+                <div class="form-actions">
+                  <button type="submit" class="btn-gold">Save Changes</button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <!-- Appearance -->
+          <div class="tab-pane" id="appearance">
+            <div class="panel">
+              <div class="panel-head">
+                <h3>Appearance</h3>
+                <p class="count">থিম আর রঙ বদলান — ড্রাফটে সেভ করুন, প্রিভিউ দেখুন, তারপর পাবলিশ করুন</p>
+              </div>
+
+              <div class="settings-form">
+                <div class="form-section">
+                  <h4>Theme</h4>
+                  <div class="theme-choices" id="themeChoices"></div>
+                </div>
+
+                <div class="form-section">
+                  <h4>Design tokens</h4>
+                  <p class="ap-hint">খালি রাখলে থিমের ডিফল্ট ভ্যালু ব্যবহার হবে।</p>
+                  <div class="token-grid" id="tokenFields"></div>
+                </div>
+
+                <div class="form-section">
+                  <h4>Live preview</h4>
+                  <div class="ap-preview" id="apPreview">
+                    <div class="ap-pv-announce" data-pv="announce">আজকের অফার — সারা দেশে ডেলিভারি</div>
+                    <div class="ap-pv-head">
+                      <span class="ap-pv-logo" data-pv="logo">আপনার দোকান</span>
+                      <span class="ap-pv-search" data-pv="search">পণ্য খুঁজুন…<i>খুঁজুন</i></span>
+                    </div>
+                    <div class="ap-pv-strip" data-pv="strip">Men · Women · Accessories · New Arrivals</div>
+                    <div class="ap-pv-hero" data-pv="hero">
+                      <strong>বিশেষ কালেকশন</strong>
+                      <span>নতুন পণ্য, সবচেয়ে ভালো দামে</span>
+                    </div>
+                    <div class="ap-pv-grid">
+                      <div class="ap-pv-card" data-pv="card">
+                        <div class="ap-pv-thumb"></div>
+                        <b>পণ্যের নাম</b>
+                        <span data-pv="price">৳ ১,২৫০</span>
+                        <em data-pv="cta">কার্টে দিন</em>
+                      </div>
+                      <div class="ap-pv-card" data-pv="card">
+                        <div class="ap-pv-thumb"></div>
+                        <b>আরেকটি পণ্য</b>
+                        <span data-pv="price">৳ ৯৮৫</span>
+                        <em data-pv="cta">কার্টে দিন</em>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-actions ap-actions">
+                  <button type="button" class="btn-gold" id="apSaveBtn">Save draft</button>
+                  <button type="button" class="btn-ghost" id="apPreviewBtn">Preview storefront</button>
+                  <button type="button" class="btn-ghost" id="apResetBtn">Reset draft</button>
+                  <button type="button" class="btn-ghost btn-danger" id="apPublishBtn">Publish</button>
+                </div>
+                <p class="ap-status" id="apStatus"></p>
+              </div>
+
+              <div class="form-section ap-revisions">
+                <h4>Published revisions</h4>
+                <ul id="apRevisionList" class="ap-revision-list"></ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="/js/store-hint.js?v=1"></script>
+  <script src="/js/settings.js?v=5"></script>
+  <script src="/js/appearance.js?v=2"></script>
+</body>
+</html>

@@ -311,6 +311,59 @@
 #view-add-product .pf-inline-form { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line-soft); }
 #view-add-product .pf-inline-form .pf-row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }
 
+/* ---- featured checkboxes ---- */
+#view-add-product .pf-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+}
+#view-add-product .pf-check input { width: 16px; height: 16px; accent-color: var(--gold); }
+
+/* ---- main image gallery ---- */
+#view-add-product #pfGallery .pf-img-slot { position: relative; width: 72px; height: 72px; }
+#view-add-product #pfGallery .pf-img-slot span {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  padding: 1px 5px;
+  background: var(--gold);
+  color: #17110a;
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+#view-add-product .pf-img-remove {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  font-size: 11px;
+  line-height: 16px;
+  text-align: center;
+}
+#view-add-product .pf-img-remove:hover { background: var(--danger); }
+
+/* ---- video preview ---- */
+#view-add-product .pf-video-preview {
+  margin-top: 10px;
+  aspect-ratio: 16 / 9;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.03);
+}
+#view-add-product .pf-video-preview iframe,
+#view-add-product .pf-video-preview video { width: 100%; height: 100%; border: 0; display: block; }
+#view-add-product .pf-video-preview .pf-note { margin: 0; padding: 10px; border: none; }
+
 /* ---- dashboard footer ---- */
 .dash-footer {
   margin-top: 40px;

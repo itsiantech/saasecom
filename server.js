@@ -4,6 +4,7 @@ const express = require("express");
 const cors = require("cors");
 
 const mongoose = require("mongoose");
+const Store = require("./models/Store");
 
 const app = express();
 app.use(cors());
@@ -11,6 +12,7 @@ app.use(express.json());
 
 // public storefront resolves its own store by slug, so it mounts before tenant middleware
 app.use("/api/storefront", require("./routes/storefront"));
+app.use("/api/public", require("./routes/publicApi"));
 
 app.use(require("./middleware/tenant"));
 app.use("/api/products", require("./routes/products"));
@@ -40,6 +42,7 @@ app.use("/api/categories", require("./routes/categories"));
 app.use("/api/brands", require("./routes/brands"));
 app.use("/api/product-form", require("./routes/productForm"));
 app.use("/api/settings", require("./routes/settings"));
+app.use("/api/appearance", require("./routes/appearance"));
 app.use("/api/cart", require("./routes/cart"));
 app.use("/api/international", require("./routes/international"));
 app.use("/api/wholesale", require("./routes/wholesale"));
@@ -51,14 +54,28 @@ app.use("/api/coupons", require("./routes/coupons"));
 app.use("/api/hero-slides", require("./routes/heroSlides"));
 // ---- tenant host (amar-dokan.platform.com ba dokan.com) — ekhane shudhu storefront cholbe
 const { resolveHostStore } = require("./lib/hostStore");
+const { storefrontUrl } = require("./lib/storefrontUrl");
 const PANEL_PAGES = new Set(["/dashboard.html", "/admin.html", "/portal.html", "/setup.html", "/account.html", "/index.html"]);
+
+// store er frontend = Next.js themed site (Store Settings → Appearance er published theme)
+async function toStorefront(res, req, store) {
+  const target = await storefrontUrl(store);
+  const here = req.protocol + "://" + req.get("host");
+  if (target.replace(/\/$/, "") === here.replace(/\/$/, "")) return false; // loop hobe na
+  res.redirect(302, target);
+  return true;
+}
+
 app.use(async (req, res, next) => {
   if (req.method !== "GET" && req.method !== "HEAD") return next();
   try {
     const store = await resolveHostStore(req);
     if (!store) return next();
     if (PANEL_PAGES.has(req.path)) return res.status(404).send("এই ঠিকানায় প্যানেল নেই — দোকান ম্যানেজ করতে প্ল্যাটফর্মের ঠিকানা ব্যবহার করুন।");
-    if (req.path === "/") return res.sendFile(path.join(__dirname, "public", "shop.html"));
+    if (req.path === "/") {
+      if (await toStorefront(res, req, store)) return;
+      return res.sendFile(path.join(__dirname, "public", "shop.html"));
+    }
     next();
   } catch (err) {
     next(err);
@@ -74,13 +91,20 @@ app.use((req, res, next) => {
 
 app.use(express.static("public"));
 
-// Store er folder address: /demo-store → storefront page ("/" ekhon SaaS landing)
+// Store er folder address: /demo-store → shudhu redirect to the themed Next storefront
 const RESERVED = new Set(["api", "css", "js", "uploads", "node_modules"]);
-app.use((req, res, next) => {
+app.use(async (req, res, next) => {
   if (req.method !== "GET") return next();
-  const slug = decodeURIComponent(req.path.slice(1)).toLowerCase();
-  if (RESERVED.has(slug) || !/^[a-z0-9][a-z0-9-]{0,62}$/.test(slug)) return next();
-  res.sendFile(path.join(__dirname, "public", "shop.html"));
+  try {
+    const slug = decodeURIComponent(req.path.slice(1)).toLowerCase();
+    if (RESERVED.has(slug) || !/^[a-z0-9][a-z0-9-]{0,62}$/.test(slug)) return next();
+    const store = await Store.findOne({ slug });
+    if (!store) return next();
+    if (await toStorefront(res, req, store)) return;
+    res.sendFile(path.join(__dirname, "public", "shop.html"));
+  } catch (err) {
+    next(err);
+  }
 });
 
 // Central error handler — catches multer (file type / size) and any thrown errors.

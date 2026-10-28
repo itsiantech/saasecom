@@ -50,10 +50,14 @@ function resolveShipping(config, settings, mode) {
     maxDays = Math.max(0, Math.floor(Number(globalRule.maxDays) || 0));
   }
 
+  // per-kg rate: product override first, then the store-wide rate (0 = flat charge only)
+  const productRate = Math.max(0, Number(productRule.ratePerKg) || 0);
+  const ratePerKg = productRate > 0 ? productRate : Math.max(0, Number(globalRule.ratePerKg) || 0);
+
   return {
     mode: selected,
     label: globalRule.label || (selected === "air" ? "Air Shipping" : "Sea Shipping"),
-    ratePerKg: Math.max(0, Number(productRule.ratePerKg) || 0),
+    ratePerKg,
     minDays,
     maxDays,
   };

@@ -21,6 +21,7 @@ const User = require("../models/User");
 const Category = require("../models/Category");
 const Store = require("../models/Store");
 const { getStoreId } = require("../lib/tenantContext");
+const { scopedKey, isScopedKey, unscopeKey, keysForStore } = require("../lib/settingsScope");
 const { buildTree } = require("../lib/categoryHelpers");
 const { CHECKOUT_FIELDS, FIELD_KEYS } = require("../lib/checkoutFields");
 const { encrypt, decrypt, maskSecret, isMasked } = require("../lib/secretBox");
@@ -143,13 +144,15 @@ const BRANDING_FIELD = {
 const BRANDING_KEYS = Object.keys(BRANDING_FIELD);
 
 async function getSettingsMap() {
-  const docs = await Settings.find({ key: { $in: SETTING_KEYS } }).lean();
+  const storeId = getStoreId();
+  const docs = await Settings.find({ key: { $in: keysForStore(storeId, SETTING_KEYS) } }).lean();
   const map = { ...DEFAULTS };
-  docs.forEach((d) => { map[d.key] = d.value; });
+  // platform row = default, store row override kore
+  docs.forEach((d) => { if (!isScopedKey(storeId, d.key)) map[d.key] = d.value; });
+  docs.forEach((d) => { if (isScopedKey(storeId, d.key)) map[unscopeKey(storeId, d.key)] = d.value; });
 
   // tenant thakle branding shudhu store er nijer row theke — global row kakhon-i
   // onno store ke Deko Store er logo dekhate parbe na. row na thakle khali (name fallback caller e).
-  const storeId = getStoreId();
   if (storeId) {
     const own = await SiteSetting.findOne({ store: storeId }).lean();
     Object.entries(BRANDING_FIELD).forEach(([key, field]) => { map[key] = String((own && own[field]) ?? ""); });
@@ -494,8 +497,9 @@ async function adminSave(req, res) {
       branding[field] = field === "logoWidth" || field === "logoHeight" ? Number(value) : value;
       return;
     }
+    const storageKey = scopedKey(storeId, key);
     ops.push({
-      updateOne: { filter: { key }, update: { $set: { key, value } }, upsert: true },
+      updateOne: { filter: { key: storageKey }, update: { $set: { key: storageKey, value } }, upsert: true },
     });
   });
   if (ops.length) await Settings.bulkWrite(ops);

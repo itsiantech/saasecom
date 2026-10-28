@@ -190,7 +190,10 @@ async function quoteLine({
 
   return {
     ...pricing,
-    retailUnitPricePaisa: toPaisa(pricing.retailUnitPricePaisa != null ? pricing.retailUnitPricePaisa : retailPrice),
+    // retailPricing()/resolveWholesaleLine() already return paisa — only the
+    // bare retailPrice fallback (taka) needs converting.
+    retailUnitPricePaisa:
+      pricing.retailUnitPricePaisa != null ? pricing.retailUnitPricePaisa : toPaisa(retailPrice),
     flashSale: null,
     flashSaleTitle: "",
     flashPercent: 0,
@@ -368,7 +371,8 @@ async function getCart(req, res) {
 
   await cart.populate([
     { path: "items.product", select: "name images slug weightKg" },
-    { path: "items.variation", select: "name" },
+    // ProductVariation stores the label in termName (swatches use name)
+    { path: "items.variation", select: "termName attributeName image" },
     { path: "items.swatch", select: "name" },
   ]);
   res.json({
@@ -695,8 +699,9 @@ async function createOrder(req, res) {
     try {
       // Wholesale OFF hole purono wholesale line current retail price-e fire jay;
       // retail line er purono snapshot price-i thake (flash line current retail).
+      // retailPricing() taka ney — item.unitPrice already BDT, so no toPaisa() here.
       const legacyUnitPrice =
-        !wholesaleOn && item.pricingMode === "retail" ? toPaisa(item.unitPrice) : null;
+        !wholesaleOn && item.pricingMode === "retail" ? Number(item.unitPrice) || 0 : null;
       pricing = await quoteLine({
         storeId,
         userId: req.user && req.user.id,

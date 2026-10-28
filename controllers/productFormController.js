@@ -12,6 +12,7 @@ const Category = require("../models/Category");
 const Brand = require("../models/Brand");
 const Settings = require("../models/Settings");
 const { getStoreId } = require("../lib/tenantContext");
+const { scopedKey, isScopedKey, unscopeKey, keysForStore } = require("../lib/settingsScope");
 const { slugify, uniqueSlug, buildTree } = require("../lib/categoryHelpers");
 const { normalizeTiers, clearTierCache } = require("../services/tierPricing");
 const { writeAudit } = require("../lib/audit");
@@ -27,8 +28,10 @@ const SUPER_KEYS = ["productAttributesEnabled", "productSwatchesEnabled"];
 const PRODUCT_SETTING_KEYS = ["attributes_enabled", "swatches_enabled", ...SUPER_KEYS];
 
 async function getSettings(storeId) {
-  const docs = await Settings.find({ key: { $in: PRODUCT_SETTING_KEYS } }).lean();
-  const map = Object.fromEntries(docs.map((d) => [d.key, d.value]));
+  const docs = await Settings.find({ key: { $in: keysForStore(storeId, PRODUCT_SETTING_KEYS) } }).lean();
+  const map = {};
+  docs.forEach((d) => { if (!isScopedKey(storeId, d.key)) map[d.key] = d.value; });
+  docs.forEach((d) => { if (isScopedKey(storeId, d.key)) map[unscopeKey(storeId, d.key)] = d.value; });
   // notun key na thakle purono key te fallback (migration-safe)
   const attr = map.attributes_enabled !== undefined ? map.attributes_enabled : map.productAttributesEnabled;
   const sw = map.swatches_enabled !== undefined ? map.swatches_enabled : map.productSwatchesEnabled;
@@ -42,10 +45,11 @@ async function saveSettings(storeId, body) {
   const ops = [];
   for (const key of SUPER_KEYS) {
     if (body[key] !== undefined) {
+      const storageKey = scopedKey(storeId, key);
       ops.push({
         updateOne: {
-          filter: { key },
-          update: { $set: { key, value: body[key] ? "true" : "false" } },
+          filter: { key: storageKey },
+          update: { $set: { key: storageKey, value: body[key] ? "true" : "false" } },
           upsert: true,
         },
       });
@@ -166,6 +170,19 @@ async function upsertTags(storeId, names) {
 /* ------------------------------------------------------------------ *
  * Build a product (shared by create + update)
  * ------------------------------------------------------------------ */
+// only a plain http(s) link may reach the storefront, where it becomes an embed
+function safeVideoUrl(raw) {
+  const value = String(raw || "").trim();
+  if (!value) return "";
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "https:" && url.protocol !== "http:") return "";
+    return url.href.slice(0, 300);
+  } catch {
+    return "";
+  }
+}
+
 async function buildProduct(storeId, payload, existing) {
   const data = {
     title: String(payload.title || "").trim(),
@@ -179,6 +196,9 @@ async function buildProduct(storeId, payload, existing) {
     weightKg: Math.max(0, Number(payload.weightKg) || 0),
     status: payload.status === "published" ? "published" : "draft",
     images: Array.isArray(payload.images) ? payload.images.filter(Boolean) : [],
+    videoUrl: safeVideoUrl(payload.videoUrl),
+    isTopFeature: !!payload.isTopFeature,
+    isHotDeal: !!payload.isHotDeal,
     brand: payload.brand && mongoose.isValidObjectId(payload.brand) ? payload.brand : null,
     hasVariations: Array.isArray(payload.attributes) && payload.attributes.length > 0,
     hasSwatches: Array.isArray(payload.swatches) && payload.swatches.length > 0,

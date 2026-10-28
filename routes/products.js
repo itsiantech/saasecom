@@ -1,15 +1,30 @@
 const express = require("express");
 const router = express.Router();
 const Product = require("../models/Product");
+const { auth, requireAdmin } = require("../middleware/auth");
+const requireTenant = require("../middleware/requireTenant");
 
-// shob product dekha
-router.get("/", async (req, res) => {
-  const products = await Product.find();
-  res.json(products);
+// ei panel api gulo shudhu oei dokan er malik er (public catalog /api/public + /api/storefront e chole)
+const guard = [requireTenant, auth, requireAdmin];
+
+// shob product dekha (admin) — paginated
+router.get("/", guard, async (req, res) => {
+  const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+  const limit = Math.min(1000, Math.max(1, parseInt(req.query.limit, 10) || 100));
+  const status = ["draft", "published"].includes(req.query.status) ? req.query.status : null;
+  const q = status ? { status } : {};
+
+  const total = await Product.countDocuments(q);
+  const products = await Product.find(q)
+    .sort({ createdAt: -1 })
+    .skip((page - 1) * limit)
+    .limit(limit);
+
+  res.json({ products, total, page, limit, pages: Math.max(1, Math.ceil(total / limit)) });
 });
 
-// ekta product dekha
-router.get("/:id", async (req, res) => {
+// ekta product dekha (admin)
+router.get("/:id", guard, async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).json({ message: "Product pawa jayni" });
@@ -19,8 +34,8 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// notun product add kora
-router.post("/", async (req, res) => {
+// notun product add kora (admin)
+router.post("/", guard, async (req, res) => {
   try {
     const product = await Product.create(req.body);
     res.status(201).json(product);
@@ -30,7 +45,7 @@ router.post("/", async (req, res) => {
 });
 
 // product update kora (admin only)
-router.put("/:id", require("../middleware/auth").auth, require("../middleware/auth").requireAdmin, async (req, res) => {
+router.put("/:id", guard, async (req, res) => {
   try {
     const product = await Product.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
@@ -44,7 +59,7 @@ router.put("/:id", require("../middleware/auth").auth, require("../middleware/au
 });
 
 // product delete kora (admin only)
-router.delete("/:id", require("../middleware/auth").auth, require("../middleware/auth").requireAdmin, async (req, res) => {
+router.delete("/:id", guard, async (req, res) => {
   try {
     const product = await Product.findByIdAndDelete(req.params.id);
     if (!product) return res.status(404).json({ message: "Product pawa jayni" });

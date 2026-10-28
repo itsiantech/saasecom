@@ -22,6 +22,7 @@
     attribute: { name: "", terms: [] },
     variationData: {}, // { [term]: { image, regularPrice, salePrice, stock } }
     swatches: [], // { id, name, price, stock, images: [] }
+    gallery: [], // product images; [0] is the storefront cover
     tiers: { __product__: [] }, // { [term|__product__]: [{ minQty, maxQty, price }] }
     tierTarget: "__product__",
   };
@@ -343,6 +344,68 @@
     g.innerHTML = sw.images.map((src) => `<div class="pf-img-slot"><img src="${esc(src)}" alt=""></div>`).join("");
   }
 
+  /* ---------------- featured, image gallery, video ---------------- */
+  function renderGallery() {
+    const wrap = $("pfGallery");
+    wrap.innerHTML = state.gallery
+      .map(
+        (src, idx) => `<div class="pf-img-slot" data-removeimg="${idx}" title="Click to remove">
+          <img src="${esc(src)}" alt="">
+          <b class="pf-img-remove">×</b>
+          ${idx === 0 ? "<span>Main</span>" : ""}
+        </div>`
+      )
+      .join("");
+    wrap.querySelectorAll("[data-removeimg]").forEach((slot) => slot.addEventListener("click", () => {
+      state.gallery.splice(Number(slot.dataset.removeimg), 1);
+      renderGallery();
+      markDirty();
+    }));
+  }
+
+  // only these hosts may become an embed; anything else is shown as a link
+  function videoEmbed(url) {
+    let parsed;
+    try { parsed = new URL(url); } catch { return null; }
+    const host = parsed.hostname.replace(/^www\./, "");
+    if (host === "youtube.com" || host === "m.youtube.com") {
+      const id = parsed.pathname === "/embed/" || parsed.pathname === "/shorts/"
+        ? parsed.pathname.split("/").filter(Boolean).pop()
+        : parsed.searchParams.get("v");
+      return id ? { kind: "iframe", src: "https://www.youtube.com/embed/" + encodeURIComponent(id) } : null;
+    }
+    if (host === "youtu.be") {
+      const id = parsed.pathname.split("/").filter(Boolean)[0];
+      return id ? { kind: "iframe", src: "https://www.youtube.com/embed/" + encodeURIComponent(id) } : null;
+    }
+    if (host === "vimeo.com") {
+      const id = parsed.pathname.split("/").filter(Boolean)[0];
+      return id ? { kind: "iframe", src: "https://player.vimeo.com/video/" + encodeURIComponent(id) } : null;
+    }
+    if (host === "player.vimeo.com" && parsed.pathname.startsWith("/video/")) return { kind: "iframe", src: url };
+    if (/\.(mp4|webm|ogg)$/i.test(parsed.pathname)) return { kind: "video", src: url };
+    return null;
+  }
+
+  function renderVideoPreview() {
+    const box = $("pfVideoPreview");
+    const url = $("pfVideoUrl").value.trim();
+    if (!url) {
+      box.hidden = true;
+      box.innerHTML = "";
+      return;
+    }
+    const embed = videoEmbed(url);
+    box.hidden = false;
+    if (!embed) {
+      box.innerHTML = `<p class="pf-note">YouTube, Vimeo ba mp4 link lagbe.</p>`;
+      return;
+    }
+    box.innerHTML = embed.kind === "video"
+      ? `<video src="${esc(embed.src)}" controls playsinline></video>`
+      : `<iframe src="${esc(embed.src)}" title="Product video preview" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
+  }
+
   /* ---------------- wholesale quantity tiers ---------------- */
   const PRODUCT_TIER_KEY = "__product__";
 
@@ -606,6 +669,10 @@
       weightKg: Number($("pfWeight").value) || 0,
       ...(wholesaleMeta().enabled ? { tiers: readTierPayload() } : {}),
       status,
+      images: state.gallery,
+      videoUrl: $("pfVideoUrl").value.trim(),
+      isTopFeature: $("pfTopFeature").checked,
+      isHotDeal: $("pfHotDeal").checked,
       categories: [...state.selectedCategories],
       tags: state.tags,
       attributes,
@@ -668,6 +735,7 @@
     state.attribute = { name: "", terms: [] };
     state.variationData = {};
     state.swatches = [];
+    state.gallery = [];
     state.tiers = { __product__: [] };
     state.tierTarget = "__product__";
 
@@ -679,6 +747,9 @@
     $("pfSale").value = "";
     $("pfStock").value = "";
     $("pfWeight").value = "";
+    $("pfVideoUrl").value = "";
+    $("pfTopFeature").checked = false;
+    $("pfHotDeal").checked = false;
     $("pfAttrSelect").value = "";
     $("pfTermInput").value = "";
     $("pfPerTerm").checked = false;
@@ -693,6 +764,8 @@
     renderTermChips();
     renderVariationTable();
     renderSwatches();
+    renderGallery();
+    renderVideoPreview();
     renderTiers();
   }
 
@@ -709,6 +782,11 @@
     $("pfSale").value = p.salePrice || "";
     $("pfStock").value = p.stock || "";
     $("pfWeight").value = p.weightKg || "";
+
+    state.gallery = Array.isArray(p.images) ? p.images.slice() : [];
+    $("pfVideoUrl").value = p.videoUrl || "";
+    $("pfTopFeature").checked = !!p.isTopFeature;
+    $("pfHotDeal").checked = !!p.isHotDeal;
 
     state.selectedCategories = new Set((data.categories || []).map(String));
     const tagNames = new Map((state.meta.tags || []).map((t) => [String(t._id), t.name]));
@@ -763,6 +841,8 @@
     renderTermChips();
     renderVariationTable();
     renderSwatches();
+    renderGallery();
+    renderVideoPreview();
     renderTiers();
   }
 
@@ -779,6 +859,7 @@
     renderTags();
     renderTermChips();
     renderSwatches();
+    renderGallery();
     renderTiers();
     state.ready = true;
   }
@@ -821,6 +902,18 @@
   });
   $("pfPerTerm").addEventListener("change", () => { renderVariationTable(); markDirty(); });
   $("addSwatchBtn").addEventListener("click", addSwatch);
+  $("addGalleryBtn").addEventListener("click", () => $("pfGalleryFile").click());
+  $("pfGalleryFile").addEventListener("change", async () => {
+    for (const f of $("pfGalleryFile").files) {
+      try { state.gallery.push(await uploadImage(f)); } catch (err) { notify(err.message, "err"); }
+    }
+    $("pfGalleryFile").value = "";
+    renderGallery();
+    markDirty();
+  });
+  $("pfVideoUrl").addEventListener("input", () => { renderVideoPreview(); markDirty(); });
+  $("pfTopFeature").addEventListener("change", markDirty);
+  $("pfHotDeal").addEventListener("change", markDirty);
   $("pfTierTarget").addEventListener("change", () => {
     state.tierTarget = $("pfTierTarget").value || PRODUCT_TIER_KEY;
     renderTierRows();

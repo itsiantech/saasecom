@@ -45,8 +45,8 @@ router.put("/stores/:id/plan", auth, requireSuperAdmin, async (req, res) => {
   }
 });
 
-// SaaS on/off status (public — frontend redirect er jonno)
-router.get("/settings/saas", async (req, res) => {
+// SaaS on/off switch (super admin) — panel er baire keu platform flag parbe na
+router.get("/settings/saas", auth, requireSuperAdmin, async (req, res) => {
   if (process.env.APP_MODE === "single") return res.json({ saasEnabled: false });
   if (process.env.APP_MODE === "saas") return res.json({ saasEnabled: true });
   const doc = await Settings.findOne({ key: "saasEnabled" });

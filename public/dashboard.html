@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="/css/dashboard.css?v=3" />
   <link rel="stylesheet" href="/css/categories.css" />
   <link rel="stylesheet" href="/css/product-form.css" />
-  <link rel="stylesheet" href="/css/settings.css" />
+  <link rel="stylesheet" href="/css/settings-dashboard.css?v=1" />
   <link rel="stylesheet" href="/css/installments.css?v=1" />
   <link rel="stylesheet" href="/css/product-catalog.css?v=1" />
   <link rel="stylesheet" href="/css/order-catalog.css?v=2" />
@@ -144,6 +144,10 @@
         <a href="#" class="nav-item" data-view="hero-slider" id="navHeroSlider">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.5"/><path d="M21 15l-5-5L5 19"/></svg>
           Hero slider
+        </a>
+        <a href="/settings.html" class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1.11-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 8.89a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 8.96 4.5a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1z"/></svg>
+          Store Settings
         </a>
       </nav>
 
@@ -695,7 +699,32 @@
               </form>
             </div>
 
-            <!-- 2. Tags -->
+            <!-- 2. Featured -->
+            <div class="pf-card">
+              <div class="pf-card-head"><h3>Featured <span class="hint">Highlight on the storefront</span></h3></div>
+              <label class="pf-check"><input id="pfTopFeature" type="checkbox" /><span>Show as featured product</span></label>
+              <label class="pf-check"><input id="pfHotDeal" type="checkbox" /><span>Show as hot deal</span></label>
+            </div>
+
+            <!-- 3. Image gallery -->
+            <div class="pf-card">
+              <div class="pf-card-head"><h3>Image gallery <span class="hint">First image is the cover</span></h3></div>
+              <div class="pf-gallery" id="pfGallery" style="margin-top:10px;"></div>
+              <button class="pf-btn-sm" id="addGalleryBtn" type="button" style="margin-top:10px;">+ Add images</button>
+              <input id="pfGalleryFile" type="file" accept="image/*" hidden multiple />
+              <p class="pf-note" style="border:none;padding:0;margin-top:8px;">Click an image to remove it. Max 2MB each.</p>
+            </div>
+
+            <!-- 4. Video -->
+            <div class="pf-card">
+              <div class="pf-card-head"><h3>Video <span class="hint">YouTube, Vimeo or an mp4 link</span></h3></div>
+              <div class="pf-field" style="margin-top:10px;">
+                <input id="pfVideoUrl" type="url" placeholder="https://www.youtube.com/watch?v=..." aria-label="Video link" />
+              </div>
+              <div id="pfVideoPreview" class="pf-video-preview" hidden></div>
+            </div>
+
+            <!-- 5. Tags -->
             <div class="pf-card">
               <div class="pf-card-head"><h3>Tags</h3></div>
               <div class="pf-field" style="margin-top:10px;">
@@ -704,7 +733,7 @@
               <div class="chips" id="pfTagChips" aria-live="polite"></div>
             </div>
 
-            <!-- 3. Short description -->
+            <!-- 6. Short description -->
             <div class="pf-card">
               <div class="pf-card-head"><h3>Short description</h3></div>
               <div class="pf-field" style="margin-top:10px;">
@@ -2573,11 +2602,12 @@
 
   <div class="toast" id="toast"></div>
 
-  <script src="/js/dashboard.js?v=3"></script>
+  <script src="/js/store-hint.js?v=1"></script>
+  <script src="/js/dashboard.js?v=6"></script>
   <script src="/js/categories.js"></script>
   <script src="/js/brands.js"></script>
   <script src="/js/product-form.js"></script>
-  <script src="/js/settings.js"></script>
+  <script src="/js/settings-dashboard.js?v=5"></script>
   <script src="/js/installments-admin.js?v=1"></script>
   <script src="/js/orders.js?v=2"></script>
   <script src="/js/product-catalog.js?v=1"></script>
