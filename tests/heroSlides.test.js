@@ -5,6 +5,7 @@ const assert = require("node:assert");
 const {
   normalizeSlide,
   normalizeLink,
+  normalizeLayout,
   publicSlide,
   sortForPublic,
 } = require("../lib/heroSlides");
@@ -73,6 +74,13 @@ test("publicSlide exposes only public fields", () => {
       linkUrl: "/shop",
     }
   );
+});
+
+test("normalizeLayout accepts only boxed/full and blanks everything else", () => {
+  assert.strictEqual(normalizeLayout("full"), "full");
+  assert.strictEqual(normalizeLayout(" BOXED "), "boxed");
+  assert.strictEqual(normalizeLayout("wide"), "");
+  assert.strictEqual(normalizeLayout(undefined), "");
 });
 
 test("sortForPublic drops inactive slides and orders by sortOrder", () => {

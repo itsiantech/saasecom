@@ -11,6 +11,7 @@ const ShopFavicon = require("../models/ShopFavicon");
 const SocialLink = require("../models/SocialLink");
 const StoreSettings = require("../models/StoreSettings");
 const { publicSlide, sortForPublic } = require("../lib/heroSlides");
+const { readSliderLayout } = require("../lib/sliderSettings");
 const { buildTree, getDescendantIds } = require("../lib/categoryHelpers");
 const { toCard, brandingFor, loadSettings, escapeRegex } = require("./storefrontController");
 const { getWholesaleSettings } = require("../lib/wholesaleSettings");
@@ -364,7 +365,11 @@ async function findRelated(storeId, product) {
 async function listHeroSlides(req, res, next) {
   try {
     const rows = await HeroSlide.find({ store: req.publicStore._id }).lean();
-    res.json({ slides: sortForPublic(rows).map(publicSlide) });
+    res.json({
+      slides: sortForPublic(rows).map(publicSlide),
+      // "" = admin never picked one; the theme decides its own default
+      layout: await readSliderLayout(req.publicStore._id),
+    });
   } catch (err) {
     next(err);
   }

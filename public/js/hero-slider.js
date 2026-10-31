@@ -16,6 +16,8 @@
     busy: false,
     storeSlug: "",
     sortable: null,
+    settings: { layout: "", theme: "" },
+    savingLayout: false,
   };
 
   async function api(path, options = {}) {
@@ -158,6 +160,49 @@
     state.items.forEach((item, index) => root.appendChild(renderItem(item, index)));
   }
 
+  /* ------------------------------------------------------- slider settings */
+  // theme2 er hero design-ei full-bleed, tai kono layout save na thakle
+  // theme onujayi default dhora hoy
+  function effectiveLayout() {
+    if (state.settings.layout) return state.settings.layout;
+    return state.settings.theme === "theme2" ? "full" : "boxed";
+  }
+
+  function renderLayout() {
+    const current = effectiveLayout();
+    $("hsSettings").querySelectorAll("[data-hs-layout]").forEach((button) => {
+      const on = button.dataset.hsLayout === current;
+      button.classList.toggle("on", on);
+      button.setAttribute("aria-pressed", String(on));
+      button.disabled = state.savingLayout;
+    });
+  }
+
+  async function chooseLayout(layout) {
+    if (state.savingLayout || layout === effectiveLayout()) return;
+    state.savingLayout = true;
+    renderLayout();
+    try {
+      const data = await json("/api/hero-slides/settings", {
+        method: "PUT",
+        body: JSON.stringify({ layout }),
+      });
+      state.settings = Object.assign({}, state.settings, data.settings || {});
+      toast("Slider layout update hoyeche", "ok");
+    } catch (err) {
+      toast(err.message, "err");
+    } finally {
+      state.savingLayout = false;
+      renderLayout();
+    }
+  }
+
+  $("hsSettings").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-hs-layout]");
+    if (!button) return;
+    chooseLayout(button.dataset.hsLayout);
+  });
+
   async function load() {
     const root = $("hsListRoot");
     root.textContent = "";
@@ -165,6 +210,8 @@
     try {
       const data = await json("/api/hero-slides");
       state.items = Array.isArray(data.items) ? data.items : [];
+      state.settings = Object.assign({ layout: "", theme: "" }, data.settings || {});
+      renderLayout();
       render();
     } catch (err) {
       root.textContent = "";

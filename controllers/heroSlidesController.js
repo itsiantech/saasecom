@@ -1,7 +1,9 @@
 const mongoose = require("mongoose");
 const HeroSlide = require("../models/HeroSlide");
+const Appearance = require("../models/Appearance");
 const { getStoreId } = require("../lib/tenantContext");
 const { MAX_SLIDES, normalizeSlide } = require("../lib/heroSlides");
+const { readSliderLayout, saveSliderLayout } = require("../lib/sliderSettings");
 
 function storeIdOf(req) {
   if (req.store && req.store._id) return req.store._id;
@@ -53,13 +55,37 @@ function fail(res, next, err) {
   next(err);
 }
 
+// store-level slider settings: the saved layout ("" = never saved) and the
+// published theme, so the client can pick that theme's own default layout
+async function sliderSettings(storeId) {
+  const [layout, doc] = await Promise.all([
+    readSliderLayout(storeId),
+    Appearance.findOne({ store: storeId }).select("published.theme draft.theme").lean(),
+  ]);
+  const theme = (doc && ((doc.published && doc.published.theme) || (doc.draft && doc.draft.theme))) || "";
+  return { layout, theme };
+}
+
 async function list(req, res, next) {
   try {
     const storeId = storeIdOf(req);
     if (!storeId) return res.status(400).json({ message: "Store pawa jayni" });
-    res.json({ items: await listRows(storeId), max: MAX_SLIDES });
+    const [items, settings] = await Promise.all([listRows(storeId), sliderSettings(storeId)]);
+    res.json({ items, max: MAX_SLIDES, settings });
   } catch (err) {
     next(err);
+  }
+}
+
+async function updateSettings(req, res, next) {
+  try {
+    const storeId = storeIdOf(req);
+    if (!storeId) return res.status(400).json({ message: "Store pawa jayni" });
+    const body = req.body || {};
+    if (body.layout !== undefined) await saveSliderLayout(storeId, body.layout);
+    res.json({ ok: true, settings: await sliderSettings(storeId) });
+  } catch (err) {
+    fail(res, next, err);
   }
 }
 
@@ -167,4 +193,4 @@ async function reorder(req, res, next) {
   }
 }
 
-module.exports = { list, create, update, remove, reorder };
+module.exports = { list, create, update, remove, reorder, updateSettings };
