@@ -113,6 +113,10 @@ before(async () => {
   state.app = express();
   state.app.use(express.json());
   state.app.use("/api/public", require("../routes/publicApi"));
+  // mirrors server.js for the cart/auth routes: no /public prefix, so identity
+  // has to come from the tenant middleware
+  state.app.use(require("../middleware/tenant"));
+  state.app.get("/api/tenant-probe", (req, res) => res.json({ store: req.store.slug }));
   state.app.use((err, req, res, next) => {
     res.status(err.status || 500).json({ message: err.message || "Server error" });
   });
@@ -190,6 +194,28 @@ test("verified custom domain resolves its own store through x-store-domain", asy
   const res = await pub("/api/public/products", { domain: "bshop.example" });
   assert.equal(res.status, 200);
   assert.deepEqual(res.body.products.map((row) => row.slug), ["b-one"]);
+});
+
+test("cart-style routes resolve the store from the proxy's x-store-domain header", async () => {
+  const byDomain = await request(state.app).get("/api/tenant-probe").set("x-store-domain", "bshop.example");
+  assert.equal(byDomain.status, 200);
+  assert.equal(byDomain.body.store, "shop-b");
+
+  const Settings = require("../models/Settings");
+  await Settings.create({ key: "platformDomain", value: "example.com" });
+  const bySubdomain = await request(state.app).get("/api/tenant-probe").set("x-store-domain", "a.example.com");
+  assert.equal(bySubdomain.status, 200);
+  assert.equal(bySubdomain.body.store, "shop-a");
+  await Settings.deleteOne({ key: "platformDomain" });
+
+  const bySlug = await request(state.app).get("/api/tenant-probe").set("x-store-slug", "shop-a");
+  assert.equal(bySlug.body.store, "shop-a");
+
+  const unverified = await request(state.app).get("/api/tenant-probe").set("x-store-domain", "unknown.example");
+  assert.equal(unverified.status, 400);
+
+  const none = await request(state.app).get("/api/tenant-probe");
+  assert.equal(none.status, 400);
 });
 
 test("public product payload never carries supplier or cost data", async () => {

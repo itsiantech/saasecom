@@ -5,6 +5,7 @@ const Plan = require("../models/Plan");
 const Settings = require("../models/Settings");
 const { tenantStorage } = require("../lib/tenantContext");
 const { resolveHostStore } = require("../lib/hostStore");
+const { fromDomainHeader } = require("./publicStore");
 
 // store chara kaj cholbe e api gulote (signup/setup er somoy)
 const STORELESS_OK = ["/api/auth", "/api/plans", "/api/settings", "/api/admin", "/api/stores"];
@@ -52,7 +53,12 @@ async function resolveStore(req, saas) {
   const hostStore = await resolveHostStore(req);
   if (hostStore) return hostStore;
 
-  // saas mode 1: explicitly slug deya thakle (frontend header/query diye pathay)
+  // saas mode 1a: Next.js proxy theke asha visitor hostname (backend er nijer
+  // req.hostname proxi er localhost, tai cart/auth route gulote o domain lagbe)
+  const domainStore = await fromDomainHeader(req);
+  if (domainStore) return domainStore;
+
+  // saas mode 1b: explicitly slug deya thakle (frontend header/query diye pathay)
   const slug = req.headers["x-store-slug"] || req.query.store;
   if (slug) return Store.findOne({ slug: String(slug).toLowerCase() });
 
