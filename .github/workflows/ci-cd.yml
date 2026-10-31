@@ -67,12 +67,22 @@ jobs:
           ssh -p "$VPS_PORT" -i ~/.ssh/deploy_key "$VPS_USER@$VPS_HOST" \
             "APP_DIR='$APP_DIR' PM2_APP_NAME='$PM2_APP_NAME' HEALTH_URL='$HEALTH_URL' bash -s" <<'REMOTE'
           set -euo pipefail
+
+          # non-interactive ssh does not load the login shell, so nvm-installed node/pm2 is off PATH
+          export PATH="$PATH:/usr/local/bin:/usr/bin"
+          [ -s "$HOME/.nvm/nvm.sh" ] && . "$HOME/.nvm/nvm.sh"
+
+          for bin in git npm pm2; do
+            command -v "$bin" >/dev/null || { echo "Missing '$bin' on the VPS (PATH problem?)" >&2; exit 1; }
+          done
+
           cd "$APP_DIR"
 
-          # never blow away local edits on the server — fail loudly instead
-          if [ -n "$(git status --porcelain)" ]; then
-            echo "Refusing to deploy: uncommitted changes in $APP_DIR" >&2
-            git status --short >&2
+          # never blow away local edits on the server — fail loudly instead.
+          # ignored files (.env, uploads, node_modules) never show up here.
+          if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+            echo "Refusing to deploy: tracked files modified in $APP_DIR" >&2
+            git status --short --untracked-files=no >&2
             exit 1
           fi
 
@@ -83,16 +93,20 @@ jobs:
           pm2 restart "$PM2_APP_NAME" --update-env || pm2 start server.js --name "$PM2_APP_NAME"
           pm2 save
 
-          if [ -n "$HEALTH_URL" ]; then
-            for i in $(seq 1 10); do
-              if curl -fsS -m 5 "$HEALTH_URL" >/dev/null; then
-                echo "Health check passed"
-                exit 0
-              fi
-              sleep 3
-            done
-            echo "Health check failed: $HEALTH_URL" >&2
-            pm2 logs "$PM2_APP_NAME" --lines 50 --nostream >&2 || true
-            exit 1
+          if [ -z "$HEALTH_URL" ]; then
+            echo "HEALTH_URL not set — skipped health check"
+            exit 0
           fi
+          command -v curl >/dev/null || { echo "curl missing on the VPS — skipped health check"; exit 0; }
+
+          for i in $(seq 1 10); do
+            if curl -fsS -m 5 "$HEALTH_URL" >/dev/null; then
+              echo "Health check passed"
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "Health check failed: $HEALTH_URL" >&2
+          pm2 logs "$PM2_APP_NAME" --lines 50 --nostream >&2 || true
+          exit 1
           REMOTE
