@@ -10,6 +10,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Liveness probe for the deploy pipeline — mounted before tenant resolution so any host can hit it.
+app.get("/api/health", (req, res) => {
+  res.json({ status: "ok", db: mongoose.connection.readyState === 1 ? "up" : "down" });
+});
+
 // public storefront resolves its own store by slug, so it mounts before tenant middleware
 app.use("/api/storefront", require("./routes/storefront"));
 app.use("/api/public", require("./routes/publicApi"));

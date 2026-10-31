@@ -1,0 +1,98 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # mongodb-memory-server downloads a mongod binary on first run; keep it between builds
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/mongodb-binaries
+          key: mongod-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: mongod-${{ runner.os }}-
+
+      - run: npm ci
+      - run: npm test
+
+  deploy:
+    name: Deploy to VPS
+    needs: test
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    steps:
+      - name: Set up SSH
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ vars.VPS_PORT || '22' }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p "$VPS_PORT" -H "$VPS_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Pull, install and restart
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ vars.VPS_PORT || '22' }}
+          APP_DIR: ${{ vars.APP_DIR }}
+          PM2_APP_NAME: ${{ vars.PM2_APP_NAME }}
+          HEALTH_URL: ${{ vars.HEALTH_URL }}
+        run: |
+          ssh -p "$VPS_PORT" -i ~/.ssh/deploy_key "$VPS_USER@$VPS_HOST" \
+            "APP_DIR='$APP_DIR' PM2_APP_NAME='$PM2_APP_NAME' HEALTH_URL='$HEALTH_URL' bash -s" <<'REMOTE'
+          set -euo pipefail
+          cd "$APP_DIR"
+
+          # never blow away local edits on the server — fail loudly instead
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "Refusing to deploy: uncommitted changes in $APP_DIR" >&2
+            git status --short >&2
+            exit 1
+          fi
+
+          git fetch --prune origin
+          git merge --ff-only origin/main
+          npm ci --omit=dev
+
+          pm2 restart "$PM2_APP_NAME" --update-env || pm2 start server.js --name "$PM2_APP_NAME"
+          pm2 save
+
+          if [ -n "$HEALTH_URL" ]; then
+            for i in $(seq 1 10); do
+              if curl -fsS -m 5 "$HEALTH_URL" >/dev/null; then
+                echo "Health check passed"
+                exit 0
+              fi
+              sleep 3
+            done
+            echo "Health check failed: $HEALTH_URL" >&2
+            pm2 logs "$PM2_APP_NAME" --lines 50 --nostream >&2 || true
+            exit 1
+          fi
+          REMOTE
