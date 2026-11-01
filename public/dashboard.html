@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="/css/dashboard.css?v=3" />
   <link rel="stylesheet" href="/css/categories.css" />
   <link rel="stylesheet" href="/css/product-form.css" />
-  <link rel="stylesheet" href="/css/settings-dashboard.css?v=1" />
+  <link rel="stylesheet" href="/css/settings-dashboard.css?v=2" />
   <link rel="stylesheet" href="/css/installments.css?v=1" />
   <link rel="stylesheet" href="/css/product-catalog.css?v=1" />
   <link rel="stylesheet" href="/css/order-catalog.css?v=2" />
@@ -772,6 +772,7 @@
             <button class="settings-menu-item" data-pane="product" type="button">Product settings</button>
             <div class="settings-menu-group">Home page</div>
             <button class="settings-menu-item" data-pane="home" type="button">Product card</button>
+            <button class="settings-menu-item" data-pane="home-sections" type="button">Category sections</button>
             <button class="settings-menu-item" data-pane="international" type="button">International import mode <span class="off-badge" data-international-off hidden>Off</span></button>
             <div class="settings-menu-group">Wholesale</div>
             <button class="settings-menu-item" data-pane="wholesale" type="button">Wholesale mode <span class="off-badge" data-wholesale-off hidden>Off</span></button>
@@ -927,6 +928,44 @@
                   <label class="pf-switch"><input type="checkbox" id="setCardCheckoutPopup" /><span class="slider"></span></label>
                 </div>
                 <p class="pf-note">Both buttons off hole card e kono action button thakbe na — card click korle product page khulbe. Stock shesh hole buttons disable thake. Ei same card home, shop ar related products e bebohar hoy.</p>
+              </div>
+            </section>
+
+            <!-- ===== HOME PAGE CATEGORY SECTIONS ===== -->
+            <section class="settings-pane" data-pane="home-sections">
+              <div class="pf-card">
+                <div class="pf-card-head">
+                  <div>
+                    <h3>Home page category sections</h3>
+                    <span class="hint">Storefront category blocks</span>
+                  </div>
+                </div>
+                <p class="pf-note">Ei section gulo হট ডিল ও নতুন পণ্যের age bose. Drag kore order change korun — jeita upore thakbe storefront e agei dekhabe. Je category te published product nei, oita automatic hide thakbe.</p>
+                <div class="pf-toggle-row">
+                  <div><strong>হট ডিল</strong><p>Show the hot deals section below the category sections</p></div>
+                  <label class="pf-switch"><input type="checkbox" id="setHomeHotDeals" /><span class="slider"></span></label>
+                </div>
+                <div class="pf-toggle-row">
+                  <div><strong>নতুন পণ্য</strong><p>Show the newest products section below হট ডিল</p></div>
+                  <label class="pf-switch"><input type="checkbox" id="setHomeNewProducts" /><span class="slider"></span></label>
+                </div>
+              </div>
+
+              <div class="pf-card">
+                <div class="pf-card-head">
+                  <h3>Category sections</h3>
+                  <span class="hint" id="homeSectionsCount"></span>
+                </div>
+                <div class="hs-list" id="homeSectionRows"></div>
+                <p class="hs-empty" id="homeSectionsEmpty" hidden>
+                  Ekhono kono category add kora hoyni — nicher dropdown theke add korun.
+                </p>
+                <div class="hs-add">
+                  <select id="homeSectionAdd" class="settings-input" aria-label="Category to add"></select>
+                  <button class="pf-btn-sm" type="button" id="homeSectionAddBtn">+ Add category</button>
+                </div>
+                <div class="hs-chips" id="homeSectionsOrder"></div>
+                <p class="pf-note">Layout: <b>Slider</b> = arrow + dot navigation, <b>Drag</b> = graber pore bosh hoiye move, <b>Grid</b> = fixed grid. Column 4/5/6 desktop e — mobile e always 2 column. Product count 4–24.</p>
               </div>
             </section>
 
@@ -2646,7 +2685,7 @@
   <script src="/js/categories.js"></script>
   <script src="/js/brands.js"></script>
   <script src="/js/product-form.js"></script>
-  <script src="/js/settings-dashboard.js?v=6"></script>
+  <script src="/js/settings-dashboard.js?v=7"></script>
   <script src="/js/installments-admin.js?v=1"></script>
   <script src="/js/orders.js?v=2"></script>
   <script src="/js/product-catalog.js?v=1"></script>

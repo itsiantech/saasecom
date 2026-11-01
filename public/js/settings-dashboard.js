@@ -61,6 +61,8 @@
     email: { enabled: false, smtpPort: 587, templates: [] },
     sms: { enabled: false, provider: "bulksmsbd", otpLength: 6, otpExpiryMinutes: 5 },
     invoice: { enabled: true, paperSize: "a4", copies: "both", accentColor: "#c9a961" },
+    homeSections: [],
+    homeSectionsLoaded: false,
     invoicePreviewMode: "retail",
     international: JSON.parse(JSON.stringify(INTERNATIONAL_DEFAULTS)),
     internationalLoaded: false,
@@ -374,6 +376,270 @@
       markDirty();
     });
   });
+
+  /* ------------------------------------------------------------------ *
+   * Home page category sections
+   * ------------------------------------------------------------------ */
+  const HOME_MODE_LABELS = { slider: "Slider", drag: "Drag", grid: "Grid" };
+  const HOME_FIXED_TOGGLES = {
+    setHomeHotDeals: "home_hot_deals_enabled",
+    setHomeNewProducts: "home_new_products_enabled",
+  };
+
+  Object.entries(HOME_FIXED_TOGGLES).forEach(([id, key]) => {
+    const el = $(id);
+    if (!el) return;
+    el.addEventListener("change", () => {
+      state.settings[key] = el.checked ? "true" : "false";
+      markDirty();
+    });
+  });
+
+  function categoryLookup() {
+    const map = new Map();
+    const walk = (nodes, depth) => {
+      (nodes || []).forEach((n) => {
+        map.set(String(n._id), { name: n.name || "", depth });
+        if (n.children && n.children.length) walk(n.children, depth + 1);
+      });
+    };
+    walk(state.categories, 0);
+    return map;
+  }
+
+  function homeSectionId() {
+    let id = "s" + Date.now().toString(36);
+    while (state.homeSections.some((s) => s.id === id)) id += "x";
+    return id;
+  }
+
+  function homeSectionRowHtml(section, index, lookup) {
+    const cat = lookup.get(String(section.category));
+    const name = cat ? cat.name : "Category removed";
+    const meta = `${section.limit} pcs · ${HOME_MODE_LABELS[section.mode] || "Grid"} · ${section.columns} column`;
+    const seg = (field, values, current) =>
+      `<div class="hs-seg" data-field="${field}">${values
+        .map(
+          (value) =>
+            `<button type="button" data-value="${value}" class="${String(current) === String(value) ? "is-on" : ""}">${HOME_MODE_LABELS[value] || value}</button>`
+        )
+        .join("")}</div>`;
+
+    return `
+      <div class="hs-row${section.enabled ? "" : " is-off"}" draggable="true" data-id="${esc(section.id)}">
+        <span class="hs-handle" title="Drag to reorder">⠿</span>
+        <div class="hs-name">
+          <strong>${esc(name)}</strong>
+          <span>${esc(meta)}</span>
+        </div>
+        <div class="hs-neg">
+          ${seg("mode", ["slider", "drag", "grid"], section.mode)}
+          ${seg("columns", [4, 5, 6], section.columns)}
+          <label class="hs-count">
+            <input type="number" class="settings-input" data-field="limit" min="4" max="24" step="1" value="${section.limit}" aria-label="Product count" />
+            <span>pcs</span>
+          </label>
+        </div>
+        <label class="pf-switch" title="Show on storefront">
+          <input type="checkbox" data-field="enabled" ${section.enabled ? "checked" : ""} aria-label="Show on storefront" />
+          <span class="slider"></span>
+        </label>
+        <div class="hs-actions">
+          <button type="button" data-act="up" title="Move up" ${index === 0 ? "disabled" : ""}>↑</button>
+          <button type="button" data-act="down" title="Move down" ${index === state.homeSections.length - 1 ? "disabled" : ""}>↓</button>
+          <button type="button" data-act="remove" title="Remove">✕</button>
+        </div>
+      </div>`;
+  }
+
+  function renderHomeSectionChips(lookup) {
+    const el = $("homeSectionsOrder");
+    if (!el) return;
+    el.innerHTML = state.homeSections
+      .map((section, index) => {
+        const cat = lookup.get(String(section.category));
+        return `<span class="hs-chip${section.enabled ? "" : " is-off"}"><b>${index + 1}</b> ${esc(cat ? cat.name : "—")}</span>`;
+      })
+      .join("");
+  }
+
+  function renderHomeSectionAddOptions() {
+    const select = $("homeSectionAdd");
+    const btn = $("homeSectionAddBtn");
+    if (!select || !btn) return;
+    const used = new Set(state.homeSections.map((s) => String(s.category)));
+    const previous = select.value;
+    let html = `<option value="">Select category</option>`;
+    const walk = (nodes, depth) => {
+      (nodes || []).forEach((n) => {
+        const id = String(n._id);
+        if (!used.has(id)) {
+          html += `<option value="${esc(id)}">${esc("› ".repeat(depth) + (n.name || ""))}</option>`;
+        }
+        if (n.children && n.children.length) walk(n.children, depth + 1);
+      });
+    };
+    walk(state.categories, 0);
+    select.innerHTML = html;
+    if ([...select.options].some((option) => option.value === previous)) select.value = previous;
+    btn.disabled = !select.value;
+  }
+
+  function renderHomeSections() {
+    const rowsEl = $("homeSectionRows");
+    if (!rowsEl) return;
+    const lookup = categoryLookup();
+    rowsEl.innerHTML = state.homeSections
+      .map((section, index) => homeSectionRowHtml(section, index, lookup))
+      .join("");
+    $("homeSectionsEmpty").hidden = state.homeSections.length > 0;
+    $("homeSectionsCount").textContent = state.homeSections.length
+      ? `${state.homeSections.length} ta section`
+      : "";
+    renderHomeSectionAddOptions();
+    renderHomeSectionChips(lookup);
+  }
+
+  function homeSectionById(id) {
+    return state.homeSections.find((section) => section.id === id) || null;
+  }
+
+  const homeRowsEl = $("homeSectionRows");
+  if (homeRowsEl) {
+    homeRowsEl.addEventListener("click", (e) => {
+      const row = e.target.closest(".hs-row");
+      if (!row) return;
+      const section = homeSectionById(row.dataset.id);
+      if (!section) return;
+
+      const segBtn = e.target.closest(".hs-seg button");
+      if (segBtn) {
+        const body = segBtn.closest(".hs-seg");
+        const field = body.dataset.field;
+        section[field] = field === "columns" ? Number(segBtn.dataset.value) : segBtn.dataset.value;
+        markDirty();
+        renderHomeSections();
+        return;
+      }
+
+      const act = e.target.closest("[data-act]");
+      if (!act || act.disabled) return;
+      const index = state.homeSections.indexOf(section);
+      if (act.dataset.act === "up" && index > 0) {
+        state.homeSections.splice(index, 1);
+        state.homeSections.splice(index - 1, 0, section);
+      }
+      if (act.dataset.act === "down" && index < state.homeSections.length - 1) {
+        state.homeSections.splice(index, 1);
+        state.homeSections.splice(index + 1, 0, section);
+      }
+      if (act.dataset.act === "remove") state.homeSections.splice(index, 1);
+      markDirty();
+      renderHomeSections();
+    });
+
+    homeRowsEl.addEventListener("change", (e) => {
+      const row = e.target.closest(".hs-row");
+      if (!row) return;
+      const section = homeSectionById(row.dataset.id);
+      if (!section) return;
+      const field = e.target.dataset.field;
+      if (field === "limit") {
+        const n = Math.round(Number(e.target.value));
+        section.limit = Number.isFinite(n) ? Math.min(24, Math.max(4, n)) : 12;
+        markDirty();
+        renderHomeSections();
+      } else if (field === "enabled") {
+        section.enabled = e.target.checked;
+        markDirty();
+        renderHomeSections();
+      }
+    });
+
+    // Drag & drop reorder — DOM reorder during dragover, state update on drop.
+    let dragId = null;
+    const rowAfterPointer = (y) =>
+      [...homeRowsEl.querySelectorAll(".hs-row:not(.is-dragging)")].reduce(
+        (closest, row) => {
+          const box = row.getBoundingClientRect();
+          const offset = y - box.top - box.height / 2;
+          if (offset < 0 && offset > closest.offset) return { offset, element: row };
+          return closest;
+        },
+        { offset: Number.NEGATIVE_INFINITY, element: null }
+      ).element;
+
+    homeRowsEl.addEventListener("dragstart", (e) => {
+      const row = e.target.closest(".hs-row");
+      if (!row) return;
+      dragId = row.dataset.id;
+      row.classList.add("is-dragging");
+      if (e.dataTransfer) {
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/plain", dragId);
+      }
+    });
+
+    homeRowsEl.addEventListener("dragover", (e) => {
+      if (!dragId) return;
+      e.preventDefault();
+      const dragging = homeRowsEl.querySelector(".hs-row.is-dragging");
+      if (!dragging) return;
+      const after = rowAfterPointer(e.clientY);
+      if (after === dragging) return;
+      homeRowsEl.querySelectorAll(".hs-row.is-over").forEach((row) => row.classList.remove("is-over"));
+      if (after) {
+        after.classList.add("is-over");
+        homeRowsEl.insertBefore(dragging, after);
+      } else {
+        homeRowsEl.appendChild(dragging);
+      }
+    });
+
+    homeRowsEl.addEventListener("drop", (e) => {
+      e.preventDefault();
+    });
+
+    homeRowsEl.addEventListener("dragend", () => {
+      const dragging = homeRowsEl.querySelector(".hs-row.is-dragging");
+      if (dragging) dragging.classList.remove("is-dragging");
+      homeRowsEl.querySelectorAll(".hs-row.is-over").forEach((row) => row.classList.remove("is-over"));
+      if (!dragId) return;
+      dragId = null;
+      const byId = new Map(state.homeSections.map((section) => [section.id, section]));
+      state.homeSections = [...homeRowsEl.querySelectorAll(".hs-row")]
+        .map((row) => byId.get(row.dataset.id))
+        .filter(Boolean);
+      markDirty();
+      renderHomeSections();
+    });
+  }
+
+  const homeSectionAddSelect = $("homeSectionAdd");
+  if (homeSectionAddSelect) {
+    homeSectionAddSelect.addEventListener("change", () => {
+      $("homeSectionAddBtn").disabled = !homeSectionAddSelect.value;
+    });
+  }
+  const homeSectionAddBtn = $("homeSectionAddBtn");
+  if (homeSectionAddBtn) {
+    homeSectionAddBtn.addEventListener("click", () => {
+      const select = $("homeSectionAdd");
+      const category = select ? select.value : "";
+      if (!category) return;
+      state.homeSections.push({
+        id: homeSectionId(),
+        category,
+        mode: "grid",
+        columns: 4,
+        limit: 12,
+        enabled: true,
+      });
+      select.value = "";
+      markDirty();
+      renderHomeSections();
+    });
+  }
 
   /* ------------------------------------------------------------------ *
    * International Import Mode
@@ -3028,6 +3294,13 @@
     $("setCardBuyNow").checked = String(state.settings.card_buy_now_enabled) !== "false";
     $("setCardCheckoutPopup").checked = String(state.settings.card_checkout_popup_enabled) !== "false";
 
+    // home page fixed sections + category sections
+    Object.entries(HOME_FIXED_TOGGLES).forEach(([id, key]) => {
+      const el = $(id);
+      if (el) el.checked = String(state.settings[key]) !== "false";
+    });
+    renderHomeSections();
+
     // shipping enable switches + dim state (render er por, karon notun row
     // render hole tar input gulo abar disable korte hoy)
     Object.keys(TOGGLE_ID).forEach((key) => {
@@ -3082,6 +3355,15 @@
       hidden: false,
     }));
     state.categories = data.categories || [];
+    state.homeSections = (data.homeSections || []).map((row, index) => ({
+      id: String(row.id || "s" + (index + 1)),
+      category: String(row.category || ""),
+      mode: ["slider", "drag", "grid"].includes(row.mode) ? row.mode : "grid",
+      columns: [4, 5, 6].includes(Number(row.columns)) ? Number(row.columns) : 4,
+      limit: Math.min(24, Math.max(4, Number(row.limit) || 12)),
+      enabled: row.enabled !== false,
+    }));
+    state.homeSectionsLoaded = Array.isArray(data.homeSections);
     state.shipping = {
       manual: (data.shipping && data.shipping.manual) || [],
       areas: (data.shipping && data.shipping.areas) || [],
@@ -3242,8 +3524,12 @@
     btn.disabled = true;
     btn.textContent = "Saving…";
     try {
+      const settingsPayload = { ...state.settings };
+      if (state.homeSectionsLoaded) {
+        settingsPayload.home_category_sections = JSON.stringify(state.homeSections);
+      }
       const payload = {
-        settings: state.settings,
+        settings: settingsPayload,
         social: state.social,
         favicons: state.favicons.map((f) => ({ storeId: f.storeId, icon: f.icon })),
         shipping: {

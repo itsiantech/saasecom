@@ -26,6 +26,7 @@ const { buildTree } = require("../lib/categoryHelpers");
 const { CHECKOUT_FIELDS, FIELD_KEYS } = require("../lib/checkoutFields");
 const { encrypt, decrypt, maskSecret, isMasked } = require("../lib/secretBox");
 const { DEFAULT_TEMPLATES, TEMPLATE_LABELS } = require("../lib/emailTemplates");
+const { parseSections, normalizeSections } = require("../lib/homeSections");
 const { sendMail } = require("../lib/mailer");
 const { sendSms } = require("../lib/sms");
 const {
@@ -83,6 +84,10 @@ const SETTING_KEYS = [
   "card_add_to_cart_enabled",
   "card_buy_now_enabled",
   "card_checkout_popup_enabled",
+  // home page layout
+  "home_category_sections",
+  "home_hot_deals_enabled",
+  "home_new_products_enabled",
 ];
 
 const BOOL_KEYS = [
@@ -106,6 +111,8 @@ const BOOL_KEYS = [
   "card_add_to_cart_enabled",
   "card_buy_now_enabled",
   "card_checkout_popup_enabled",
+  "home_hot_deals_enabled",
+  "home_new_products_enabled",
 ];
 
 const DEFAULTS = {
@@ -139,6 +146,9 @@ const DEFAULTS = {
   card_add_to_cart_enabled: "true",
   card_buy_now_enabled: "true",
   card_checkout_popup_enabled: "true",
+  home_category_sections: "[]",
+  home_hot_deals_enabled: "true",
+  home_new_products_enabled: "true",
 };
 
 // je branding key gulo prottek dokan alada rakhbe — SiteSetting er field er sathe mapping
@@ -412,6 +422,7 @@ async function buildAdminPayload() {
   const fieldMap = new Map(fields.map((f) => [f.fieldKey, f]));
   return {
     settings,
+    homeSections: parseSections(settings.home_category_sections),
     social,
     shipping: { manual, areas, classes, intl, wd },
     categories: buildTree(cats),
@@ -492,10 +503,17 @@ async function adminSave(req, res) {
   // ---- settings (key/value) ----
   const ops = [];
   const branding = {};
+  let allowedHomeCategories = null;
+  if (settings.home_category_sections !== undefined) {
+    const owned = await Category.find({ store: storeId, deletedAt: null }).select("_id").lean();
+    allowedHomeCategories = owned.map((row) => String(row._id));
+  }
   SETTING_KEYS.forEach((key) => {
     if (settings[key] === undefined) return;
     let value = settings[key];
-    if (BOOL_KEYS.includes(key)) value = value === true || value === "true" ? "true" : "false";
+    if (key === "home_category_sections") {
+      value = JSON.stringify(normalizeSections(value, allowedHomeCategories));
+    } else if (BOOL_KEYS.includes(key)) value = value === true || value === "true" ? "true" : "false";
     else value = String(value == null ? "" : value);
     if (["logo_width", "logo_height"].includes(key)) {
       const n = Number(value);

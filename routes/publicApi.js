@@ -18,6 +18,7 @@ const { auth, optionalAuth } = require("../middleware/auth");
 router.use(publicStore);
 
 router.get("/store", catalog.getStoreInfo);
+router.get("/home", catalog.listHome);
 router.get("/categories", catalog.listCategories);
 router.get("/brands", catalog.listBrands);
 router.get("/products", catalog.listProducts);

@@ -18,6 +18,7 @@ const { getWholesaleSettings } = require("../lib/wholesaleSettings");
 const { getSettingsMap } = require("./settingsController");
 const { loadLiveFlashSales, bestFlashSale, publicFlashSale } = require("../services/promotions");
 const { toPaisa, fromPaisa } = require("../lib/money");
+const { parseSections } = require("../lib/homeSections");
 
 /* ------------------------------------------------------------------ *
  * Public catalog reads. Every query here is store-scoped BY HAND:
@@ -422,6 +423,97 @@ async function listFlashSales(req, res, next) {  try {
   }
 }
 
+const HOME_SECTION_PROJECTION =
+  "name title slug images price regularPrice salePrice stock categories soldCount moq hasVariations internationalConfig.sizes";
+
+function decoratedCard(product, ctx) {
+  const card = cardOf(product, ctx.international.enabled);
+  card.regularPrice = product.regularPrice || product.price || 0;
+  card.salePrice = product.salePrice || 0;
+  card.soldCount = product.soldCount || 0;
+  card.moq = product.moq || 1;
+  card.stock = Number(product.stock) || 0;
+  const flash = bestFlashSale({
+    sales: ctx.flashSales,
+    productId: product._id,
+    categoryIds: product.categories || [],
+    basePaisa: toPaisa(card.price),
+  });
+  if (flash) {
+    card.price = fromPaisa(flash.pricePaisa);
+    card.flashSale = { ...publicFlashSale(flash.sale), price: card.price };
+  }
+  if (ctx.wholesale.enabled) card.wholesaleBadge = ctx.wholesale.badgeText;
+  return withRating(card, ctx.ratings, product._id);
+}
+
+// Home page blocks the admin configured: category sections in saved order,
+// each with its own product limit, plus the two fixed-section toggles.
+async function listHome(req, res, next) {
+  try {
+    const store = req.publicStore;
+    const [map, international, wholesale, flashSales] = await Promise.all([
+      getSettingsMap(),
+      loadSettings(store._id),
+      getWholesaleSettings(store._id),
+      loadLiveFlashSales(store._id),
+    ]);
+
+    const flags = {
+      hotDeals: String(map.home_hot_deals_enabled) === "true",
+      newProducts: String(map.home_new_products_enabled) === "true",
+    };
+
+    const configured = parseSections(map.home_category_sections).filter((row) => row.enabled !== false);
+    if (!configured.length) return res.json({ sections: [], flags });
+
+    const cats = await Category.find({ store: store._id, deletedAt: null }).select("_id name slug").lean();
+    const byId = new Map(cats.map((row) => [String(row._id), row]));
+    const picked = configured
+      .map((row) => ({ ...row, categoryDoc: byId.get(String(row.category)) }))
+      .filter((row) => row.categoryDoc);
+
+    const productRows = await Promise.all(
+      picked.map(async (row) => {
+        const subtree = await getDescendantIds(Category, store._id, [row.categoryDoc._id]);
+        return Product.find({
+          store: store._id,
+          status: "published",
+          categories: { $in: subtree.map(objectIdOr).filter(Boolean) },
+        })
+          .select(HOME_SECTION_PROJECTION)
+          .sort({ soldCount: -1, createdAt: -1 })
+          .limit(Number(row.limit) || 12)
+          .lean();
+      })
+    );
+
+    const ratings = await ratingMapFor(store._id, productRows.flat().map((row) => row._id));
+    const ctx = { international, wholesale, flashSales, ratings };
+
+    res.json({
+      // a category with nothing published is hidden, not shown empty
+      sections: picked
+        .map((row, index) => ({
+          id: row.id,
+          mode: row.mode,
+          columns: row.columns,
+          limit: row.limit,
+          category: {
+            id: row.categoryDoc._id,
+            name: row.categoryDoc.name,
+            slug: row.categoryDoc.slug || String(row.categoryDoc._id),
+          },
+          products: productRows[index].map((product) => decoratedCard(product, ctx)),
+        }))
+        .filter((row) => row.products.length),
+      flags,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
 async function getStoreInfo(req, res, next) {
   try {
     const store = req.publicStore;
@@ -466,6 +558,7 @@ async function getStoreInfo(req, res, next) {
 
 module.exports = {
   getStoreInfo,
+  listHome,
   listCategories,
   listBrands,
   listProducts,
