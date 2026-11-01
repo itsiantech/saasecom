@@ -47,6 +47,32 @@ function cardOf(product, internationalEnabled) {
   return card;
 }
 
+// one grouped query per page instead of per card; aggregate() skips tenantPlugin,
+// so the store id stays part of the $match.
+async function ratingMapFor(storeId, productIds) {
+  if (!productIds.length) return new Map();
+  const rows = await Review.aggregate([
+    {
+      $match: {
+        store: new mongoose.Types.ObjectId(String(storeId)),
+        product: { $in: productIds.map((id) => new mongoose.Types.ObjectId(String(id))) },
+        status: "published",
+      },
+    },
+    { $group: { _id: "$product", count: { $sum: 1 }, sum: { $sum: "$rating" } } },
+  ]);
+  return new Map(
+    rows.map((row) => [String(row._id), { count: row.count, average: Math.round((row.sum / row.count) * 10) / 10 }])
+  );
+}
+
+function withRating(card, ratings, productId) {
+  const rating = ratings.get(String(productId));
+  card.ratingAverage = rating ? rating.average : 0;
+  card.ratingCount = rating ? rating.count : 0;
+  return card;
+}
+
 function baseFilter(storeId, extra = {}) {
   return { store: storeId, status: "published", ...extra };
 }
@@ -168,10 +194,11 @@ async function listProducts(req, res, next) {
       total = count;
     }
 
-    const [international, wholesale, flashSales] = await Promise.all([
+    const [international, wholesale, flashSales, ratings] = await Promise.all([
       loadSettings(store._id),
       getWholesaleSettings(store._id),
       loadLiveFlashSales(store._id),
+      ratingMapFor(store._id, rows.map((row) => row._id)),
     ]);
 
     res.json({
@@ -194,7 +221,7 @@ async function listProducts(req, res, next) {
           card.flashSale = { ...publicFlashSale(flash.sale), price: card.price };
         }
         if (wholesale.enabled) card.wholesaleBadge = wholesale.badgeText;
-        return card;
+        return withRating(card, ratings, product._id);
       }),
       pagination: { page, limit, total, pages: Math.ceil(total / limit) || 1 },
       filters: { sort: sortKey, query, category: categoryIds, brand: brandIds },
@@ -355,11 +382,16 @@ async function findRelated(storeId, product) {
   const rows = await Product.find(
     baseFilter(storeId, { _id: { $ne: product._id }, categories: { $in: product.categories || [] } })
   )
-    .select("title name slug images price regularPrice salePrice stock internationalConfig.sizes")
+    .select("title name slug images price regularPrice salePrice stock soldCount internationalConfig.sizes")
     .sort({ soldCount: -1, createdAt: -1 })
     .limit(12)
     .lean();
-  return rows.map((row) => cardOf(row, false));
+  const ratings = await ratingMapFor(storeId, rows.map((row) => row._id));
+  return rows.map((row) => {
+    const card = cardOf(row, false);
+    card.soldCount = row.soldCount || 0;
+    return withRating(card, ratings, row._id);
+  });
 }
 
 async function listHeroSlides(req, res, next) {

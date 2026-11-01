@@ -251,6 +251,15 @@ test("review can be written for own-store products only", async () => {
   const detail = await pub("/api/public/products/a-one", { slug: "shop-a" });
   assert.equal(detail.body.reviews.count, 1);
   assert.equal(detail.body.reviews.average, 4);
+
+  // listing cards carry the same rating so cards can draw stars without N+1 calls
+  const cards = await pub("/api/public/products", { slug: "shop-a" });
+  const aOne = cards.body.products.find((row) => String(row.id) === String(state.a1._id));
+  assert.equal(aOne.ratingAverage, 4);
+  assert.equal(aOne.ratingCount, 1);
+  const bCards = await pub("/api/public/products", { slug: "shop-b" });
+  assert.equal(bCards.body.products[0].ratingAverage, 0);
+  assert.equal(bCards.body.products[0].ratingCount, 0);
 });
 
 /* -------------------------------- wishlist ------------------------------- */
