@@ -16,6 +16,7 @@ const Product = require("../models/Product");
 const Order = require("../models/Order");
 const SiteSetting = require("../models/SiteSetting");
 const Settings = require("../models/Settings");
+const { EMPTY_STYLE } = require("../lib/dashboardStyle");
 
 const state = {};
 
@@ -142,6 +143,48 @@ test("an invoice prints the logo of the store that owns the order", async () => 
   assert.equal(res.status, 200);
   assert.match(res.text, /a-logo\.png/);
   assert.doesNotMatch(res.text, /b-logo\.png/);
+});
+
+test("dashboard style is stored per store and normalized", async () => {
+  const empty = await as("a", "get", "/api/settings/dashboard-style");
+  assert.equal(empty.status, 200, JSON.stringify(empty.body));
+  assert.deepEqual(empty.body.style, EMPTY_STYLE);
+  assert.ok(Array.isArray(empty.body.options.presets));
+  assert.ok(empty.body.options.presets.length >= 5);
+
+  const saved = await as("a", "put", "/api/settings/dashboard-style", {
+    body: {
+      style: {
+        bodyBg: "#ABCDEF",
+        fontFamily: "playfair",
+        activeWeight: "600",
+        activeText: "red",
+        evil: "<script>",
+      },
+    },
+  });
+  assert.equal(saved.status, 200, JSON.stringify(saved.body));
+  assert.equal(saved.body.style.bodyBg, "#abcdef");
+  assert.equal(saved.body.style.fontFamily, "playfair");
+  assert.equal(saved.body.style.activeWeight, "600");
+  assert.equal(saved.body.style.activeText, "");
+
+  const rows = await Settings.find({ key: /dashboardStyle$/ }).lean();
+  const own = rows.find((row) => row.key === `store:${state.storeA._id}:dashboardStyle`);
+  assert.ok(own, "style row is scoped to store A");
+  assert.equal(JSON.parse(own.value).bodyBg, "#abcdef");
+  assert.equal(rows.find((row) => row.key === `store:${state.storeB._id}:dashboardStyle`), undefined);
+  assert.equal(rows.find((row) => row.key === "dashboardStyle"), undefined);
+
+  const other = await as("b", "get", "/api/settings/dashboard-style");
+  assert.equal(other.status, 200, JSON.stringify(other.body));
+  assert.deepEqual(other.body.style, EMPTY_STYLE);
+
+  const shopper = await as("c", "get", "/api/settings/dashboard-style");
+  assert.equal(shopper.status, 403);
+
+  const anonymous = await request(state.app).get("/api/settings/dashboard-style").set("x-store-slug", "shop-a");
+  assert.equal(anonymous.status, 401);
 });
 
 test("store owners — even role admin — never reach the super admin APIs", async () => {

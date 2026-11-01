@@ -10,14 +10,19 @@
 /* ---- sidebar ---- */
 .sidebar {
   background: var(--bg-2);
-  border-right: 1px solid var(--line-soft);
   padding: 28px 20px;
   display: flex;
   flex-direction: column;
   position: sticky;
   top: 0;
   height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
+.sidebar::-webkit-scrollbar { display: none; }
 
 .sb-brand {
   display: flex;
@@ -80,9 +85,49 @@
 .sb-nav a:hover { background: rgba(255, 255, 255, 0.04); color: var(--text); }
 
 .sb-nav a.active {
-  background: var(--gold-soft);
-  color: var(--gold);
-  border: 1px solid var(--line);
+  background: var(--nav-active-bg, var(--bg));
+  color: var(--nav-active-text, var(--gold));
+  border: 0;
+}
+
+/* active tab: page-color bar that opens into the content area */
+.sb-nav > a.active,
+.nav-parent-row:has(.nav-item.active) {
+  position: relative;
+  z-index: 1;
+  margin-right: -21px;
+  border-radius: 999px 0 0 999px;
+  background: var(--nav-active-bg, var(--bg));
+}
+.sb-nav > a.active { padding-right: 34px; }
+
+.nav-parent-row:has(.nav-item.active) { padding-right: 12px; }
+.nav-parent-row:has(.nav-item.active) .nav-item.active {
+  background: none;
+  border-radius: 0;
+}
+
+.sb-nav > a.active::before,
+.sb-nav > a.active::after,
+.nav-parent-row:has(.nav-item.active)::before,
+.nav-parent-row:has(.nav-item.active)::after {
+  content: "";
+  position: absolute;
+  right: -1px;
+  width: 14px;
+  height: 14px;
+  background: var(--bg);
+  pointer-events: none;
+}
+.sb-nav > a.active::before,
+.nav-parent-row:has(.nav-item.active)::before {
+  top: -14px;
+  border-top-left-radius: 14px;
+}
+.sb-nav > a.active::after,
+.nav-parent-row:has(.nav-item.active)::after {
+  bottom: -14px;
+  border-bottom-left-radius: 14px;
 }
 
 /* ---- products group + sub menu ---- */
@@ -117,9 +162,18 @@
 .nav-sub .nav-item { padding: 10px 12px; font-size: 13px; }
 .nav-sub .nav-item svg { width: 16px; height: 16px; }
 
+/* menu look overrides from Style Settings (empty = switch is transparent) */
+.sb-nav a { background: var(--nav-menu-bg, transparent); }
+.sb-nav a svg { color: var(--nav-icon, currentColor); }
+.sb-nav a.active svg { color: var(--nav-active-icon, var(--nav-icon, currentColor)); }
+.sb-nav a.active {
+  font-family: var(--nav-active-font, inherit);
+  font-weight: var(--nav-active-weight, inherit);
+}
+
 /* parent ektu highlight thake jokhon tar child active */
 .nav-group.child-active > .nav-parent-row .nav-item { color: var(--text); }
-.nav-group.child-active > .nav-parent-row .nav-item.active { color: var(--gold); }
+.nav-group.child-active > .nav-parent-row .nav-item.active { color: var(--nav-active-text, var(--gold)); }
 
 .sb-bottom { margin-top: auto; border-top: 1px solid var(--line-soft); padding-top: 16px; }
 

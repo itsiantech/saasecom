@@ -19,6 +19,41 @@ router.get("/checkout", optionalAuth, ctrl.checkoutGet);
 // dashboard chrome (logo, title, favicon, footer)
 router.get("/site", auth, requireAdmin, ctrl.siteGet);
 
+/* ------------------------------------------------------------------ *
+ * Store admin dashboard look (Style Settings view).
+ * Kept in Settings with the per-store prefix so each store owns its own
+ * palette; the dashboard falls back to the dark/light theme when a value
+ * is empty.
+ * ------------------------------------------------------------------ */
+const Settings = require("../models/Settings");
+const { scopedKey } = require("../lib/settingsScope");
+const { STYLE_KEY, parseStyle, normalizeStyle, styleOptions } = require("../lib/dashboardStyle");
+
+router.get("/dashboard-style", auth, requireAdmin, async (req, res) => {
+  try {
+    if (!req.store) return res.status(400).json({ message: "Store pawa jayni" });
+    const doc = await Settings.findOne({ key: scopedKey(req.store._id, STYLE_KEY) });
+    res.json({ style: parseStyle(doc ? doc.value : ""), options: styleOptions() });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+router.put("/dashboard-style", auth, requireAdmin, async (req, res) => {
+  try {
+    if (!req.store) return res.status(400).json({ message: "Store pawa jayni" });
+    const style = normalizeStyle(req.body && req.body.style);
+    await Settings.findOneAndUpdate(
+      { key: scopedKey(req.store._id, STYLE_KEY) },
+      { $set: { value: JSON.stringify(style) } },
+      { upsert: true, setDefaultsOnInsert: true }
+    );
+    res.json({ style, options: styleOptions() });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
 // notification test + invoice preview (admin)
 router.post("/email/test", auth, requireAdmin, ctrl.emailTest);
 router.post("/sms/test", auth, requireAdmin, ctrl.smsTest);
