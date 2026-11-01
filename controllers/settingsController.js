@@ -79,6 +79,10 @@ const SETTING_KEYS = [
   "login_phone_enabled",
   // marketing
   "flash_sales_enabled",
+  // storefront product card
+  "card_add_to_cart_enabled",
+  "card_buy_now_enabled",
+  "card_checkout_popup_enabled",
 ];
 
 const BOOL_KEYS = [
@@ -99,6 +103,9 @@ const BOOL_KEYS = [
   "login_email_enabled",
   "login_phone_enabled",
   "flash_sales_enabled",
+  "card_add_to_cart_enabled",
+  "card_buy_now_enabled",
+  "card_checkout_popup_enabled",
 ];
 
 const DEFAULTS = {
@@ -129,6 +136,9 @@ const DEFAULTS = {
   login_email_enabled: "true",
   login_phone_enabled: "false",
   flash_sales_enabled: "true",
+  card_add_to_cart_enabled: "true",
+  card_buy_now_enabled: "true",
+  card_checkout_popup_enabled: "true",
 };
 
 // je branding key gulo prottek dokan alada rakhbe — SiteSetting er field er sathe mapping

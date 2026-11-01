@@ -770,6 +770,8 @@
             <button class="settings-menu-item" data-pane="footer" type="button">Footer</button>
             <button class="settings-menu-item" data-pane="social" type="button">Social media</button>
             <button class="settings-menu-item" data-pane="product" type="button">Product settings</button>
+            <div class="settings-menu-group">Home page</div>
+            <button class="settings-menu-item" data-pane="home" type="button">Product card</button>
             <button class="settings-menu-item" data-pane="international" type="button">International import mode <span class="off-badge" data-international-off hidden>Off</span></button>
             <div class="settings-menu-group">Wholesale</div>
             <button class="settings-menu-item" data-pane="wholesale" type="button">Wholesale mode <span class="off-badge" data-wholesale-off hidden>Off</span></button>
@@ -900,6 +902,31 @@
                   <div><strong>Image swatches</strong><p>Show the Image swatches section on Add Product</p></div>
                   <label class="pf-switch"><input type="checkbox" id="setSwatches" /><span class="slider"></span></label>
                 </div>
+              </div>
+            </section>
+
+            <!-- ===== HOME PAGE PRODUCT CARD ===== -->
+            <section class="settings-pane" data-pane="home">
+              <div class="pf-card">
+                <div class="pf-card-head">
+                  <div>
+                    <h3>Home page product card</h3>
+                    <span class="hint">Card action buttons</span>
+                  </div>
+                </div>
+                <div class="pf-toggle-row">
+                  <div><strong>Add to Cart</strong><p>Show an Add to Cart button on storefront product cards</p></div>
+                  <label class="pf-switch"><input type="checkbox" id="setCardAddToCart" /><span class="slider"></span></label>
+                </div>
+                <div class="pf-toggle-row">
+                  <div><strong>Buy Now</strong><p>Adds the item to cart, then opens checkout — quick popup when it is on, cart page when it is off</p></div>
+                  <label class="pf-switch"><input type="checkbox" id="setCardBuyNow" /><span class="slider"></span></label>
+                </div>
+                <div class="pf-toggle-row">
+                  <div><strong>Checkout popup</strong><p>Buy Now opens a quick order form instead of the cart page</p></div>
+                  <label class="pf-switch"><input type="checkbox" id="setCardCheckoutPopup" /><span class="slider"></span></label>
+                </div>
+                <p class="pf-note">Both buttons off hole card e kono action button thakbe na — card click korle product page khulbe. Stock shesh hole buttons disable thake. Ei same card home, shop ar related products e bebohar hoy.</p>
               </div>
             </section>
 
@@ -2619,7 +2646,7 @@
   <script src="/js/categories.js"></script>
   <script src="/js/brands.js"></script>
   <script src="/js/product-form.js"></script>
-  <script src="/js/settings-dashboard.js?v=5"></script>
+  <script src="/js/settings-dashboard.js?v=6"></script>
   <script src="/js/installments-admin.js?v=1"></script>
   <script src="/js/orders.js?v=2"></script>
   <script src="/js/product-catalog.js?v=1"></script>

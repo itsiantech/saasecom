@@ -359,6 +359,23 @@
   });
 
   /* ------------------------------------------------------------------ *
+   * Home page product card switches
+   * ------------------------------------------------------------------ */
+  const CARD_TOGGLES = {
+    setCardAddToCart: "card_add_to_cart_enabled",
+    setCardBuyNow: "card_buy_now_enabled",
+    setCardCheckoutPopup: "card_checkout_popup_enabled",
+  };
+  Object.entries(CARD_TOGGLES).forEach(([id, key]) => {
+    const el = $(id);
+    if (!el) return;
+    el.addEventListener("change", () => {
+      state.settings[key] = el.checked ? "true" : "false";
+      markDirty();
+    });
+  });
+
+  /* ------------------------------------------------------------------ *
    * International Import Mode
    * ------------------------------------------------------------------ */
   function intlNumberOr(value, fallback) {
@@ -3005,6 +3022,11 @@
     // product settings
     $("setAttributes").checked = String(state.settings.attributes_enabled) !== "false";
     $("setSwatches").checked = String(state.settings.swatches_enabled) !== "false";
+
+    // home page product card
+    $("setCardAddToCart").checked = String(state.settings.card_add_to_cart_enabled) !== "false";
+    $("setCardBuyNow").checked = String(state.settings.card_buy_now_enabled) !== "false";
+    $("setCardCheckoutPopup").checked = String(state.settings.card_checkout_popup_enabled) !== "false";
 
     // shipping enable switches + dim state (render er por, karon notun row
     // render hole tar input gulo abar disable korte hoy)

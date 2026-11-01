@@ -15,6 +15,7 @@ const Product = require("../models/Product");
 const Category = require("../models/Category");
 const Order = require("../models/Order");
 const Review = require("../models/Review");
+const Settings = require("../models/Settings");
 
 const state = {};
 
@@ -314,6 +315,22 @@ test("store info exposes only its own branding, contact and settings", async () 
 
   const other = await pub("/api/public/store", { domain: "bshop.example" });
   assert.equal(other.body.store.name, "Shop B");
+});
+
+// card buttons default on, and a store's own toggle must not leak to another store
+test("product card action flags are per store", async () => {
+  const defaults = await pub("/api/public/store", { slug: "shop-a" });
+  assert.deepEqual(defaults.body.card, { addToCart: true, buyNow: true, checkoutPopup: true });
+
+  await Settings.create({ key: `store:${state.storeA._id}:card_buy_now_enabled`, value: "false" });
+  const off = await pub("/api/public/store", { slug: "shop-a" });
+  assert.equal(off.body.card.buyNow, false);
+  assert.equal(off.body.card.addToCart, true);
+  assert.equal(off.body.card.checkoutPopup, true);
+
+  const other = await pub("/api/public/store", { domain: "bshop.example" });
+  assert.equal(other.body.card.buyNow, true);
+  await Settings.deleteMany({ key: `store:${state.storeA._id}:card_buy_now_enabled` });
 });
 
 test("categories tree and brands are store scoped", async () => {

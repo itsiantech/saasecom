@@ -55,6 +55,7 @@ function toCard(product, internationalEnabled) {
     price,
     isInternational: useInternational,
     inStock: stock > 0,
+    hasVariations: !!product.hasVariations,
   };
 }
 

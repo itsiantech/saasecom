@@ -15,6 +15,7 @@ const { readSliderLayout } = require("../lib/sliderSettings");
 const { buildTree, getDescendantIds } = require("../lib/categoryHelpers");
 const { toCard, brandingFor, loadSettings, escapeRegex } = require("./storefrontController");
 const { getWholesaleSettings } = require("../lib/wholesaleSettings");
+const { getSettingsMap } = require("./settingsController");
 const { loadLiveFlashSales, bestFlashSale, publicFlashSale } = require("../services/promotions");
 const { toPaisa, fromPaisa } = require("../lib/money");
 
@@ -156,7 +157,7 @@ async function listProducts(req, res, next) {
     if (req.query.featured === "1") match.isTopFeature = true;
     if (req.query.hotDeal === "1") match.isHotDeal = true;
 
-    const projection = "name title slug images price regularPrice salePrice stock categories brand soldCount moq isHotDeal isTopFeature internationalConfig.sizes createdAt";
+    const projection = "name title slug images price regularPrice salePrice stock categories brand soldCount moq isHotDeal isTopFeature hasVariations internationalConfig.sizes createdAt";
     let rows;
     let total;
 
@@ -178,7 +179,7 @@ async function listProducts(req, res, next) {
         },
         { $sort: SORTS[sortKey] },
         { $facet: {
-          rows: [{ $skip: (page - 1) * limit }, { $limit: limit }, { $project: { name: 1, title: 1, slug: 1, images: 1, price: 1, regularPrice: 1, salePrice: 1, stock: 1, categories: 1, brand: 1, soldCount: 1, moq: 1, isHotDeal: 1, isTopFeature: 1, "internationalConfig.sizes": 1, createdAt: 1, _effectivePrice: 1 } }],
+          rows: [{ $skip: (page - 1) * limit }, { $limit: limit }, { $project: { name: 1, title: 1, slug: 1, images: 1, price: 1, regularPrice: 1, salePrice: 1, stock: 1, categories: 1, brand: 1, soldCount: 1, moq: 1, isHotDeal: 1, isTopFeature: 1, hasVariations: 1, "internationalConfig.sizes": 1, createdAt: 1, _effectivePrice: 1 } }],
           count: [{ $count: "total" }],
         } },
       ];
@@ -382,7 +383,7 @@ async function findRelated(storeId, product) {
   const rows = await Product.find(
     baseFilter(storeId, { _id: { $ne: product._id }, categories: { $in: product.categories || [] } })
   )
-    .select("title name slug images price regularPrice salePrice stock soldCount internationalConfig.sizes")
+    .select("title name slug images price regularPrice salePrice stock soldCount hasVariations internationalConfig.sizes")
     .sort({ soldCount: -1, createdAt: -1 })
     .limit(12)
     .lean();
@@ -424,13 +425,14 @@ async function listFlashSales(req, res, next) {  try {
 async function getStoreInfo(req, res, next) {
   try {
     const store = req.publicStore;
-    const [site, faviconDoc, settingsDoc, international, wholesale, social] = await Promise.all([
+    const [site, faviconDoc, settingsDoc, international, wholesale, social, map] = await Promise.all([
       SiteSetting.findOne({ store: store._id }).lean(),
       ShopFavicon.findOne({ store: store._id }).lean(),
       StoreSettings.findOne({ storeId: store._id }).select("seo").lean(),
       loadSettings(store._id),
       getWholesaleSettings(store._id),
       SocialLink.find({ store: store._id }).sort({ sortOrder: 1, name: 1 }).lean(),
+      getSettingsMap(),
     ]);
     const seo = (settingsDoc && settingsDoc.seo) || {};
     res.json({
@@ -450,6 +452,11 @@ async function getStoreInfo(req, res, next) {
       },
       international,
       wholesale: { enabled: wholesale.enabled === true, badgeText: wholesale.badgeText, moq: wholesale.moq },
+      card: {
+        addToCart: String(map.card_add_to_cart_enabled) !== "false",
+        buyNow: String(map.card_buy_now_enabled) !== "false",
+        checkoutPopup: String(map.card_checkout_popup_enabled) !== "false",
+      },
       social: social.map((row) => ({ name: row.name, icon: row.icon || "", url: row.url })),
     });
   } catch (err) {
