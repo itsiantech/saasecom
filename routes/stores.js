@@ -8,22 +8,18 @@ const dns = require("dns").promises;
 const { auth } = require("../middleware/auth");
 const { RESERVED_SUBS, SUB_RE, normalizeDomain, platformDomain, platformTarget } = require("../lib/hostStore");
 const { storefrontUrl } = require("../lib/storefrontUrl");
+const { normalizeSlug, slugProblem } = require("../lib/storeSlug");
+const { createStoreWithSubscription } = require("../lib/storeProvisioning");
 
-// notun dokan khola (saas mode e plan soho)
+// notun dokan khola (saas mode e plan soho) — paid plan shudhu payment approve howar por
 router.post("/", auth, async (req, res) => {
   try {
     const { name, slug, planSlug } = req.body;
     if (!name) return res.status(400).json({ message: "Store er naam lagbe" });
 
-    let finalSlug = (slug || "").toLowerCase().trim();
-    if (!finalSlug) finalSlug = "store-" + randomBytes(3).toString("hex");
-
-    if (!/^[a-z0-9-]+$/.test(finalSlug)) {
-      return res.status(400).json({ message: "Slug e shudhu choto hater, number, hyphen hobe" });
-    }
-    if (RESERVED_SLUGS.has(finalSlug)) {
-      return res.status(400).json({ message: "এই ঠিকানাটি সংরক্ষিত, অন্য কিছু নিন" });
-    }
+    const finalSlug = normalizeSlug(slug) || "store-" + randomBytes(3).toString("hex");
+    const problem = slugProblem(finalSlug);
+    if (problem) return res.status(400).json({ message: problem });
     if (await Store.exists({ slug: finalSlug })) {
       return res.status(409).json({ message: "Ei slug age theke nie neya hoyeche" });
     }
@@ -38,23 +34,19 @@ router.post("/", auth, async (req, res) => {
       if (!plan) return res.status(404).json({ message: "Free plan pawa jayni" });
     }
 
-    const store = await Store.create({ name, slug: finalSlug, owner: req.user.id, plan: plan._id });
+    if (Number(plan.price) > 0 && req.user.role !== "superadmin") {
+      return res.status(402).json({
+        message: "এই প্যাকেজে পেমেন্ট লাগবে — পেমেন্ট করে দোকান খুলুন",
+        requiresPayment: true,
+        checkout: "/plan-checkout.html?plan=" + encodeURIComponent(plan.slug),
+      });
+    }
 
-    // Subscription create kora
-    const now = new Date();
-    const startDate = now;
-    const endDate = new Date(now.getTime() + plan.durationDays * 24 * 60 * 60 * 1000);
-    const trialEndsAt = plan.trialDays > 0
-      ? new Date(now.getTime() + plan.trialDays * 24 * 60 * 60 * 1000)
-      : null;
-
-    const subscription = await Subscription.create({
-      store: store._id,
-      plan: plan._id,
-      status: plan.trialDays > 0 ? "trial" : "active",
-      startDate,
-      endDate,
-      trialEndsAt,
+    const { store, subscription } = await createStoreWithSubscription({
+      ownerId: req.user.id,
+      name,
+      slug: finalSlug,
+      plan,
     });
 
     res.status(201).json({ store, subscription });
@@ -83,12 +75,6 @@ router.get("/mine", auth, async (req, res) => {
 });
 
 // je slug gulo app er nijer path — dokaner thikana e use kora jabe na
-const RESERVED_SLUGS = new Set([
-  "api", "css", "js", "uploads", "assets", "admin", "dashboard", "login", "register",
-  "setup", "portal", "account", "checkout", "product", "shop", "store", "home", "static",
-  "favicon", "robots", "health", "favicon.ico",
-]);
-
 // dokaner thikana (slug) poroborton — shudhu malik ba super admin
 router.patch("/:id/slug", auth, async (req, res) => {
   try {
@@ -101,12 +87,8 @@ router.patch("/:id/slug", auth, async (req, res) => {
     }
 
     const slug = String(req.body.slug || "").toLowerCase().trim();
-    if (!/^[a-z0-9][a-z0-9-]{1,62}$/.test(slug)) {
-      return res.status(400).json({ message: "ঠিকানা ৩-৬৩ অক্ষরের হতে হবে — ছোট হাতের অক্ষর, সংখ্যা বা hyphen" });
-    }
-    if (RESERVED_SLUGS.has(slug)) {
-      return res.status(400).json({ message: "এই ঠিকানাটি সংরক্ষিত, অন্য কিছু নিন" });
-    }
+    const problem = slugProblem(slug);
+    if (problem) return res.status(400).json({ message: problem });
     if (await Store.exists({ slug, _id: { $ne: store._id } })) {
       return res.status(409).json({ message: "এই ঠিকানা আগেই নেওয়া হয়েছে" });
     }

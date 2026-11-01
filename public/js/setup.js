@@ -9,6 +9,7 @@ const submitBtn = document.getElementById("submitBtn");
 const msg = document.getElementById("msg");
 
 let selectedPlan = null;
+let selectedPlanData = null;
 
 function showMsg(text, type) {
   msg.textContent = text;
@@ -91,6 +92,7 @@ function renderPlans(plans) {
       planList.querySelectorAll(".plan-card").forEach((c) => c.classList.remove("active"));
       card.classList.add("active");
       selectedPlan = card.dataset.slug;
+      selectedPlanData = plans.find((p) => p.slug === selectedPlan) || null;
     });
   });
 
@@ -102,6 +104,7 @@ function renderPlans(plans) {
   if (initial) {
     initial.classList.add("active");
     selectedPlan = initial.dataset.slug;
+    selectedPlanData = plans.find((p) => p.slug === selectedPlan) || null;
   }
 }
 
@@ -111,9 +114,21 @@ form.addEventListener("submit", async (e) => {
   showMsg("");
 
   const name = document.getElementById("sName").value.trim();
-  const slug = document.getElementById("sSlug").value.trim();
+  const slug = document.getElementById("sSlug").value.trim().toLowerCase();
   if (!name) return showMsg("দোকানের নাম লিখুন", "err");
   if (!selectedPlan) return showMsg("একটা প্ল্যান বেছে নিন", "err");
+
+  // paid plan: dokan ekhoni toiri na — prothome payment checkout
+  if (selectedPlanData && Number(selectedPlanData.price || 0) > 0) {
+    if (!/^[a-z0-9][a-z0-9-]{2,62}$/.test(slug)) {
+      return showMsg("ঠিকানা ৩–৬৩ অক্ষরের হতে হবে — ছোট হাতের অক্ষর, সংখ্যা বা hyphen", "err");
+    }
+    location.href =
+      "/plan-checkout.html?plan=" + encodeURIComponent(selectedPlan) +
+      "&name=" + encodeURIComponent(name) +
+      "&slug=" + encodeURIComponent(slug);
+    return;
+  }
 
   submitBtn.disabled = true;
   submitBtn.textContent = "তৈরি হচ্ছে...";

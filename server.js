@@ -26,6 +26,7 @@ app.use("/api/stores", require("./routes/stores"));
 app.use("/api/plans", require("./routes/plans"));
 app.use("/api/admin", require("./routes/admin"));
 app.use("/api/subscriptions", require("./routes/subscriptions"));
+app.use("/api/billing", require("./routes/billing"));
 app.use("/api/orders", require("./routes/orders"));
 app.use("/api/customers", require("./routes/customers"));
 // Isolated module: a supplier load failure must never stop the app from booting.
@@ -60,7 +61,7 @@ app.use("/api/hero-slides", require("./routes/heroSlides"));
 // ---- tenant host (amar-dokan.platform.com ba dokan.com) — ekhane shudhu storefront cholbe
 const { resolveHostStore } = require("./lib/hostStore");
 const { storefrontUrl } = require("./lib/storefrontUrl");
-const PANEL_PAGES = new Set(["/dashboard.html", "/admin.html", "/portal.html", "/setup.html", "/account.html", "/index.html"]);
+const PANEL_PAGES = new Set(["/dashboard.html", "/admin.html", "/portal.html", "/setup.html", "/account.html", "/index.html", "/plan-checkout.html"]);
 
 // store er frontend = Next.js themed site (Store Settings → Appearance er published theme)
 async function toStorefront(res, req, store) {

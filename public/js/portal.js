@@ -48,7 +48,12 @@
       location.href = LOGIN_URL;
       throw new Error("Session expire hoyeche");
     }
-    if (!res.ok) throw new Error((data && data.message) || "Request fail korlo");
+    if (!res.ok) {
+      const err = new Error((data && data.message) || "Request fail korlo");
+      err.status = res.status;
+      err.data = data;
+      throw err;
+    }
     return data;
   }
 
@@ -75,6 +80,7 @@
   /* --------------------------------------------------------------- stores */
   let stores = [];
   let plans = [];
+  let myPayments = [];
 
   const STATUS_LABEL = { active: "চালু", trial: "ট্রায়ালে", expired: "মেয়াদ শেষ", cancelled: "বাতিল" };
 
@@ -106,16 +112,19 @@
       ? (status === "trial" && sub.trialEndsAt ? fmtDate(sub.trialEndsAt) : fmtDate(sub.endDate)) + " পর্যন্ত"
       : "সাবস্ক্রিপশন নেই";
     const l = plan.limits || {};
+    const pendingPay = myPayments.find((p) => p.status === "pending" && p.storeId === String(store._id));
     return `
       <div class="pt-meta">
         <div class="pt-meta-row"><span>মেয়াদ</span><b>${esc(when)}${left !== null && left >= 0 ? " · " + left + " দিন বাকি" : ""}</b></div>
         ${sub ? '<div class="pt-meta-row"><span>প্যাকেজ নেওয়া তারিখ</span><b>' + esc(fmtDate(sub.startDate)) + "</b></div>" : ""}
+        ${pendingPay ? '<div class="pt-meta-row"><span>পেমেন্ট</span><b>' + esc(pendingPay.invoiceNo) + " · " + esc(pendingPay.planName) + " · যাচাইয়ের অপেক্ষায়</b></div>" : ""}
         <div class="pt-chips">
           <span class="pt-chip">প্রোডাক্ট ${esc(limit(l.products))}</span>
           <span class="pt-chip">অর্ডার ${esc(limit(l.orders))}</span>
           <span class="pt-chip">স্টাফ ${esc(limit(l.staffMembers))}</span>
           <span class="pt-chip">স্টোরেজ ${esc(limit(l.storageMB))}MB</span>
         </div>
+        ${pendingPay ? '<a class="pt-addr-link" href="' + esc(pendingPay.invoiceUrl) + '" target="_blank" rel="noopener">ইনভয়েস দেখুন →</a>' : ""}
       </div>`;
   }
 
@@ -259,13 +268,15 @@
 
   async function loadAll() {
     try {
-      const [mine, planList, cfg] = await Promise.all([
+      const [mine, planList, cfg, payList] = await Promise.all([
         api("/api/stores/mine"),
         api("/api/plans"),
         api("/api/stores/domain-config").catch(() => null),
+        api("/api/billing/payments/mine").catch(() => ({ payments: [] })),
       ]);
       stores = Array.isArray(mine) ? mine : [];
       plans = Array.isArray(planList) ? planList : [];
+      myPayments = (payList && payList.payments) || [];
       if (cfg && cfg.platformDomain !== undefined) domainCfg = cfg;
       renderStores();
       showPlanIntent();
@@ -331,6 +342,16 @@
     const opt = e.target.closest("[data-pick]");
     if (!opt || !modalStore) return;
     const planSlug = opt.dataset.pick;
+    const chosen = plans.find((p) => p.slug === planSlug);
+
+    // paid plan → payment checkout (approve hole plan bodlabe)
+    if (chosen && Number(chosen.price || 0) > 0) {
+      location.href =
+        "/plan-checkout.html?plan=" + encodeURIComponent(planSlug) +
+        "&store=" + encodeURIComponent(modalStore._id);
+      return;
+    }
+
     opt.disabled = true;
     try {
       await api("/api/subscriptions/upgrade?store=" + enc(modalStore.slug), {
@@ -341,6 +362,10 @@
       closeModal();
       await loadAll();
     } catch (err) {
+      if (err.data && err.data.checkout) {
+        location.href = err.data.checkout;
+        return;
+      }
       opt.disabled = false;
       toast(err.message, "err");
     }

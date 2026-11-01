@@ -33,6 +33,15 @@ router.post("/upgrade", auth, requireAdmin, async (req, res) => {
     const newPlan = await Plan.findOne({ slug: String(planSlug).toLowerCase(), active: true });
     if (!newPlan) return res.status(404).json({ message: "Plan pawa jayni" });
 
+    // paid plan: plan ekhoni bodlay na — payment approve hole subscription update hoy
+    if (Number(newPlan.price) > 0) {
+      return res.status(402).json({
+        message: "এই প্যাকেজের জন্য পেমেন্ট লাগবে",
+        requiresPayment: true,
+        checkout: "/plan-checkout.html?plan=" + encodeURIComponent(newPlan.slug) + "&store=" + String(req.store._id),
+      });
+    }
+
     let subscription = await Subscription.findOne({ store: req.store._id });
     const now = new Date();
 

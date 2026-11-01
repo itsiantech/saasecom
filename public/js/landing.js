@@ -13,7 +13,11 @@
   const esc = (s) =>
     String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-  const orderHref = (slug) => "/login.html?next=" + encodeURIComponent("/portal.html?plan=" + slug);
+  // free → setup (agei chilo), paid → payment checkout (login lagle oi page handle kore)
+  const orderHref = (plan) =>
+    Number(plan.price || 0) > 0
+      ? "/plan-checkout.html?plan=" + encodeURIComponent(plan.slug)
+      : "/login.html?next=" + encodeURIComponent("/portal.html?plan=" + plan.slug);
 
   const num = (n) => Number(n || 0).toLocaleString("en-IN");
   const limit = (n) => (Number(n) === 0 ? "আনলিমিটেড" : num(n));
@@ -50,7 +54,7 @@
             .map((r) => `<li class="${r.on ? "" : "off"}"><span class="ld-tick">${r.on ? "✓" : ""}</span>${esc(r.text)}</li>`)
             .join("")}
         </ul>
-        <a class="ld-btn ld-btn-primary ld-card-cta" href="${orderHref(plan.slug)}">
+        <a class="ld-btn ld-btn-primary ld-card-cta" href="${orderHref(plan)}">
           ${price === 0 ? "ফ্রি দোকান খুলুন" : "এই প্যাকেজ নিন"}
         </a>
       </article>`;

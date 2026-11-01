@@ -7,8 +7,8 @@ const { tenantStorage } = require("../lib/tenantContext");
 const { resolveHostStore } = require("../lib/hostStore");
 const { fromDomainHeader } = require("./publicStore");
 
-// store chara kaj cholbe e api gulote (signup/setup er somoy)
-const STORELESS_OK = ["/api/auth", "/api/plans", "/api/settings", "/api/admin", "/api/stores"];
+// store chara kaj cholbe e api gulote (signup/setup/billing er somoy)
+const STORELESS_OK = ["/api/auth", "/api/plans", "/api/settings", "/api/admin", "/api/stores", "/api/billing"];
 
 async function saasEnabled() {
   if (process.env.APP_MODE === "single") return false;

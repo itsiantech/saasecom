@@ -29,6 +29,7 @@ async function api(url, options = {}) {
 
 function toast(text, type) {
   const el = $("toast");
+  if (!el) return;
   el.textContent = text;
   el.className = "toast show " + (type || "");
   clearTimeout(el._t);
@@ -66,7 +67,7 @@ const fmtLimit = (n) => (n === 0 ? "∞" : Number(n || 0).toLocaleString("en-IN"
     return;
   }
 
-  await Promise.all([loadStats(), loadPlans(), loadStores(), loadSaas()]);
+  await Promise.all([loadStats(), loadPlans(), loadStores(), loadSaas(), loadTheme(), loadPayments(), loadBillingSettings()]);
 })();
 
 /* ---------- stats ---------- */
@@ -326,6 +327,672 @@ $("saasToggle").addEventListener("change", async (e) => {
   } catch (err) {
     toast(err.message, "err");
     e.target.checked = !e.target.checked;
+  }
+});
+
+/* ---------- admin design colors ---------- */
+const THEME_CACHE_KEY = "luxe_admin_theme_vars";
+
+const THEME_FIELDS = [
+  { group: "বডি ও কার্ড", items: [
+    { key: "bg", label: "বডি ব্যাকগ্রাউন্ড" },
+    { key: "panel", label: "কার্ড / প্যানেল ব্যাকগ্রাউন্ড" },
+    { key: "line", label: "বর্ডার / লাইন" },
+  ]},
+  { group: "সাইডবার", items: [
+    { key: "sideBg", label: "সাইডবার ব্যাকগ্রাউন্ড" },
+    { key: "sideText", label: "সাইডবার টেক্সট" },
+    { key: "sideMenu", label: "মেনু কালার (আইডল)" },
+    { key: "sideHover", label: "মেনু হোভার" },
+  ]},
+  { group: "টেক্সট", items: [
+    { key: "text", label: "মূল টেক্সট" },
+    { key: "muted", label: "সেকেন্ডারি টেক্সট" },
+  ]},
+  { group: "অ্যাকসেন্ট ও বাটন", items: [
+    { key: "accent", label: "অ্যাকসেন্ট (অ্যাকটিভ মেনু)" },
+    { key: "icon", label: "আইকন কালার" },
+    { key: "btnBg", label: "বাটন কালার" },
+  ]},
+];
+
+const THEME_PRESETS = {
+  "মিডনাইট ব্লু (ডিফল্ট)": {
+    bg: "#070d17", panel: "#0e1a29", line: "#1d3149", sideBg: "#091320", sideText: "#e6eef7",
+    sideMenu: "#93a8bd", sideHover: "#ffffff", text: "#e6eef7", muted: "#8aa0b6",
+    accent: "#4d8dff", icon: "#8aa0b6", btnBg: "#4d8dff",
+  },
+  "ডার্ক গোল্ড (আগের)": {
+    bg: "#0a0a10", panel: "#12121b", line: "#232330", sideBg: "#0e0e16", sideText: "#ece9e2",
+    sideMenu: "#98917f", sideHover: "#ece9e2", text: "#ece9e2", muted: "#98917f",
+    accent: "#d4af7a", icon: "#98917f", btnBg: "#d4af7a",
+  },
+  "লাইট": {
+    bg: "#f6f4ef", panel: "#ffffff", line: "#e2ddd2", sideBg: "#ffffff", sideText: "#1d1b16",
+    sideMenu: "#6b6558", sideHover: "#1d1b16", text: "#1d1b16", muted: "#6f6a5e",
+    accent: "#a2743a", icon: "#6f6a5e", btnBg: "#a2743a",
+  },
+  "ইমারেল্ড": {
+    bg: "#06110d", panel: "#0b1f18", line: "#1c3a2e", sideBg: "#081813", sideText: "#e5f2ea",
+    sideMenu: "#8aab9b", sideHover: "#ffffff", text: "#e5f2ea", muted: "#8aab9b",
+    accent: "#3fbf87", icon: "#8aab9b", btnBg: "#3fbf87",
+  },
+};
+
+const THEME_DEFAULT = { ...THEME_PRESETS["মিডনাইট ব্লু (ডিফল্ট)"] };
+const THEME_KEY_LIST = THEME_FIELDS.reduce((keys, group) => keys.concat(group.items.map((f) => f.key)), []);
+let adminTheme = { ...THEME_DEFAULT };
+let activePreset = "মিডনাইট ব্লু (ডিফল্ট)";
+
+function matchPreset(theme) {
+  return Object.keys(THEME_PRESETS).find((name) =>
+    THEME_KEY_LIST.every((key) => String(THEME_PRESETS[name][key]).toLowerCase() === String(theme[key] || "").toLowerCase())
+  ) || null;
+}
+
+function hexRgb(hex) {
+  const h = String(hex || "").replace("#", "");
+  const n = parseInt(h.length === 3 ? h.split("").map((c) => c + c).join("") : h, 16);
+  if (Number.isNaN(n)) return { r: 0, g: 0, b: 0 };
+  return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+}
+
+function themeMix(a, b, t) {
+  const A = hexRgb(a);
+  const B = hexRgb(b);
+  const to = (v) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, "0");
+  return "#" + to(A.r + (B.r - A.r) * t) + to(A.g + (B.g - A.g) * t) + to(A.b + (B.b - A.b) * t);
+}
+
+function themeRgba(hex, alpha) {
+  const c = hexRgb(hex);
+  return "rgba(" + c.r + "," + c.g + "," + c.b + "," + alpha + ")";
+}
+
+function themeLum(hex) {
+  const c = hexRgb(hex);
+  const f = (v) => {
+    const s = v / 255;
+    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+  };
+  return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b);
+}
+
+function themeRatio(a, b) {
+  const l1 = themeLum(a);
+  const l2 = themeLum(b);
+  const hi = Math.max(l1, l2);
+  const lo = Math.min(l1, l2);
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+function themeVars(theme) {
+  const t = theme;
+  const btnText = themeRatio(t.btnBg, "#ffffff") >= themeRatio(t.btnBg, "#17110a") ? "#ffffff" : "#17110a";
+  return {
+    "--bg": t.bg,
+    "--bg-2": themeMix(t.panel, t.bg, 0.35),
+    "--panel": t.panel,
+    "--panel-2": themeMix(t.panel, t.text, 0.04),
+    "--line": t.line,
+    "--line-soft": themeMix(t.line, t.panel, 0.45),
+    "--gold": t.accent,
+    "--gold-2": themeMix(t.accent, "#000000", 0.18),
+    "--gold-soft": themeRgba(t.accent, 0.12),
+    "--text": t.text,
+    "--muted": t.muted,
+    "--side-bg": t.sideBg,
+    "--side-text": t.sideText,
+    "--side-menu": t.sideMenu,
+    "--side-hover": t.sideHover,
+    "--side-hover-bg": themeRgba(t.sideHover, 0.08),
+    "--icon": t.icon,
+    "--btn-bg": t.btnBg,
+    "--btn-text": btnText,
+    "--input-bg": themeMix(t.panel, t.text, 0.06),
+    "--row-hover": themeRgba(t.accent, 0.045),
+    "--accent-glow": themeRgba(t.accent, 0.14),
+  };
+}
+
+function applyTheme(theme) {
+  const vars = themeVars(theme);
+  const root = document.documentElement;
+  Object.keys(vars).forEach((key) => root.style.setProperty(key, vars[key]));
+  try { localStorage.setItem(THEME_CACHE_KEY, JSON.stringify(vars)); } catch { /* storage off */ }
+  renderThemeChecks(theme);
+}
+
+function renderThemeChecks(theme) {
+  const el = $("themeChecks");
+  if (!el) return;
+  const checks = [
+    ["টেক্সট / বডি", theme.text, theme.bg, 4.5],
+    ["টেক্সট / কার্ড", theme.text, theme.panel, 4.5],
+    ["সেকেন্ডারি / কার্ড", theme.muted, theme.panel, 3],
+    ["মেনু / সাইডবার", theme.sideMenu, theme.sideBg, 3.5],
+  ];
+  el.innerHTML = checks
+    .map(([label, fg, bg, min]) => {
+      const r = themeRatio(fg, bg);
+      const ok = r >= min;
+      return '<span class="theme-chip ' + (ok ? "ok" : "warn") + '">' + esc(label) + " · " + r.toFixed(1) + ":1</span>";
+    })
+    .join("");
+}
+
+function syncThemeInputs() {
+  document.querySelectorAll(".theme-sw input[data-key]").forEach((el) => {
+    el.value = adminTheme[el.dataset.key];
+    el.closest(".theme-sw").style.background = adminTheme[el.dataset.key];
+  });
+  document.querySelectorAll(".theme-hex[data-key]").forEach((el) => {
+    if (document.activeElement !== el) el.value = adminTheme[el.dataset.key].toUpperCase();
+  });
+  document.querySelectorAll(".preset-btn").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.preset === activePreset);
+  });
+}
+
+function buildThemeControls() {
+  const groups = $("themeGroups");
+  if (groups) {
+    groups.innerHTML = THEME_FIELDS.map((group) =>
+      '<div class="theme-group"><div class="theme-group-title">' + esc(group.group) + "</div>" +
+      group.items.map((f) =>
+        '<div class="theme-row">' +
+          '<span class="theme-sw"><input type="color" data-key="' + f.key + '" aria-label="' + esc(f.label) + '" /></span>' +
+          '<label for="theme-hex-' + f.key + '">' + esc(f.label) + "</label>" +
+          '<input class="theme-hex" id="theme-hex-' + f.key + '" data-key="' + f.key + '" type="text" maxlength="7" spellcheck="false" />' +
+        "</div>"
+      ).join("") + "</div>"
+    ).join("");
+
+    groups.querySelectorAll(".theme-sw input").forEach((el) => {
+      el.addEventListener("input", () => setThemeColor(el.dataset.key, el.value));
+    });
+    groups.querySelectorAll(".theme-hex").forEach((el) => {
+      el.addEventListener("input", () => {
+        const v = el.value.trim().replace(/^([0-9a-f]{6})$/i, "#$1");
+        if (/^#[0-9a-f]{6}$/i.test(v)) setThemeColor(el.dataset.key, v);
+      });
+    });
+  }
+
+  const presets = $("themePresets");
+  if (presets) {
+    presets.innerHTML = Object.keys(THEME_PRESETS)
+      .map((name) => '<button class="preset-btn" type="button" data-preset="' + esc(name) + '">' + esc(name) + "</button>")
+      .join("");
+    presets.querySelectorAll(".preset-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        activePreset = btn.dataset.preset;
+        adminTheme = { ...THEME_PRESETS[activePreset] };
+        applyTheme(adminTheme);
+        syncThemeInputs();
+        themeNote("প্রিসেট বাছা হয়েছে — সেভ করলে থেকে যাবে", "");
+      });
+    });
+  }
+
+  const saveBtn = $("themeSaveBtn");
+  if (saveBtn) saveBtn.addEventListener("click", saveTheme);
+  const resetBtn = $("themeResetBtn");
+  if (resetBtn) resetBtn.addEventListener("click", () => {
+    activePreset = "মিডনাইট ব্লু (ডিফল্ট)";
+    adminTheme = { ...THEME_DEFAULT };
+    applyTheme(adminTheme);
+    syncThemeInputs();
+    themeNote("ডিফল্টে ফেরানো হলো — সেভ চাপো", "");
+  });
+}
+
+function setThemeColor(key, value) {
+  adminTheme[key] = String(value).toLowerCase();
+  activePreset = null;
+  applyTheme(adminTheme);
+  syncThemeInputs();
+  themeNote("সেভ হয়নি", "");
+}
+
+let themeNoteTimer;
+function themeNote(text, type) {
+  const el = $("themeNote");
+  if (!el) return;
+  el.textContent = text;
+  el.className = "theme-note " + (type || "");
+  clearTimeout(themeNoteTimer);
+  themeNoteTimer = setTimeout(() => { el.textContent = ""; el.className = "theme-note"; }, 2800);
+}
+
+async function loadTheme() {
+  try {
+    const data = await api("/api/admin/settings/theme");
+    adminTheme = { ...THEME_DEFAULT, ...(data && data.theme) };
+    activePreset = matchPreset(adminTheme);
+    applyTheme(adminTheme);
+  } catch {
+    applyTheme(adminTheme);
+  }
+  buildThemeControls();
+  syncThemeInputs();
+}
+
+async function saveTheme() {
+  const btn = $("themeSaveBtn");
+  if (!btn) return;
+  btn.disabled = true;
+  btn.textContent = "সেভ হচ্ছে...";
+  try {
+    const data = await api("/api/admin/settings/theme", {
+      method: "PUT",
+      body: JSON.stringify({ theme: adminTheme }),
+    });
+    adminTheme = { ...THEME_DEFAULT, ...(data && data.theme) };
+    activePreset = matchPreset(adminTheme);
+    applyTheme(adminTheme);
+    syncThemeInputs();
+    themeNote("কালার সেভ হয়েছে", "ok");
+  } catch (err) {
+    themeNote(err.message, "err");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "সেভ করুন";
+  }
+}
+
+/* ---------- platform payments ---------- */
+const PAY_STATUS = {
+  pending: { label: "অপেক্ষমাণ", cls: "warn" },
+  approved: { label: "অনুমোদিত", cls: "on" },
+  rejected: { label: "বাতিল", cls: "rejected" },
+};
+
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+function fmtDate(value) {
+  const d = value ? new Date(value) : null;
+  if (!d || isNaN(d)) return "—";
+  return d.getDate() + " " + MONTHS[d.getMonth()] + " " + d.getFullYear();
+}
+
+const num = (n) => Number(n || 0).toLocaleString("en-IN");
+
+let payRows = [];
+let payStatus = "pending";
+let payQuery = "";
+let payDebounce;
+
+async function loadPayments() {
+  const params = new URLSearchParams();
+  if (payStatus) params.set("status", payStatus);
+  if (payQuery) params.set("q", payQuery);
+  try {
+    const data = await api("/api/admin/billing/payments?" + params.toString());
+    payRows = data.payments || [];
+    renderPayments(data.counts || {});
+  } catch (e) {
+    toast(e.message, "err");
+  }
+}
+
+function renderPayments(counts) {
+  $("payCount").textContent =
+    "যাচাইয়ের অপেক্ষায় " + num(counts.pending) + " টি · অনুমোদিত " + num(counts.approved) + " টি";
+
+  const tbody = $("payBody");
+  if (!payRows.length) {
+    tbody.innerHTML = '<tr><td colspan="8"><div class="empty">এই তালিকায় কোনো পেমেন্ট নেই</div></td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = payRows
+    .map((row) => {
+      const st = PAY_STATUS[row.status] || { label: row.status, cls: "off" };
+      const owner = row.user ? row.user.name + (row.user.email ? " · " + row.user.email : "") : "—";
+      const storeLine = row.storeSlug ? "/" + row.storeSlug : "অনুমোদনের পর তৈরি হবে";
+      const actions = [
+        '<a class="btn-mini link" href="' + esc(row.invoiceUrl) + '" target="_blank" rel="noopener">ইনভয়েস</a>',
+        '<a class="btn-mini link" href="' + esc(row.invoiceUrl) + '" target="_blank" rel="noopener">ডাউনলোড</a>',
+      ];
+      if (row.status === "pending") {
+        actions.push('<button class="btn-mini ok" type="button" data-approve="' + esc(row.id) + '">অনুমোদন</button>');
+        actions.push('<button class="btn-mini no" type="button" data-reject="' + esc(row.id) + '">বাতিল</button>');
+      }
+
+      return `
+      <tr>
+        <td>
+          <div class="pay-inv">${esc(row.invoiceNo)}</div>
+          <div class="pay-when">${esc(fmtDate(row.invoiceDate))}</div>
+        </td>
+        <td>
+          <div class="pay-store">${esc(row.storeName)}</div>
+          <div class="pay-sub">${esc(storeLine)}</div>
+          <div class="pay-sub" title="${esc(owner)}">${esc(owner)}</div>
+        </td>
+        <td>
+          <div>${esc(row.planName || "—")}</div>
+          <div class="pay-sub">${row.kind === "existing" ? "আপগ্রেড" : "নতুন দোকান"}</div>
+        </td>
+        <td class="pay-amount">৳ ${num(row.amount)}</td>
+        <td class="pay-method">${esc(row.methodLabel || row.method)}
+          <small>${esc(row.trxid || "—")}</small>
+        </td>
+        <td>
+          <span class="badge ${st.cls}">${esc(st.label)}</span>
+          <div class="pay-sub">${esc(fmtDate(row.nextDueDate))}</div>
+        </td>
+        <td><div class="pay-actions">${actions.join("")}</div></td>
+      </tr>`;
+    })
+    .join("");
+}
+
+$("payTabs").addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-status]");
+  if (!btn) return;
+  payStatus = btn.dataset.status;
+  document.querySelectorAll(".pay-tab").forEach((t) => t.classList.toggle("on", t === btn));
+  loadPayments();
+});
+
+$("paySearch").addEventListener("input", (e) => {
+  const value = e.target.value.trim();
+  clearTimeout(payDebounce);
+  payDebounce = setTimeout(() => {
+    payQuery = value;
+    loadPayments();
+  }, 350);
+});
+
+$("payBody").addEventListener("click", async (e) => {
+  const approveBtn = e.target.closest("[data-approve]");
+  if (approveBtn) {
+    if (!confirm("এই পেমেন্ট অনুমোদন করবেন? দোকান/প্ল্যান সাথে সাথে আপডেট হবে।")) return;
+    approveBtn.disabled = true;
+    try {
+      const out = await api("/api/admin/billing/payments/" + approveBtn.dataset.approve + "/approve", {
+        method: "PUT",
+      });
+      toast(
+        out.slugAdjusted
+          ? "অনুমোদিত — ঠিকানাটি নেওয়া ছিল, /" + out.storeSlug + " দেওয়া হয়েছে"
+          : "পেমেন্ট অনুমোদিত হয়েছে",
+        "ok"
+      );
+      await Promise.all([loadPayments(), loadStores(), loadStats()]);
+    } catch (err) {
+      toast(err.message, "err");
+      approveBtn.disabled = false;
+    }
+    return;
+  }
+
+  const rejectBtn = e.target.closest("[data-reject]");
+  if (rejectBtn) openReject(rejectBtn.dataset.reject);
+});
+
+/* ---------- reject modal ---------- */
+let rejectId = null;
+
+function openReject(id) {
+  const row = payRows.find((r) => r.id === id);
+  rejectId = id;
+  $("rejectSub").textContent = row ? row.invoiceNo + " · " + row.storeName + " · ৳ " + num(row.amount) : "";
+  $("rejectReason").value = "";
+  $("rejectMsg").textContent = "";
+  $("rejectMsg").className = "msg";
+  $("rejectOverlay").classList.add("open");
+  $("rejectReason").focus();
+}
+
+function closeReject() {
+  $("rejectOverlay").classList.remove("open");
+  rejectId = null;
+}
+
+$("rejectCancelBtn").addEventListener("click", closeReject);
+$("rejectOverlay").addEventListener("click", (e) => {
+  if (e.target === $("rejectOverlay")) closeReject();
+});
+
+$("rejectSubmitBtn").addEventListener("click", async () => {
+  if (!rejectId) return;
+  const reason = $("rejectReason").value.trim();
+  const msg = $("rejectMsg");
+  if (reason.length < 3) {
+    msg.textContent = "বাতিলের কারণ লিখুন";
+    msg.className = "msg err";
+    return;
+  }
+
+  const btn = $("rejectSubmitBtn");
+  btn.disabled = true;
+  try {
+    await api("/api/admin/billing/payments/" + rejectId + "/reject", {
+      method: "PUT",
+      body: JSON.stringify({ reason }),
+    });
+    toast("পেমেন্ট বাতিল হয়েছে", "ok");
+    closeReject();
+    await loadPayments();
+  } catch (err) {
+    msg.textContent = err.message;
+    msg.className = "msg err";
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+/* ---------- payment settings ---------- */
+const BILLING_CARDS = [
+  {
+    id: "bkash",
+    title: "বিকাশ",
+    fields: [
+      { key: "number", label: "নম্বর", placeholder: "01XXXXXXXXX" },
+      { key: "accountName", label: "অ্যাকাউন্টের নাম", placeholder: "LUXE" },
+      { key: "instructions", label: "ইন্সট্রাকশন (কাস্টমার যা পড়বে)", textarea: true, placeholder: "সেন্ড মানি করে ট্রানজেকশন আইডি দিন" },
+    ],
+  },
+  {
+    id: "nagad",
+    title: "নগদ",
+    fields: [
+      { key: "number", label: "নম্বর", placeholder: "01XXXXXXXXX" },
+      { key: "accountName", label: "অ্যাকাউন্টের নাম", placeholder: "LUXE" },
+      { key: "instructions", label: "ইন্সট্রাকশন (কাস্টমার যা পড়বে)", textarea: true },
+    ],
+  },
+  {
+    id: "bank",
+    title: "ব্যাংক ট্রান্সফার",
+    fields: [
+      { key: "bankName", label: "ব্যাংকের নাম", placeholder: "Islami Bank" },
+      { key: "accountName", label: "অ্যাকাউন্টের নাম" },
+      { key: "accountNumber", label: "অ্যাকাউন্ট নম্বর" },
+      { key: "branch", label: "শাখা" },
+      { key: "routingNumber", label: "রাউটিং নম্বর" },
+      { key: "instructions", label: "ইন্সট্রাকশন (কাস্টমার যা পড়বে)", textarea: true },
+    ],
+  },
+  {
+    id: "qr",
+    title: "বাংলা QR",
+    fields: [
+      { key: "accountName", label: "অ্যাকাউন্টের নাম" },
+      { key: "imageUrl", label: "QR ছবি (আপলোড বা লিংক)", placeholder: "/uploads/..." },
+      { key: "instructions", label: "ইন্সট্রাকশন (কাস্টমার যা পড়বে)", textarea: true },
+    ],
+    qr: true,
+  },
+];
+
+function bmField(id, f, value) {
+  const attrs =
+    ' data-field="' + f.key + '" placeholder="' + esc(f.placeholder || "") + '" spellcheck="false"';
+  const control = f.textarea
+    ? '<textarea' + attrs + ">" + esc(value) + "</textarea>"
+    : '<input type="text"' + attrs + ' value="' + esc(value) + '" />';
+  return '<div class="field"><label>' + esc(f.label) + "</label>" + control + "</div>";
+}
+
+function billingCard(m, data) {
+  const on = Boolean(data.enabled);
+  const qr = m.qr
+    ? '<div class="bm-qr">' +
+      (data.imageUrl
+        ? '<img id="bmQrImg" src="' + esc(data.imageUrl) + '" alt="QR" />'
+        : '<div class="bm-qr-empty" id="bmQrImg">QR<br />নেই</div>') +
+      '<div><input type="file" id="bmQrFile" accept="image/*" style="font-size:12px;width:100%;" />' +
+      '<p class="billing-hint" style="margin-top:6px;">QR ছবি আপলোড করুন (2MB এর নিচে) — অথবা নিচে লিংক বসান</p></div>' +
+      "</div>"
+    : "";
+
+  return (
+    '<div class="bm-card' + (on ? " on" : "") + '" data-card="' + m.id + '">' +
+      '<div class="bm-head"><h4><span class="bm-dot"></span>' + esc(m.title) + "</h4>" +
+        '<label class="switch"><input type="checkbox" data-method="' + m.id + '"' + (on ? " checked" : "") + ' /><span class="slider"></span></label>' +
+      "</div>" +
+      '<div class="bm-fields">' +
+        qr +
+        m.fields.map((f) => bmField(m.id, f, data[f.key] || "")).join("") +
+      "</div>" +
+    "</div>"
+  );
+}
+
+function billingApiCard(api) {
+  const on = Boolean(api.enabled);
+  const field = (key, label, value, placeholder) =>
+    '<div class="field"><label>' + esc(label) + "</label>" +
+    '<input type="text" data-api="' + key + '" value="' + esc(value) + '" placeholder="' + esc(placeholder || "") + '" spellcheck="false" /></div>';
+
+  return (
+    '<div class="bm-card api' + (on ? " on" : "") + '" data-card="api">' +
+      '<div class="bm-head"><h4><span class="bm-dot"></span>API পেমেন্ট গেটওয়ে (ফেজ ২)</h4>' +
+        '<label class="switch"><input type="checkbox" data-method="api"' + (on ? " checked" : "") + ' /><span class="slider"></span></label>' +
+      "</div>" +
+      '<div class="bm-fields">' +
+        '<div class="bm-2">' +
+          field("provider", "গেটওয়ে", api.provider, "bkash / sslcommerz") +
+          '<div class="field"><label>মোড</label><select data-api="sandbox" style="width:100%;background:var(--panel);border:1px solid var(--line-soft);border-radius:9px;padding:10px 12px;color:var(--text);font-size:13.5px;">' +
+            '<option value="1"' + (api.sandbox !== false ? " selected" : "") + ">Sandbox</option>" +
+            '<option value="0"' + (api.sandbox === false ? " selected" : "") + ">Live</option>" +
+          "</select></div>" +
+        "</div>" +
+        '<div class="bm-2">' +
+          field("publicKey", "Public / App key", api.publicKey, "••••") +
+          field("secretKey", "Secret key", api.secretKey, "••••") +
+        "</div>" +
+        '<div class="field"><label>নোট</label><textarea data-api="note">' + esc(api.note || "") + "</textarea></div>" +
+      "</div>" +
+    "</div>"
+  );
+}
+
+function renderBilling(settings) {
+  $("bManualOn").checked = settings.manualEnabled !== false;
+  $("billingGrid").innerHTML =
+    BILLING_CARDS.map((m) => billingCard(m, settings[m.id] || {})).join("") + billingApiCard(settings.api || {});
+  const file = $("bmQrFile");
+  if (file) file.addEventListener("change", uploadQr);
+}
+
+function collectBilling() {
+  const out = {
+    manualEnabled: $("bManualOn").checked,
+    api: {
+      enabled: Boolean(document.querySelector('[data-method="api"]').checked),
+      sandbox: document.querySelector('[data-api="sandbox"]').value !== "0",
+    },
+  };
+  ["provider", "publicKey", "secretKey", "note"].forEach((key) => {
+    out.api[key] = document.querySelector('[data-api="' + key + '"]').value;
+  });
+
+  BILLING_CARDS.forEach((m) => {
+    const card = document.querySelector('[data-card="' + m.id + '"]');
+    const row = { enabled: Boolean(card.querySelector('[data-method="' + m.id + '"]').checked) };
+    m.fields.forEach((f) => {
+      row[f.key] = card.querySelector('[data-field="' + f.key + '"]').value;
+    });
+    out[m.id] = row;
+  });
+
+  return out;
+}
+
+async function uploadQr(e) {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+  const fd = new FormData();
+  fd.append("image", file);
+  try {
+    const res = await fetch("/api/settings/upload", {
+      method: "POST",
+      headers: { Authorization: "Bearer " + token },
+      body: fd,
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok || !data || !data.path) throw new Error((data && data.message) || "ছবি আপলোড হয়নি");
+    const input = document.querySelector('[data-field="imageUrl"]');
+    if (input) input.value = data.path;
+    const img = $("bmQrImg");
+    if (img && img.tagName === "IMG") img.src = data.path;
+    else renderBilling(collectBilling());
+    billingNote("QR আপলোড হয়েছে — সেভ চাপুন", "ok");
+  } catch (err) {
+    toast(err.message, "err");
+  }
+}
+
+$("billingGrid").addEventListener("change", (e) => {
+  const sw = e.target.closest("[data-method]");
+  if (!sw) return;
+  const card = sw.closest(".bm-card");
+  if (card) card.classList.toggle("on", sw.checked);
+});
+
+let billingNoteTimer;
+function billingNote(text, type) {
+  const el = $("billingNote");
+  if (!el) return;
+  el.textContent = text;
+  el.className = "theme-note " + (type || "");
+  clearTimeout(billingNoteTimer);
+  billingNoteTimer = setTimeout(() => {
+    el.textContent = "";
+    el.className = "theme-note";
+  }, 3000);
+}
+
+async function loadBillingSettings() {
+  try {
+    const data = await api("/api/admin/billing/settings");
+    renderBilling(data.settings || {});
+  } catch (e) {
+    toast(e.message, "err");
+  }
+}
+
+$("billingSaveBtn").addEventListener("click", async () => {
+  const btn = $("billingSaveBtn");
+  btn.disabled = true;
+  btn.textContent = "সেভ হচ্ছে...";
+  try {
+    const data = await api("/api/admin/billing/settings", {
+      method: "PUT",
+      body: JSON.stringify({ settings: collectBilling() }),
+    });
+    renderBilling(data.settings || {});
+    billingNote("পেমেন্ট সেটিংস সেভ হয়েছে", "ok");
+  } catch (err) {
+    billingNote(err.message, "err");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "সেভ করুন";
   }
 });
 

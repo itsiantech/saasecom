@@ -8,7 +8,17 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/css/style.css" />
-  <link rel="stylesheet" href="/css/admin.css?v=2" />
+  <link rel="stylesheet" href="/css/admin.css?v=8" />
+  <script>
+    (function () {
+      try {
+        var vars = JSON.parse(localStorage.getItem("luxe_admin_theme_vars") || "{}");
+        Object.keys(vars).forEach(function (key) {
+          if (/^--[a-z0-9-]+$/.test(key)) document.documentElement.style.setProperty(key, vars[key]);
+        });
+      } catch (e) { /* ignore */ }
+    })();
+  </script>
 </head>
 <body>
   <div class="dash">
@@ -24,7 +34,10 @@
         <a href="#stats" class="active">ড্যাশবোর্ড</a>
         <a href="#plans">প্ল্যান</a>
         <a href="#stores">দোকানসমূহ</a>
+        <a href="#payments">পেমেন্ট</a>
+        <a href="#billing">পেমেন্ট সেটিংস</a>
         <a href="#settings">সেটিংস</a>
+        <a href="#theme">ডিজাইন</a>
       </nav>
       <div class="sb-bottom">
         <div class="sb-user">
@@ -94,6 +107,61 @@
         </div>
       </section>
 
+      <!-- platform payments -->
+      <section class="panel" id="payments">
+        <div class="panel-head">
+          <div>
+            <h3>পেমেন্ট</h3>
+            <p class="count" id="payCount">যাচাইয়ের অপেক্ষায় 0 টি</p>
+          </div>
+          <div class="pay-tools">
+            <input class="pay-search" id="paySearch" type="search" placeholder="ইনভয়েস / দোকান / TRXID" aria-label="পেমেন্ট খুঁজুন" />
+            <div class="pay-tabs" id="payTabs">
+              <button class="pay-tab on" type="button" data-status="pending">অপেক্ষমাণ</button>
+              <button class="pay-tab" type="button" data-status="approved">অনুমোদিত</button>
+              <button class="pay-tab" type="button" data-status="rejected">বাতিল</button>
+              <button class="pay-tab" type="button" data-status="">সব</button>
+            </div>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="pay-table">
+            <thead>
+              <tr>
+                <th>ইনভয়েস</th><th>দোকান</th><th>প্ল্যান</th><th>টাকা</th>
+                <th>মেথড</th><th>স্ট্যাটাস / পরবর্তী বিল</th><th>অ্যাকশন</th>
+              </tr>
+            </thead>
+            <tbody id="payBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- payment settings -->
+      <section class="panel" id="billing">
+        <div class="panel-head">
+          <div>
+            <h3>পেমেন্ট সেটিংস</h3>
+            <p class="count">ম্যানুয়াল পেমেন্ট (বিকাশ, নগদ, ব্যাংক, বাংলা QR) ও API গেটওয়ে</p>
+          </div>
+          <button class="btn-add" id="billingSaveBtn" type="button">সেভ করুন</button>
+        </div>
+        <div class="billing-body">
+          <div class="switch-row">
+            <label for="bManualOn">ম্যানুয়াল পেমেন্ট চালু (চেকআউটে এই মেথডগুলো দেখাবে)</label>
+            <label class="switch">
+              <input type="checkbox" id="bManualOn" />
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="billing-grid" id="billingGrid"></div>
+          <div class="billing-foot">
+            <span class="theme-note" id="billingNote"></span>
+            <span class="billing-hint">API key সবসময় মাস্ক হয়ে দেখাবে — পুরো key আর কোনোদিন ফেরত আসবে না। API দিয়ে স্বয়ংক্রিয় পেমেন্ট ফেজ ২-এ যুক্ত হবে।</span>
+          </div>
+        </div>
+      </section>
+
       <!-- settings -->
       <section class="panel" id="settings">
         <div class="panel-head">
@@ -105,6 +173,25 @@
             <input type="checkbox" id="saasToggle" />
             <span class="slider"></span>
           </label>
+        </div>
+      </section>
+      <!-- theme / design colors -->
+      <section class="panel" id="theme">
+        <div class="panel-head">
+          <div>
+            <h3>ডিজাইন কালার</h3>
+            <p class="count">শুধু এই সুপার অ্যাডমিন প্যানেলে প্রযোজ্য — দোকান বা স্টোরফ্রন্টে প্রভাব নেই</p>
+          </div>
+        </div>
+        <div class="theme-body">
+          <div class="theme-presets" id="themePresets"></div>
+          <div class="theme-grid" id="themeGroups"></div>
+          <div class="theme-checks" id="themeChecks"></div>
+          <div class="theme-foot">
+            <button class="btn-add" id="themeSaveBtn" type="button">সেভ করুন</button>
+            <button class="btn-ghost" id="themeResetBtn" type="button" style="flex:0 0 auto;padding:11px 18px;">ডিফল্টে ফেরান</button>
+            <span class="theme-note" id="themeNote"></span>
+          </div>
         </div>
       </section>
     </main>
@@ -158,8 +245,25 @@
     </div>
   </div>
 
+  <!-- reject payment modal -->
+  <div class="modal-overlay" id="rejectOverlay">
+    <div class="modal">
+      <h3>পেমেন্ট বাতিল</h3>
+      <p class="muted" style="margin-top:8px;font-size:13px;" id="rejectSub">—</p>
+      <div class="field">
+        <label for="rejectReason">বাতিলের কারণ (কাস্টমার দেখবে)</label>
+        <textarea id="rejectReason" rows="4" style="width:100%;background:var(--input-bg);border:1px solid var(--line-soft);border-radius:10px;padding:12px 14px;color:var(--text);font-size:14px;outline:none;resize:vertical;"></textarea>
+      </div>
+      <p class="msg" id="rejectMsg"></p>
+      <div class="modal-actions">
+        <button type="button" class="btn-ghost" id="rejectCancelBtn">ফিরে যান</button>
+        <button type="button" class="btn-gold" id="rejectSubmitBtn">বাতিল করুন</button>
+      </div>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
 
-  <script src="/js/admin.js?v=2"></script>
+  <script src="/js/admin.js?v=10"></script>
 </body>
 </html>
