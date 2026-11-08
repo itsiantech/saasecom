@@ -8,7 +8,8 @@ const Store = require("./models/Store");
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+// rawBody kept for HMAC-verified webhooks
+app.use(express.json({ verify: (req, _res, buf) => { req.rawBody = buf; } }));
 
 // Liveness probe for the deploy pipeline — mounted before tenant resolution so any host can hit it.
 app.get("/api/health", (req, res) => {
@@ -95,6 +96,17 @@ app.use(async (req, res, next) => {
 app.use((req, res, next) => {
   const slug = String(req.query.store || "").trim().toLowerCase();
   if (req.path === "/" && /^[a-z0-9][a-z0-9-]{0,62}$/.test(slug)) return res.redirect(302, "/" + slug);
+  next();
+});
+
+// Uploaded files are untrusted: never let a browser sniff them into HTML/JS,
+// and sandbox anything that is opened directly.
+app.use("/uploads", (_req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader(
+    "Content-Security-Policy",
+    "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox"
+  );
   next();
 });
 

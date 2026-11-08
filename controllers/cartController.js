@@ -5,7 +5,7 @@ const Product = require("../models/Product");
 const ProductVariation = require("../models/ProductVariation");
 const ProductSwatch = require("../models/ProductSwatch");
 const { getStoreId } = require("../lib/tenantContext");
-const { randomBytes } = require("crypto");
+const { randomBytes, createHash } = require("crypto");
 const {
   getShippingConfig,
   quoteFromConfig,
@@ -32,6 +32,9 @@ const {
   publicCoupon,
   normalizeCode,
   couponBenefitLabel,
+  couponUsageIssue,
+  reserveCouponUse,
+  releaseCouponUse,
 } = require("../services/promotions");
 const {
   WholesaleCartError,
@@ -212,49 +215,60 @@ function couponLinesFromPricedItems(pricedItems) {
   }));
 }
 
-function couponExtra(storeId, couponCode, lines, subtotalPaisa, shippingPaisa = 0) {
-  return loadCoupon(storeId, couponCode).then((coupon) => {
-    if (!coupon) {
-      return {
-        coupon: null,
-        couponError: couponCode ? "Coupon code pawa jayni" : "",
-        eligiblePaisa: 0,
-        discountPaisa: 0,
-        freeDelivery: false,
-      };
-    }
-    if (!normalizeCode(couponCode) || coupon.code !== normalizeCode(couponCode)) {
-      return {
-        coupon: publicCoupon(coupon),
-        couponError: "Coupon code valid na",
-        eligiblePaisa: 0,
-        discountPaisa: 0,
-        freeDelivery: false,
-      };
-    }
-    const result = evaluateCoupon({
-      coupon,
-      lines,
-      subtotalPaisa,
-      shippingPaisa,
-    });
-    if (!result.ok) {
-      return {
-        coupon: publicCoupon(coupon),
-        couponError: result.message,
-        eligiblePaisa: 0,
-        discountPaisa: 0,
-        freeDelivery: false,
-      };
-    }
+async function couponExtra(storeId, couponCode, lines, subtotalPaisa, shippingPaisa = 0, userId = null) {
+  const coupon = await loadCoupon(storeId, couponCode);
+  if (!coupon) {
     return {
-      coupon: { ...publicCoupon(coupon), label: couponBenefitLabel(coupon) },
-      couponError: "",
-      eligiblePaisa: result.eligiblePaisa,
-      discountPaisa: result.discountPaisa,
-      freeDelivery: result.freeDelivery,
+      coupon: null,
+      couponError: couponCode ? "Coupon code pawa jayni" : "",
+      eligiblePaisa: 0,
+      discountPaisa: 0,
+      freeDelivery: false,
     };
+  }
+  if (!normalizeCode(couponCode) || coupon.code !== normalizeCode(couponCode)) {
+    return {
+      coupon: publicCoupon(coupon),
+      couponError: "Coupon code valid na",
+      eligiblePaisa: 0,
+      discountPaisa: 0,
+      freeDelivery: false,
+    };
+  }
+
+  const usageError = await couponUsageIssue({ coupon, storeId, userId });
+  if (usageError) {
+    return {
+      coupon: publicCoupon(coupon),
+      couponError: usageError,
+      eligiblePaisa: 0,
+      discountPaisa: 0,
+      freeDelivery: false,
+    };
+  }
+
+  const result = evaluateCoupon({
+    coupon,
+    lines,
+    subtotalPaisa,
+    shippingPaisa,
   });
+  if (!result.ok) {
+    return {
+      coupon: publicCoupon(coupon),
+      couponError: result.message,
+      eligiblePaisa: 0,
+      discountPaisa: 0,
+      freeDelivery: false,
+    };
+  }
+  return {
+    coupon: { ...publicCoupon(coupon), label: couponBenefitLabel(coupon) },
+    couponError: "",
+    eligiblePaisa: result.eligiblePaisa,
+    discountPaisa: result.discountPaisa,
+    freeDelivery: result.freeDelivery,
+  };
 }
 
 function couponPayload(info) {
@@ -270,12 +284,12 @@ function couponPayload(info) {
 }
 
 // Shared with installment preview so the schedule matches checkout.
-async function cartCouponInfo(storeId, cart, shippingPaisa = 0) {
+async function cartCouponInfo(storeId, cart, shippingPaisa = 0, userId = null) {
   const lines = await couponLinesForCart(storeId, cart);
   const subtotalPaisa = lines.reduce((sum, line) => sum + line.amountPaisa, 0);
   let info = { coupon: null, couponError: "", discountPaisa: 0, eligiblePaisa: 0, freeDelivery: false };
   if (cart.couponCode) {
-    info = await couponExtra(storeId, cart.couponCode, lines, subtotalPaisa, shippingPaisa);
+    info = await couponExtra(storeId, cart.couponCode, lines, subtotalPaisa, shippingPaisa, userId);
   }
   return { lines, subtotalPaisa, ...info };
 }
@@ -363,7 +377,9 @@ async function getCart(req, res) {
       storeId,
       cart.couponCode,
       await couponLinesForCart(storeId, cart),
-      subtotalPaisa
+      subtotalPaisa,
+      0,
+      req.user && req.user.id
     );
     coupon = couponPayload(info);
     couponError = info.couponError || "";
@@ -399,7 +415,7 @@ async function applyCoupon(req, res) {
   await refreshCartPricing(req, cart, storeId);
   const lines = await couponLinesForCart(storeId, cart);
   const subtotalPaisa = lines.reduce((sum, line) => sum + line.amountPaisa, 0);
-  const info = await couponExtra(storeId, code, lines, subtotalPaisa);
+  const info = await couponExtra(storeId, code, lines, subtotalPaisa, 0, req.user && req.user.id);
   if (info.couponError) return res.status(400).json({ message: info.couponError });
 
   cart.couponCode = info.coupon.code;
@@ -566,6 +582,26 @@ async function removeItem(req, res) {
  * ------------------------------------------------------------------ */
 async function createOrder(req, res) {
   const storeId = storeIdOf(req);
+  const body = req.body || {};
+  // Replay protection: a retried/double-clicked checkout returns the same order.
+  // The stored key is scoped to this cart identity, so another session cannot
+  // read an order by guessing the raw header value.
+  const rawIdempotencyKey = String(
+    req.get("Idempotency-Key") || body.idempotencyKey || ""
+  ).trim().slice(0, 120);
+  const cartIdentity = cartKey(req);
+  const idempotencyKey = rawIdempotencyKey
+    ? createHash("sha256")
+        .update(
+          [String(storeId), cartIdentity.user || "", cartIdentity.sessionId || "", rawIdempotencyKey].join("|")
+        )
+        .digest("hex")
+    : "";
+  if (idempotencyKey) {
+    const existing = await Order.findOne({ store: storeId, idempotencyKey });
+    if (existing) return res.status(200).json({ ok: true, order: existing, duplicate: true });
+  }
+
   const cart = await getOrCreateCart(req);
   if (!cart.items.length) return res.status(400).json({ message: "Cart faka" });
 
@@ -582,7 +618,6 @@ async function createOrder(req, res) {
     return res.status(401).json({ message: "Checkout er age login ba register korun" });
   }
 
-  const body = req.body || {};
   const requestedInstallment = String(body.paymentMode || "full") === "installment";
   const input = body.customer || {};
   const customer = {
@@ -728,7 +763,9 @@ async function createOrder(req, res) {
       storeId,
       cart.couponCode,
       couponLinesFromPricedItems(pricedItems),
-      itemsSubtotalPaisa
+      itemsSubtotalPaisa,
+      0,
+      req.user && req.user.id
     );
     if (couponInfo.couponError) {
       return res.status(400).json({ message: couponInfo.couponError });
@@ -808,13 +845,13 @@ async function createOrder(req, res) {
       );
       if (!stockDoc) {
         for (const d of decreased) {
-          await d.model.updateOne({ _id: d.id }, { $inc: { stock: d.qty } });
+          await d.model.updateOne({ _id: d.id, store: storeId }, { $inc: { stock: d.qty } });
         }
         return res.status(400).json({ message: "Stock shed sathe somoy emon hoye geche" });
       }
       decreased.push({ model: Model, id: target, qty: item.quantity });
-    } else if (wholesaleOn) {
-      // Simple wholesale lines use the base Product stock.
+    } else {
+      // Simple lines (retail or wholesale) use the base Product stock.
       const stockDoc = await Product.findOneAndUpdate(
         { _id: item.product, store: storeId, stock: { $gte: item.quantity } },
         { $inc: { stock: -item.quantity } },
@@ -822,12 +859,25 @@ async function createOrder(req, res) {
       );
       if (!stockDoc) {
         for (const d of decreased) {
-          await d.model.updateOne({ _id: d.id }, { $inc: { stock: d.qty } });
+          await d.model.updateOne({ _id: d.id, store: storeId }, { $inc: { stock: d.qty } });
         }
         return res.status(400).json({ message: "Stock shed sathe somoy emon hoye geche" });
       }
       decreased.push({ model: Product, id: item.product, qty: item.quantity });
     }
+  }
+
+  // Coupon budget is claimed atomically only after every other validation passed.
+  let couponReserved = false;
+  if (couponInfo.coupon) {
+    const reservation = await reserveCouponUse(couponInfo.coupon, storeId);
+    if (!reservation.ok) {
+      for (const d of decreased) {
+        await d.model.updateOne({ _id: d.id, store: storeId }, { $inc: { stock: d.qty } });
+      }
+      return res.status(400).json({ message: reservation.message });
+    }
+    couponReserved = true;
   }
 
   const lineItems = pricedItems.map(({ item, pricing }) => ({
@@ -850,10 +900,24 @@ async function createOrder(req, res) {
 
   // ---- shipping ----
   const shipping = body.shipping || {};
-  const shippingContext = { ...(shipping.context || {}) };
-  if (!shippingContext.district && customer.district) shippingContext.district = customer.district;
+  // Zone and parcel data are derived from the validated customer address and
+  // the stored products — never from body.shipping.context, which a browser
+  // could spoof to buy a cheaper zone.
+  const parcelWeight = pricedItems.reduce(
+    (sum, { item, context }) =>
+      sum + (Number(context.product.weight) || Number(context.product.weightKg) || 0) * item.quantity,
+    0
+  );
+  const parcelMax = (field) =>
+    pricedItems.reduce((max, { context }) => Math.max(max, Number(context.product[field]) || 0), 0);
   const quotes = quoteFromConfig(cfg, {
-    ...shippingContext,
+    district: customer.district || "",
+    country: customer.country || "",
+    areaName: customer.thana || "",
+    weight: Math.round(parcelWeight * 1000) / 1000,
+    length: parcelMax("length"),
+    width: parcelMax("width"),
+    height: parcelMax("height"),
     orderTotal: fromPaisa(discountedItemsPaisa),
   });
   let shippingAmount = 0;
@@ -907,6 +971,7 @@ async function createOrder(req, res) {
   try {
     order = await Order.create({
       store: storeId,
+      idempotencyKey,
       orderNumber: "ORD-" + Date.now().toString(36).toUpperCase() + "-" + randomBytes(2).toString("hex").toUpperCase(),
       invoiceNumber,
       customer: req.user && req.user.id ? req.user.id : null,
@@ -947,6 +1012,8 @@ async function createOrder(req, res) {
       totalAmount: fromPaisa(discountedItemsPaisa) + shippingAmount,
       status: "pending",
       paymentStatus: "pending",
+      // stock was already decremented above — cancel/delete may restore it
+      stockDeducted: true,
     });
 
     if (installmentCheckout) {
@@ -970,7 +1037,12 @@ async function createOrder(req, res) {
       await Order.deleteOne({ _id: order._id }).catch(() => null);
     }
     for (const d of decreased) {
-      await d.model.updateOne({ _id: d.id }, { $inc: { stock: d.qty } });
+      await d.model.updateOne({ _id: d.id, store: storeId }, { $inc: { stock: d.qty } });
+    }
+    if (couponReserved) await releaseCouponUse(couponInfo.coupon, storeId);
+    if (err && err.code === 11000 && idempotencyKey) {
+      const existing = await Order.findOne({ store: storeId, idempotencyKey });
+      if (existing) return res.status(200).json({ ok: true, order: existing, duplicate: true });
     }
     return res.status(400).json({ message: err.message });
   }

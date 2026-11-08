@@ -1,0 +1,250 @@
+{
+  "name": "fashion",
+  "displayName": "Fashion Store",
+  "description": "Perfect for clothing, accessories, and fashion items",
+  "version": "1.0.0",
+  "categories": [
+    {
+      "name": "Men's Clothing",
+      "slug": "mens-clothing",
+      "parent": null,
+      "level": 0,
+      "order": 1,
+      "image": "/uploads/demo/fashion/category-1.svg",
+      "icon": { "type": "none", "value": "" },
+      "status": "published",
+      "subcategories": [
+        {
+          "name": "T-Shirts",
+          "slug": "t-shirts",
+          "level": 1,
+          "order": 1,
+          "image": "/uploads/demo/fashion/category-2.svg",
+          "status": "published"
+        },
+        {
+          "name": "Shirts",
+          "slug": "shirts",
+          "level": 1,
+          "order": 2,
+          "image": "/uploads/demo/fashion/category-3.svg",
+          "status": "published"
+        },
+        {
+          "name": "Jeans",
+          "slug": "jeans",
+          "level": 1,
+          "order": 3,
+          "image": "/uploads/demo/fashion/category-1.svg",
+          "status": "published"
+        }
+      ]
+    },
+    {
+      "name": "Women's Clothing",
+      "slug": "womens-clothing",
+      "parent": null,
+      "level": 0,
+      "order": 2,
+      "image": "/uploads/demo/fashion/category-2.svg",
+      "icon": { "type": "none", "value": "" },
+      "status": "published",
+      "subcategories": [
+        {
+          "name": "Dresses",
+          "slug": "dresses",
+          "level": 1,
+          "order": 1,
+          "image": "/uploads/demo/fashion/category-3.svg",
+          "status": "published"
+        },
+        {
+          "name": "Tops",
+          "slug": "tops",
+          "level": 1,
+          "order": 2,
+          "image": "/uploads/demo/fashion/category-1.svg",
+          "status": "published"
+        }
+      ]
+    },
+    {
+      "name": "Accessories",
+      "slug": "accessories",
+      "parent": null,
+      "level": 0,
+      "order": 3,
+      "image": "/uploads/demo/fashion/category-3.svg",
+      "icon": { "type": "none", "value": "" },
+      "status": "published"
+    }
+  ],
+  "brands": [
+    {
+      "name": "FashionHub",
+      "slug": "fashionhub",
+      "level": 0,
+      "order": 1,
+      "image": "/uploads/demo/fashion/brand-1.svg",
+      "status": "published"
+    },
+    {
+      "name": "StyleWear",
+      "slug": "stylewear",
+      "level": 0,
+      "order": 2,
+      "image": "/uploads/demo/fashion/brand-2.svg",
+      "status": "published"
+    }
+  ],
+  "products": [
+    {
+      "title": "Classic Cotton T-Shirt",
+      "slug": "classic-cotton-t-shirt",
+      "regularPrice": 990,
+      "salePrice": 790,
+      "stock": 50,
+      "description": "<p>Comfortable 100% cotton t-shirt perfect for everyday wear.</p>",
+      "shortDescription": "Comfortable 100% cotton t-shirt",
+      "weightKg": 0.2,
+      "sku": "TS-001",
+      "status": "published",
+      "images": ["/uploads/demo/fashion/product-1.svg", "/uploads/demo/fashion/product-2.svg"],
+      "brandSlug": "fashionhub",
+      "categorySlugs": ["mens-clothing", "t-shirts"],
+      "tags": ["cotton", "t-shirt", "casual"],
+      "productType": "physical",
+      "isHotDeal": true,
+      "isTopFeature": true,
+      "moq": 1,
+      "shipsAbroad": false
+    },
+    {
+      "title": "Formal Button-Down Shirt",
+      "slug": "formal-button-down-shirt",
+      "regularPrice": 1490,
+      "salePrice": 1290,
+      "stock": 30,
+      "description": "<p>Classic formal shirt perfect for office wear.</p>",
+      "shortDescription": "Classic formal shirt",
+      "weightKg": 0.25,
+      "sku": "SH-001",
+      "status": "published",
+      "images": ["/uploads/demo/fashion/product-3.svg", "/uploads/demo/fashion/product-4.svg"],
+      "brandSlug": "fashionhub",
+      "categorySlugs": ["mens-clothing", "shirts"],
+      "tags": ["shirt", "formal", "office"],
+      "productType": "physical",
+      "isHotDeal": false,
+      "isTopFeature": true,
+      "moq": 1,
+      "shipsAbroad": false
+    },
+    {
+      "title": "Slim Fit Jeans",
+      "slug": "slim-fit-jeans",
+      "regularPrice": 1990,
+      "salePrice": 1790,
+      "stock": 40,
+      "description": "<p>Stylish slim fit jeans made from premium denim.</p>",
+      "shortDescription": "Stylish slim fit jeans",
+      "weightKg": 0.6,
+      "sku": "JN-001",
+      "status": "published",
+      "images": ["/uploads/demo/fashion/product-5.svg", "/uploads/demo/fashion/product-6.svg"],
+      "brandSlug": "stylewear",
+      "categorySlugs": ["mens-clothing", "jeans"],
+      "tags": ["jeans", "denim", "casual"],
+      "productType": "physical",
+      "isHotDeal": true,
+      "isTopFeature": false,
+      "moq": 1,
+      "shipsAbroad": false
+    },
+    {
+      "title": "Floral Summer Dress",
+      "slug": "floral-summer-dress",
+      "regularPrice": 2490,
+      "salePrice": 1990,
+      "stock": 25,
+      "description": "<p>Beautiful floral print dress perfect for summer.</p>",
+      "shortDescription": "Beautiful floral print dress",
+      "weightKg": 0.35,
+      "sku": "DR-001",
+      "status": "published",
+      "images": ["/uploads/demo/fashion/product-7.svg", "/uploads/demo/fashion/product-8.svg"],
+      "brandSlug": "stylewear",
+      "categorySlugs": ["womens-clothing", "dresses"],
+      "tags": ["dress", "summer", "floral"],
+      "productType": "physical",
+      "isHotDeal": true,
+      "isTopFeature": true,
+      "moq": 1,
+      "shipsAbroad": false
+    },
+    {
+      "title": "Casual Cotton Top",
+      "slug": "casual-cotton-top",
+      "regularPrice": 890,
+      "salePrice": 690,
+      "stock": 45,
+      "description": "<p>Comfortable cotton top for everyday wear.</p>",
+      "shortDescription": "Comfortable cotton top",
+      "weightKg": 0.2,
+      "sku": "TP-001",
+      "status": "published",
+      "images": ["/uploads/demo/fashion/product-9.svg", "/uploads/demo/fashion/product-10.svg"],
+      "brandSlug": "fashionhub",
+      "categorySlugs": ["womens-clothing", "tops"],
+      "tags": ["top", "cotton", "casual"],
+      "productType": "physical",
+      "isHotDeal": false,
+      "isTopFeature": false,
+      "moq": 1,
+      "shipsAbroad": false
+    },
+    {
+      "title": "Leather Belt",
+      "slug": "leather-belt",
+      "regularPrice": 990,
+      "salePrice": 790,
+      "stock": 35,
+      "description": "<p>Genuine leather belt with metal buckle.</p>",
+      "shortDescription": "Genuine leather belt",
+      "weightKg": 0.15,
+      "sku": "BL-001",
+      "status": "published",
+      "images": ["/uploads/demo/fashion/product-11.svg", "/uploads/demo/fashion/product-12.svg"],
+      "brandSlug": "stylewear",
+      "categorySlugs": ["accessories"],
+      "tags": ["belt", "leather", "accessory"],
+      "productType": "physical",
+      "isHotDeal": true,
+      "isTopFeature": false,
+      "moq": 1,
+      "shipsAbroad": false
+    }
+  ],
+  "heroSlides": [
+    {
+      "image": "/uploads/demo/fashion/hero-1.svg",
+      "alt": "Summer Collection",
+      "title": "Summer Collection 2024",
+      "subtitle": "Up to 50% off on selected items",
+      "buttonLabel": "Shop Now",
+      "linkUrl": "/products",
+      "active": true,
+      "sortOrder": 1
+    },
+    {
+      "image": "/uploads/demo/fashion/hero-2.svg",
+      "alt": "New Arrivals",
+      "title": "New Arrivals",
+      "subtitle": "Check out our latest fashion collection",
+      "buttonLabel": "Explore",
+      "linkUrl": "/products?new=true",
+      "active": true,
+      "sortOrder": 2
+    }
+  ]
+}

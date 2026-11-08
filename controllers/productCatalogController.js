@@ -11,6 +11,7 @@ const { isInternational } = require("../lib/internationalSettings");
 const { getStoreId } = require("../lib/tenantContext");
 const { writeAudit } = require("../lib/audit");
 const { toPaisa } = require("../lib/money");
+const { sanitizeRichText } = require("../lib/richText");
 const {
   buildListQuery,
   tierLines,
@@ -174,7 +175,7 @@ async function detail(req, res, next) {
         id: p._id,
         name: p.title || p.name || "",
         sku: p.sku || "",
-        description: p.description || "",
+        description: sanitizeRichText(p.description || ""),
         shortDescription: p.shortDescription || "",
         images: p.images || [],
         productType: p.productType || "physical",

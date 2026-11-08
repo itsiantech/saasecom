@@ -133,7 +133,7 @@ router.get("/payments/:id/invoice", async (req, res) => {
       const header = req.headers.authorization || "";
       if (header.startsWith("Bearer ")) {
         try {
-          const payload = jwt.verify(header.slice(7), process.env.JWT_SECRET);
+          const payload = jwt.verify(header.slice(7), process.env.JWT_SECRET, { algorithms: ["HS256"] });
           allowed = payload.role === "superadmin" || String(payment.user._id) === String(payload.id);
         } catch {
           /* invalid token → 403 nicher line */

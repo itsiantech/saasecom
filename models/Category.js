@@ -24,6 +24,8 @@ const categorySchema = new mongoose.Schema(
     deletedAt: { type: Date, default: null },
     // Remember the status before trashing so Restore brings it back exactly as it was.
     previousStatus: { type: String, enum: ["draft", "published", null], default: null },
+    // Demo data flag - true if created from starter pack
+    isDemo: { type: Boolean, default: false, index: true },
   },
   { timestamps: true }
 );

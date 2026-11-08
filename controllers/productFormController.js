@@ -12,6 +12,7 @@ const Category = require("../models/Category");
 const Brand = require("../models/Brand");
 const Settings = require("../models/Settings");
 const { getStoreId } = require("../lib/tenantContext");
+const { sanitizeRichText } = require("../lib/richText");
 const { scopedKey, isScopedKey, unscopeKey, keysForStore } = require("../lib/settingsScope");
 const { slugify, uniqueSlug, buildTree } = require("../lib/categoryHelpers");
 const { normalizeTiers, clearTierCache } = require("../services/tierPricing");
@@ -275,11 +276,26 @@ async function syncRelations(storeId, product, payload) {
     await ProductTag.create({ store: storeId, product: product._id, tag });
   }
 
-  // categories
-  const catIds = (payload.categories || []).filter((c) => mongoose.isValidObjectId(c));
+  // categories — join rows feed the reports, but list/filter, storefront,
+  // category pages and checkout all read Product.categories, so keep both in sync.
+  const requested = [...new Set(
+    (payload.categories || []).filter((c) => mongoose.isValidObjectId(c)).map(String)
+  )];
+  let catIds = [];
+  if (requested.length) {
+    const cats = await Category.find({ store: storeId, _id: { $in: requested } }).select("slug").lean();
+    catIds = cats.map((c) => c._id);
+    // "Uncategorized" is just a placeholder — drop it once a real category is picked
+    const uncat = cats.find((c) => c.slug === "uncategorized");
+    if (uncat && catIds.length > 1) {
+      catIds = catIds.filter((id) => String(id) !== String(uncat._id));
+    }
+  }
   for (const category of catIds) {
     await ProductCategory.create({ store: storeId, product: product._id, category });
   }
+  product.categories = catIds;
+  await product.save();
 
   return { tagIds, categoryIds: catIds };
 }
@@ -420,11 +436,17 @@ async function getOne(req, res) {
   const storeId = storeIdOf(req);
   const product = await Product.findOne({ _id: req.params.id, store: storeId }).lean();
   if (!product) return res.status(404).json({ message: "Product pawa jayni" });
+  // purono row o sanitize kore load hoy — editor e raw HTML kokhono jay na
+  product.description = sanitizeRichText(product.description || "");
 
   const variations = await ProductVariation.find({ store: storeId, product: product._id }).lean();
   const swatches = await ProductSwatch.find({ store: storeId, product: product._id }).lean();
   const productTags = await ProductTag.find({ store: storeId, product: product._id }).select("tag").lean();
   const productCats = await ProductCategory.find({ store: storeId, product: product._id }).select("category").lean();
+  // seeded/legacy products only have the array — don't lose it when the form saves
+  const categoryIds = productCats.length
+    ? productCats.map((c) => c.category)
+    : (product.categories || []);
   const tierRows = await ProductPriceTier.find({ store: storeId, product: product._id })
     .sort({ minQty: 1 })
     .lean();
@@ -449,7 +471,7 @@ async function getOne(req, res) {
     variations,
     swatches,
     tags: productTags.map((t) => t.tag),
-    categories: productCats.map((c) => c.category),
+    categories: categoryIds,
     tierSets: [
       { term: null, tiers: productTiers },
       ...[...tiersByTerm.entries()].map(([term, tiers]) => ({ term, tiers })),

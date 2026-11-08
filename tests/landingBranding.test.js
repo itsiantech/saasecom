@@ -149,7 +149,10 @@ test("saving updates the landing texts and is visible publicly", async () => {
 test("logo upload stores the image and remove clears it", async () => {
   const upload = await admin("post", "/api/admin/settings/landing/logo", state.superToken).attach(
     "logo",
-    Buffer.from([0x89, 0x50, 0x4e, 0x47]),
+    Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=",
+      "base64"
+    ),
     { filename: "logo.png", contentType: "image/png" }
   );
   assert.equal(upload.status, 200, JSON.stringify(upload.body));

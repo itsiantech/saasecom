@@ -17,6 +17,7 @@ const {
   escapeRegex,
 } = require("../services/orderCatalog");
 const { changeOrderStatus, OrderStatusError } = require("../services/orderStatusChange");
+const { restoreOrderStock } = require("../services/orderStock");
 const { shapeOrderDetail } = require("../services/orderDetail");
 
 function storeOf(req) {
@@ -328,6 +329,15 @@ async function bulk(req, res, next) {
     }
 
     if (body.action === "delete") {
+      // restore reserved stock before the rows disappear (claim flag keeps it idempotent)
+      const orders = await Order.find({ _id: { $in: ids } }).select("_id store items stockDeducted");
+      for (const order of orders) {
+        try {
+          await restoreOrderStock(order);
+        } catch (err) {
+          console.error("order restock:", err.message);
+        }
+      }
       const del = await Promise.all([
         Order.deleteMany({ _id: { $in: ids } }),
         OrderStatusHistory.deleteMany({ order: { $in: ids } }),

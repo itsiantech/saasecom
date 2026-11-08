@@ -13,6 +13,10 @@ const couponSchema = new mongoose.Schema(
     categories: [{ type: mongoose.Schema.Types.ObjectId, ref: "Category", default: [] }],
     categoryIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Category", default: [] }],
     freeDelivery: { type: Boolean, default: false },
+    // 0 = unlimited; usedCount is the atomic reservation counter.
+    usageLimit: { type: Number, default: 0, min: 0 },
+    perCustomerLimit: { type: Number, default: 0, min: 0 },
+    usedCount: { type: Number, default: 0, min: 0 },
   },
   { timestamps: true }
 );

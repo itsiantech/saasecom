@@ -19,6 +19,11 @@
   const TOKEN_KEY = "luxe_customer_token";
   const SESSION_KEY = "luxe_cart_session";
   const STORE_KEY = "luxe_store_slug";
+  // Stable per checkout attempt — a retry after a lost response returns the same order.
+  const CHECKOUT_KEY =
+    window.crypto && typeof window.crypto.randomUUID === "function"
+      ? window.crypto.randomUUID()
+      : "co-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 10);
 
   const BD_PHONE_RE = /^01[3-9]\d{8}$/;
   const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -1212,6 +1217,7 @@
     try {
       const { res, data } = await api("/api/cart/checkout", {
         method: "POST",
+        headers: { "Idempotency-Key": CHECKOUT_KEY },
         body: JSON.stringify(body),
       });
 

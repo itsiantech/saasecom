@@ -55,6 +55,28 @@ function esc(s) {
   return String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 
+// server already sanitizes on write/read; this is the last line of defence for old rows
+function sanitizeHtml(html) {
+  const tpl = document.createElement("template");
+  tpl.innerHTML = String(html || "");
+  tpl.content
+    .querySelectorAll("script,style,iframe,object,embed,link,meta,form,input,button,textarea,select")
+    .forEach((node) => node.remove());
+  tpl.content.querySelectorAll("*").forEach((node) => {
+    [...node.attributes].forEach((attr) => {
+      const name = attr.name.toLowerCase();
+      const value = String(attr.value || "").trim().toLowerCase();
+      const dangerousUrl =
+        (name === "href" || name === "src" || name === "xlink:href") &&
+        (value.startsWith("javascript:") || value.startsWith("data:text/html"));
+      if (name.startsWith("on") || name === "srcdoc" || dangerousUrl) {
+        node.removeAttribute(attr.name);
+      }
+    });
+  });
+  return tpl.innerHTML;
+}
+
 function el(id) {
   return document.getElementById(id);
 }
@@ -937,7 +959,7 @@ function renderSections() {
   secs.push(`
     <section class="pcv-section" aria-labelledby="pcvSecDesc">
       <h3 id="pcvSecDesc">Description</h3>
-      ${p.description ? `<div class="pcv-desc">${p.description}</div>` : '<div class="pcv-desc-empty">No description added.</div>'}
+      ${p.description ? `<div class="pcv-desc">${sanitizeHtml(p.description)}</div>` : '<div class="pcv-desc-empty">No description added.</div>'}
     </section>`);
 
   // 2. Variations + swatches

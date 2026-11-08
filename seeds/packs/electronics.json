@@ -1,0 +1,242 @@
+{
+  "name": "electronics",
+  "displayName": "Electronics Store",
+  "description": "Perfect for electronics, gadgets, and tech accessories",
+  "version": "1.0.0",
+  "categories": [
+    {
+      "name": "Smartphones",
+      "slug": "smartphones",
+      "parent": null,
+      "level": 0,
+      "order": 1,
+      "image": "/uploads/demo/electronics/category-1.svg",
+      "icon": { "type": "none", "value": "" },
+      "status": "published",
+      "subcategories": [
+        {
+          "name": "Android Phones",
+          "slug": "android-phones",
+          "level": 1,
+          "order": 1,
+          "image": "/uploads/demo/electronics/category-2.svg",
+          "status": "published"
+        },
+        {
+          "name": "iPhones",
+          "slug": "iphones",
+          "level": 1,
+          "order": 2,
+          "image": "/uploads/demo/electronics/category-3.svg",
+          "status": "published"
+        }
+      ]
+    },
+    {
+      "name": "Laptops & Computers",
+      "slug": "laptops-computers",
+      "parent": null,
+      "level": 0,
+      "order": 2,
+      "image": "/uploads/demo/electronics/category-1.svg",
+      "icon": { "type": "none", "value": "" },
+      "status": "published",
+      "subcategories": [
+        {
+          "name": "Laptops",
+          "slug": "laptops",
+          "level": 1,
+          "order": 1,
+          "image": "/uploads/demo/electronics/category-2.svg",
+          "status": "published"
+        },
+        {
+          "name": "Tablets",
+          "slug": "tablets",
+          "level": 1,
+          "order": 2,
+          "image": "/uploads/demo/electronics/category-3.svg",
+          "status": "published"
+        }
+      ]
+    },
+    {
+      "name": "Audio",
+      "slug": "audio",
+      "parent": null,
+      "level": 0,
+      "order": 3,
+      "image": "/uploads/demo/electronics/category-1.svg",
+      "icon": { "type": "none", "value": "" },
+      "status": "published"
+    }
+  ],
+  "brands": [
+    {
+      "name": "TechPro",
+      "slug": "techpro",
+      "level": 0,
+      "order": 1,
+      "image": "/uploads/demo/electronics/brand-1.svg",
+      "status": "published"
+    },
+    {
+      "name": "SoundMaster",
+      "slug": "soundmaster",
+      "level": 0,
+      "order": 2,
+      "image": "/uploads/demo/electronics/brand-2.svg",
+      "status": "published"
+    }
+  ],
+  "products": [
+    {
+      "title": "Wireless Bluetooth Headphones",
+      "slug": "wireless-bluetooth-headphones",
+      "regularPrice": 2990,
+      "salePrice": 2490,
+      "stock": 30,
+      "description": "<p>High-quality wireless headphones with noise cancellation and 20-hour battery life.</p>",
+      "shortDescription": "Wireless headphones with noise cancellation",
+      "weightKg": 0.3,
+      "sku": "WH-001",
+      "status": "published",
+      "images": ["/uploads/demo/electronics/product-1.svg", "/uploads/demo/electronics/product-2.svg"],
+      "brandSlug": "soundmaster",
+      "categorySlugs": ["audio"],
+      "tags": ["audio", "headphones", "wireless"],
+      "productType": "physical",
+      "isHotDeal": true,
+      "isTopFeature": true,
+      "moq": 1,
+      "shipsAbroad": false
+    },
+    {
+      "title": "15.6\" Gaming Laptop",
+      "slug": "156-gaming-laptop",
+      "regularPrice": 85000,
+      "salePrice": 79900,
+      "stock": 10,
+      "description": "<p>High-performance gaming laptop with RTX graphics and 32GB RAM.</p>",
+      "shortDescription": "High-performance gaming laptop",
+      "weightKg": 2.5,
+      "sku": "GL-001",
+      "status": "published",
+      "images": ["/uploads/demo/electronics/product-3.svg", "/uploads/demo/electronics/product-4.svg"],
+      "brandSlug": "techpro",
+      "categorySlugs": ["laptops-computers", "laptops"],
+      "tags": ["laptop", "gaming", "computer"],
+      "productType": "physical",
+      "isHotDeal": false,
+      "isTopFeature": true,
+      "moq": 1,
+      "shipsAbroad": false
+    },
+    {
+      "title": "Android Smartphone Pro",
+      "slug": "android-smartphone-pro",
+      "regularPrice": 35000,
+      "salePrice": 32000,
+      "stock": 20,
+      "description": "<p>Latest Android smartphone with 5G support and 128GB storage.</p>",
+      "shortDescription": "Latest Android smartphone with 5G",
+      "weightKg": 0.2,
+      "sku": "SP-001",
+      "status": "published",
+      "images": ["/uploads/demo/electronics/product-5.svg", "/uploads/demo/electronics/product-6.svg"],
+      "brandSlug": "techpro",
+      "categorySlugs": ["smartphones", "android-phones"],
+      "tags": ["smartphone", "android", "5g"],
+      "productType": "physical",
+      "isHotDeal": true,
+      "isTopFeature": true,
+      "moq": 1,
+      "shipsAbroad": false
+    },
+    {
+      "title": "10\" Tablet Pro",
+      "slug": "10-tablet-pro",
+      "regularPrice": 25000,
+      "salePrice": 22000,
+      "stock": 25,
+      "description": "<p>10-inch tablet with HD display and long battery life.</p>",
+      "shortDescription": "10-inch tablet with HD display",
+      "weightKg": 0.5,
+      "sku": "TB-001",
+      "status": "published",
+      "images": ["/uploads/demo/electronics/product-7.svg", "/uploads/demo/electronics/product-8.svg"],
+      "brandSlug": "techpro",
+      "categorySlugs": ["laptops-computers", "tablets"],
+      "tags": ["tablet", "android", "portable"],
+      "productType": "physical",
+      "isHotDeal": false,
+      "isTopFeature": false,
+      "moq": 1,
+      "shipsAbroad": false
+    },
+    {
+      "title": "Portable Bluetooth Speaker",
+      "slug": "portable-bluetooth-speaker",
+      "regularPrice": 1990,
+      "salePrice": 1690,
+      "stock": 40,
+      "description": "<p>Waterproof portable speaker with 12-hour battery life.</p>",
+      "shortDescription": "Waterproof portable speaker",
+      "weightKg": 0.4,
+      "sku": "BS-001",
+      "status": "published",
+      "images": ["/uploads/demo/electronics/product-9.svg", "/uploads/demo/electronics/product-10.svg"],
+      "brandSlug": "soundmaster",
+      "categorySlugs": ["audio"],
+      "tags": ["speaker", "bluetooth", "portable"],
+      "productType": "physical",
+      "isHotDeal": true,
+      "isTopFeature": false,
+      "moq": 1,
+      "shipsAbroad": false
+    },
+    {
+      "title": "USB-C Fast Charger",
+      "slug": "usb-c-fast-charger",
+      "regularPrice": 990,
+      "salePrice": 790,
+      "stock": 50,
+      "description": "<p>Fast charger with multiple USB ports for all your devices.</p>",
+      "shortDescription": "Fast charger with multiple USB ports",
+      "weightKg": 0.15,
+      "sku": "CH-001",
+      "status": "published",
+      "images": ["/uploads/demo/electronics/product-11.svg", "/uploads/demo/electronics/product-12.svg"],
+      "brandSlug": "techpro",
+      "categorySlugs": ["audio"],
+      "tags": ["charger", "usb-c", "accessory"],
+      "productType": "physical",
+      "isHotDeal": false,
+      "isTopFeature": false,
+      "moq": 1,
+      "shipsAbroad": false
+    }
+  ],
+  "heroSlides": [
+    {
+      "image": "/uploads/demo/electronics/hero-1.svg",
+      "alt": "Tech Deals",
+      "title": "Tech Deals of the Week",
+      "subtitle": "Save big on the latest electronics",
+      "buttonLabel": "Shop Now",
+      "linkUrl": "/products",
+      "active": true,
+      "sortOrder": 1
+    },
+    {
+      "image": "/uploads/demo/electronics/hero-2.svg",
+      "alt": "New Gadgets",
+      "title": "New Gadgets Arrived",
+      "subtitle": "Check out our latest tech collection",
+      "buttonLabel": "Explore",
+      "linkUrl": "/products?new=true",
+      "active": true,
+      "sortOrder": 2
+    }
+  ]
+}

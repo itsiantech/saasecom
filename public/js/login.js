@@ -57,13 +57,6 @@ function setMode(next) {
 
 toggleBtn.addEventListener("click", () => setMode(mode === "login" ? "register" : "login"));
 
-// demo account — click korle autofill hoye dashboard e chole jabe
-document.getElementById("demoBtn").addEventListener("click", () => {
-  document.getElementById("email").value = "admin@test.com";
-  document.getElementById("password").value = "demo1234";
-  form.requestSubmit();
-});
-
 function showMsg(text, type) {
   msg.textContent = text;
   msg.className = "msg" + (type ? " " + type : "");

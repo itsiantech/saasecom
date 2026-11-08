@@ -19,6 +19,7 @@ const { getSettingsMap } = require("./settingsController");
 const { loadLiveFlashSales, bestFlashSale, publicFlashSale } = require("../services/promotions");
 const { toPaisa, fromPaisa } = require("../lib/money");
 const { parseSections } = require("../lib/homeSections");
+const { sanitizeRichText } = require("../lib/richText");
 
 /* ------------------------------------------------------------------ *
  * Public catalog reads. Every query here is store-scoped BY HAND:
@@ -286,7 +287,7 @@ function publicProduct(product) {
     name: product.title || product.name || "Unnamed product",
     slug: product.slug || String(product._id),
     sku: product.sku || "",
-    description: product.description || "",
+    description: sanitizeRichText(product.description || ""),
     shortDescription: product.shortDescription || "",
     images: product.images || [],
     videoUrl: product.videoUrl || "",

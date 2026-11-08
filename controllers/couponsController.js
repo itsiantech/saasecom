@@ -88,6 +88,8 @@ async function validatePayload(storeId, body, excludeId = null) {
     categories,
     categoryIds,
     freeDelivery,
+    usageLimit: Math.max(0, Math.floor(Number(body.usageLimit) || 0)),
+    perCustomerLimit: Math.max(0, Math.floor(Number(body.perCustomerLimit) || 0)),
   };
 }
 
@@ -105,6 +107,9 @@ function adminView(coupon, now = new Date()) {
     startAt: coupon.startAt,
     endAt: coupon.endAt,
     freeDelivery: coupon.freeDelivery === true,
+    usageLimit: Number(coupon.usageLimit) || 0,
+    perCustomerLimit: Number(coupon.perCustomerLimit) || 0,
+    usedCount: Number(coupon.usedCount) || 0,
     products: (coupon.products || []).map((p) => (p && p._id) || p).filter(Boolean),
     categories: (coupon.categories || []).map((c) => (c && c._id) || c).filter(Boolean),
     productNames,

@@ -2,10 +2,12 @@ const express = require("express");
 const router = express.Router();
 const ctrl = require("../controllers/productFormController");
 const { auth, requireAdmin } = require("../middleware/auth");
-const { upload } = require("../middleware/upload");
+const { makeImageUpload, singleImage, finalizeImage } = require("../middleware/upload");
+
+const imageUpload = makeImageUpload({ maxBytes: 2 * 1024 * 1024 });
 
 // image upload used by the product form (product / variation / swatch images)
-router.post("/upload", auth, requireAdmin, upload.single("image"), (req, res) => {
+router.post("/upload", auth, requireAdmin, singleImage(imageUpload, "image"), finalizeImage(), (req, res) => {
   if (!req.file) return res.status(400).json({ message: "Image lagbe" });
   res.json({ path: "/uploads/" + req.file.filename });
 });

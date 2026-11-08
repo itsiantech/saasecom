@@ -3,6 +3,7 @@ const OrderStatusHistory = require("../models/OrderStatusHistory");
 const { writeAudit } = require("../lib/audit");
 const { notifyOrderCancelled, notifyOrderStatus } = require("../lib/notify");
 const { cancelInstallmentOrder } = require("./installmentCancel");
+const { restoreOrderStock } = require("./orderStock");
 
 class OrderStatusError extends Error {
   constructor(message, status = 400) {
@@ -72,6 +73,15 @@ async function changeOrderStatus({ orderId, toStatus, actor = {}, note = "" }) {
       });
     } catch (err) {
       console.error("installment cancel:", err.message);
+    }
+  }
+
+  // cancelled orders give their reserved stock back (never double-counted)
+  if (toStatus === "cancelled") {
+    try {
+      await restoreOrderStock(order);
+    } catch (err) {
+      console.error("order restock:", err.message);
     }
   }
 

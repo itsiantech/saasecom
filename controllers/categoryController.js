@@ -107,8 +107,9 @@ async function list(req, res) {
 
   // Attach direct product count + children count to every row.
   const productCounts = await Product.aggregate([
-    { $match: { store: storeId, category: { $ne: null } } },
-    { $group: { _id: "$category", count: { $sum: 1 } } },
+    { $match: { store: storeId, categories: { $exists: true, $ne: [] } } },
+    { $unwind: "$categories" },
+    { $group: { _id: "$categories", count: { $sum: 1 } } },
   ]);
   const pcMap = new Map(productCounts.map((p) => [p._id.toString(), p.count]));
 
@@ -186,9 +187,9 @@ async function getOne(req, res) {
     const desc = await Category.find({ store: storeId, ancestors: category._id })
       .select("_id")
       .lean();
-    productFilter.category = { $in: [category._id, ...desc.map((d) => d._id)] };
+    productFilter.categories = { $in: [category._id, ...desc.map((d) => d._id)] };
   } else {
-    productFilter.category = category._id;
+    productFilter.categories = category._id;
   }
   const products = await Product.find(productFilter).lean();
 

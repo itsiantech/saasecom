@@ -10,6 +10,8 @@ const heroSlideSchema = new mongoose.Schema(
     linkUrl: { type: String, default: "", trim: true, maxlength: 500 },
     active: { type: Boolean, default: true },
     sortOrder: { type: Number, default: 0 },
+    // Demo data flag - true if created from starter pack
+    isDemo: { type: Boolean, default: false, index: true },
   },
   { timestamps: true }
 );

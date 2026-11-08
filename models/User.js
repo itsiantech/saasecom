@@ -9,6 +9,8 @@ const userSchema = new mongoose.Schema(
     email: { type: String, unique: true, sparse: true, lowercase: true, trim: true },
     phone: { type: String, unique: true, sparse: true, trim: true },
     password: { type: String, default: null },
+    failedLoginAttempts: { type: Number, default: 0, min: 0 },
+    lockedUntil: { type: Date, default: null },
     googleId: { type: String, default: null },
     role: { type: String, enum: ["admin", "customer", "superadmin"], default: "customer" },
     // wholesale/installment eligibility approval by an admin

@@ -202,6 +202,60 @@ async function loadCoupon(storeId, code) {
   return Coupon.findOne({ store: storeId, code: normalized }).lean();
 }
 
+// Checks the coupon's redemption budget before checkout. Total uses are
+// reserved atomically in reserveCouponUse; this is the read-side gate.
+async function couponUsageIssue({ coupon, storeId, userId = null }) {
+  if (!coupon) return "";
+
+  const usageLimit = Number(coupon.usageLimit) || 0;
+  if (usageLimit > 0 && (Number(coupon.usedCount) || 0) >= usageLimit) {
+    return "Ei coupon er usage limit sesh";
+  }
+
+  const perCustomer = Number(coupon.perCustomerLimit) || 0;
+  if (perCustomer > 0) {
+    if (!userId) return "Ei coupon nite hole login korun";
+    const Order = require("../models/Order");
+    const used = await Order.countDocuments({
+      store: storeId,
+      customer: userId,
+      couponCode: coupon.code,
+      status: { $ne: "cancelled" },
+    });
+    if (used >= perCustomer) return "Ei coupon apnar jonno sesh hoye geche";
+  }
+
+  return "";
+}
+
+// One atomic conditional increment so two simultaneous checkouts cannot both
+// take the last redemption.
+async function reserveCouponUse(coupon, storeId) {
+  if (!coupon) return { ok: true };
+  const usageLimit = Number(coupon.usageLimit) || 0;
+  if (usageLimit <= 0) return { ok: true };
+
+  const updated = await Coupon.findOneAndUpdate(
+    {
+      _id: coupon._id || coupon.id,
+      store: storeId,
+      $expr: { $lt: [{ $ifNull: ["$usedCount", 0] }, usageLimit] },
+    },
+    { $inc: { usedCount: 1 } },
+    { returnDocument: "after" }
+  );
+  if (!updated) return { ok: false, message: "Ei coupon er usage limit sesh" };
+  return { ok: true };
+}
+
+async function releaseCouponUse(coupon, storeId) {
+  if (!coupon || (Number(coupon.usageLimit) || 0) <= 0) return;
+  await Coupon.updateOne(
+    { _id: coupon._id, store: storeId, usedCount: { $gt: 0 } },
+    { $inc: { usedCount: -1 } }
+  );
+}
+
 function publicFlashSale(sale, now = new Date()) {
   if (!sale) return null;
   return {
@@ -224,6 +278,9 @@ function publicCoupon(coupon, now = new Date()) {
     discountValue: Number(coupon.discountValue) || 0,
     minOrderAmount: Number(coupon.minOrderAmount) || 0,
     freeDelivery: coupon.freeDelivery === true,
+    usageLimit: Number(coupon.usageLimit) || 0,
+    perCustomerLimit: Number(coupon.perCustomerLimit) || 0,
+    usedCount: Number(coupon.usedCount) || 0,
     startAt: coupon.startAt,
     endAt: coupon.endAt,
     status: windowStatus(coupon, now),
@@ -246,6 +303,9 @@ module.exports = {
   evaluateCoupon,
   loadLiveFlashSales,
   loadCoupon,
+  couponUsageIssue,
+  reserveCouponUse,
+  releaseCouponUse,
   publicFlashSale,
   publicCoupon,
 };

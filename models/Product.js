@@ -86,7 +86,11 @@ const productSchema = new mongoose.Schema(
     price: { type: Number, default: 0 }, // mirror of `regularPrice`
     regularPrice: { type: Number, default: 0 },
     salePrice: { type: Number, default: 0 },
-    description: { type: String, default: "" }, // rich text (HTML)
+    description: {
+      type: String,
+      default: "",
+      set: (value) => require("../lib/richText").sanitizeRichText(value),
+    }, // rich text (HTML) — sanitized on every write
     shortDescription: { type: String, default: "" },
     stock: { type: Number, default: 0 },
     // used by wholesale per-kg / vehicle shipping
@@ -117,6 +121,8 @@ const productSchema = new mongoose.Schema(
     moq: { type: Number, default: 1, min: 1 },
     shipsAbroad: { type: Boolean, default: false },
     soldCount: { type: Number, default: 0, min: 0 },
+    // Demo data flag - true if created from starter pack
+    isDemo: { type: Boolean, default: false, index: true },
   },
   { timestamps: true }
 );

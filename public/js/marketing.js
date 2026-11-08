@@ -458,6 +458,8 @@
     $("cpValue").value = item ? item.discountValue || "" : "";
     $("cpMin").value = item ? item.minOrderAmount || 0 : 0;
     $("cpFreeDelivery").checked = !!(item && item.freeDelivery);
+    $("cpUsage").value = item ? item.usageLimit || 0 : 0;
+    $("cpPerCustomer").value = item ? item.perCustomerLimit || 0 : 0;
 
     const today = new Date();
     const weekLater = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
@@ -488,6 +490,8 @@
     const discountType = $("cpType").value === "fixed" ? "fixed" : "percent";
     const discountValue = Number($("cpValue").value) || 0;
     const minOrderAmount = Math.max(0, Number($("cpMin").value) || 0);
+    const usageLimit = Math.max(0, Math.floor(Number($("cpUsage").value) || 0));
+    const perCustomerLimit = Math.max(0, Math.floor(Number($("cpPerCustomer").value) || 0));
     const freeDelivery = $("cpFreeDelivery").checked;
     const start = $("cpStart").value;
     const end = $("cpEnd").value;
@@ -509,6 +513,8 @@
       discountType,
       discountValue,
       minOrderAmount,
+      usageLimit,
+      perCustomerLimit,
       freeDelivery,
       startAt: dateStartISO(start),
       endAt: dateEndISO(end),
@@ -556,7 +562,7 @@
           <span class="promo-code">${esc(item.code)}</span>
           <p style="margin-top:8px;">${esc(couponBenefit(item))}${
             item.minOrderAmount > 0 ? ` · min order ৳${esc(item.minOrderAmount)}` : ""
-          }</p>
+          }${item.usageLimit > 0 ? ` · used ${esc(item.usedCount || 0)}/${esc(item.usageLimit)}` : ""}</p>
         </div>
         <span class="promo-pill ${esc(item.status)}">${esc(STATUS_LABEL[item.status] || item.status)}</span>
       </div>

@@ -88,8 +88,28 @@
       cb.value = node._id;
       cb.checked = state.selectedCategories.has(String(node._id));
       cb.addEventListener("change", () => {
-        if (cb.checked) state.selectedCategories.add(String(node._id));
-        else state.selectedCategories.delete(String(node._id));
+        const id = String(node._id);
+        const uncatId = state.meta && state.meta.uncategorized ? String(state.meta.uncategorized._id) : "";
+        const uncatBox = uncatId ? $("pfCategoryTree").querySelector(`input[value="${uncatId}"]`) : null;
+
+        if (cb.checked && id === uncatId) {
+          // "Uncategorized" is a placeholder, not a real category — picking it clears the rest
+          state.selectedCategories.clear();
+          state.selectedCategories.add(uncatId);
+          $("pfCategoryTree").querySelectorAll('input[type="checkbox"]').forEach((box) => {
+            box.checked = box.value === uncatId;
+          });
+        } else if (cb.checked) {
+          state.selectedCategories.add(id);
+          state.selectedCategories.delete(uncatId);
+          if (uncatBox) uncatBox.checked = false;
+        } else {
+          state.selectedCategories.delete(id);
+          if (!state.selectedCategories.size && uncatId) {
+            state.selectedCategories.add(uncatId);
+            if (uncatBox) uncatBox.checked = true;
+          }
+        }
         markDirty();
       });
 
@@ -618,8 +638,12 @@
       renderParentOptions();
       renderCategoryTree();
       state.selectedCategories.add(String(data._id));
+      const uncatId = state.meta && state.meta.uncategorized ? String(state.meta.uncategorized._id) : "";
+      if (uncatId && uncatId !== String(data._id)) state.selectedCategories.delete(uncatId);
       const node = $("pfCategoryTree").querySelector(`input[value="${data._id}"]`);
       if (node) node.checked = true;
+      const uncatBox = uncatId ? $("pfCategoryTree").querySelector(`input[value="${uncatId}"]`) : null;
+      if (uncatBox) uncatBox.checked = false;
       $("createCategoryForm").hidden = true;
       $("newCatName").value = "";
       notify("Category added & selected");
@@ -789,6 +813,9 @@
     $("pfHotDeal").checked = !!p.isHotDeal;
 
     state.selectedCategories = new Set((data.categories || []).map(String));
+    // old saves could carry Uncategorized next to a real category — keep the real one
+    const uncatId = state.meta && state.meta.uncategorized ? String(state.meta.uncategorized._id) : "";
+    if (uncatId && state.selectedCategories.size > 1) state.selectedCategories.delete(uncatId);
     const tagNames = new Map((state.meta.tags || []).map((t) => [String(t._id), t.name]));
     state.tags = (data.tags || []).map((t) => tagNames.get(String(t)) || String(t));
 

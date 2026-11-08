@@ -3,9 +3,28 @@ const router = express.Router();
 const Product = require("../models/Product");
 const { auth, requireAdmin } = require("../middleware/auth");
 const requireTenant = require("../middleware/requireTenant");
+const { sanitizeRichText } = require("../lib/richText");
 
 // ei panel api gulo shudhu oei dokan er malik er (public catalog /api/public + /api/storefront e chole)
 const guard = [requireTenant, auth, requireAdmin];
+
+// Client shudhu ei field gulo likhte parbe — store/_id/isDemo/soldCount baad.
+const PRODUCT_FIELDS = [
+  "name", "title", "slug", "price", "regularPrice", "salePrice",
+  "description", "shortDescription", "stock", "weightKg", "sku", "status",
+  "images", "videoUrl", "brand", "categories", "tags", "supplierId",
+  "hasVariations", "hasSwatches", "internationalConfig",
+  "productType", "isHotDeal", "isTopFeature", "moq", "shipsAbroad",
+];
+
+function productPayload(body = {}) {
+  const out = {};
+  for (const key of PRODUCT_FIELDS) {
+    if (body[key] !== undefined) out[key] = body[key];
+  }
+  if (out.description !== undefined) out.description = sanitizeRichText(out.description);
+  return out;
+}
 
 // shob product dekha (admin) — paginated
 router.get("/", guard, async (req, res) => {
@@ -37,7 +56,7 @@ router.get("/:id", guard, async (req, res) => {
 // notun product add kora (admin)
 router.post("/", guard, async (req, res) => {
   try {
-    const product = await Product.create(req.body);
+    const product = await Product.create({ ...productPayload(req.body), store: req.storeId });
     res.status(201).json(product);
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -47,10 +66,11 @@ router.post("/", guard, async (req, res) => {
 // product update kora (admin only)
 router.put("/:id", guard, async (req, res) => {
   try {
-    const product = await Product.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
-    });
+    const product = await Product.findOneAndUpdate(
+      { _id: req.params.id, store: req.storeId },
+      productPayload(req.body),
+      { new: true, runValidators: true }
+    );
     if (!product) return res.status(404).json({ message: "Product pawa jayni" });
     res.json(product);
   } catch (err) {

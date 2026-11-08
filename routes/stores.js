@@ -10,11 +10,12 @@ const { RESERVED_SUBS, SUB_RE, normalizeDomain, platformDomain, platformTarget }
 const { storefrontUrl } = require("../lib/storefrontUrl");
 const { normalizeSlug, slugProblem } = require("../lib/storeSlug");
 const { createStoreWithSubscription } = require("../lib/storeProvisioning");
+const { applyStarterPack } = require("../services/starterPack");
 
 // notun dokan khola (saas mode e plan soho) — paid plan shudhu payment approve howar por
 router.post("/", auth, async (req, res) => {
   try {
-    const { name, slug, planSlug } = req.body;
+    const { name, slug, planSlug, starterPack } = req.body;
     if (!name) return res.status(400).json({ message: "Store er naam lagbe" });
 
     const finalSlug = normalizeSlug(slug) || "store-" + randomBytes(3).toString("hex");
@@ -48,6 +49,17 @@ router.post("/", auth, async (req, res) => {
       slug: finalSlug,
       plan,
     });
+
+    // Apply starter pack if requested (default: true)
+    if (starterPack !== false && starterPack !== "false") {
+      const packName = starterPack || "general";
+      try {
+        await applyStarterPack(store._id, packName);
+      } catch (packError) {
+        console.error("Failed to apply starter pack:", packError);
+        // Don't fail store creation if pack fails, just log the error
+      }
+    }
 
     res.status(201).json({ store, subscription });
   } catch (err) {

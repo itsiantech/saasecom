@@ -22,6 +22,8 @@ const brandSchema = new mongoose.Schema(
     status: { type: String, enum: ["draft", "published", "trashed"], default: "draft" },
     deletedAt: { type: Date, default: null },
     previousStatus: { type: String, enum: ["draft", "published", null], default: null },
+    // Demo data flag - true if created from starter pack
+    isDemo: { type: Boolean, default: false, index: true },
   },
   { timestamps: true }
 );

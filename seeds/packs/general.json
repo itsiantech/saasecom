@@ -1,0 +1,260 @@
+{
+  "name": "general",
+  "displayName": "General Store",
+  "description": "Perfect for mixed retail stores with various product categories",
+  "version": "1.0.0",
+  "categories": [
+    {
+      "name": "Electronics",
+      "slug": "electronics",
+      "parent": null,
+      "level": 0,
+      "order": 1,
+      "image": "/uploads/demo/general/category-1.svg",
+      "icon": { "type": "none", "value": "" },
+      "status": "published",
+      "subcategories": [
+        {
+          "name": "Smartphones",
+          "slug": "smartphones",
+          "level": 1,
+          "order": 1,
+          "image": "/uploads/demo/general/category-2.svg",
+          "status": "published"
+        },
+        {
+          "name": "Laptops",
+          "slug": "laptops",
+          "level": 1,
+          "order": 2,
+          "image": "/uploads/demo/general/category-3.svg",
+          "status": "published"
+        }
+      ]
+    },
+    {
+      "name": "Clothing",
+      "slug": "clothing",
+      "parent": null,
+      "level": 0,
+      "order": 2,
+      "image": "/uploads/demo/general/category-1.svg",
+      "icon": { "type": "none", "value": "" },
+      "status": "published",
+      "subcategories": [
+        {
+          "name": "Men's Wear",
+          "slug": "mens-wear",
+          "level": 1,
+          "order": 1,
+          "image": "/uploads/demo/general/category-2.svg",
+          "status": "published"
+        },
+        {
+          "name": "Women's Wear",
+          "slug": "womens-wear",
+          "level": 1,
+          "order": 2,
+          "image": "/uploads/demo/general/category-3.svg",
+          "status": "published"
+        }
+      ]
+    },
+    {
+      "name": "Home & Garden",
+      "slug": "home-garden",
+      "parent": null,
+      "level": 0,
+      "order": 3,
+      "image": "/uploads/demo/general/category-1.svg",
+      "icon": { "type": "none", "value": "" },
+      "status": "published"
+    }
+  ],
+  "brands": [
+    {
+      "name": "TechBrand",
+      "slug": "techbrand",
+      "level": 0,
+      "order": 1,
+      "image": "/uploads/demo/general/brand-1.svg",
+      "status": "published"
+    },
+    {
+      "name": "StyleCo",
+      "slug": "styleco",
+      "level": 0,
+      "order": 2,
+      "image": "/uploads/demo/general/brand-2.svg",
+      "status": "published"
+    },
+    {
+      "name": "HomeEssentials",
+      "slug": "homeessentials",
+      "level": 0,
+      "order": 3,
+      "image": "/uploads/demo/general/brand-3.svg",
+      "status": "published"
+    }
+  ],
+  "products": [
+    {
+      "title": "Wireless Bluetooth Headphones",
+      "slug": "wireless-bluetooth-headphones",
+      "regularPrice": 2990,
+      "salePrice": 2490,
+      "stock": 30,
+      "description": "<p>High-quality wireless headphones with noise cancellation and 20-hour battery life.</p>",
+      "shortDescription": "Wireless headphones with noise cancellation",
+      "weightKg": 0.3,
+      "sku": "WH-001",
+      "status": "published",
+      "images": ["/uploads/demo/general/product-1.svg", "/uploads/demo/general/product-2.svg"],
+      "brandSlug": "techbrand",
+      "categorySlugs": ["electronics", "smartphones"],
+      "tags": ["electronics", "audio", "wireless"],
+      "productType": "physical",
+      "isHotDeal": true,
+      "isTopFeature": true,
+      "moq": 1,
+      "shipsAbroad": false
+    },
+    {
+      "title": "15.6\" Laptop Pro",
+      "slug": "156-laptop-pro",
+      "regularPrice": 65000,
+      "salePrice": 59900,
+      "stock": 15,
+      "description": "<p>Powerful laptop with 16GB RAM, 512GB SSD, and Intel i7 processor.</p>",
+      "shortDescription": "High-performance laptop for work and gaming",
+      "weightKg": 2.1,
+      "sku": "LP-001",
+      "status": "published",
+      "images": ["/uploads/demo/general/product-3.svg", "/uploads/demo/general/product-4.svg"],
+      "brandSlug": "techbrand",
+      "categorySlugs": ["electronics", "laptops"],
+      "tags": ["laptop", "computer", "work"],
+      "productType": "physical",
+      "isHotDeal": false,
+      "isTopFeature": true,
+      "moq": 1,
+      "shipsAbroad": false
+    },
+    {
+      "title": "Men's Cotton T-Shirt",
+      "slug": "mens-cotton-tshirt",
+      "regularPrice": 990,
+      "salePrice": 790,
+      "stock": 50,
+      "description": "<p>Comfortable 100% cotton t-shirt perfect for everyday wear.</p>",
+      "shortDescription": "Comfortable cotton t-shirt",
+      "weightKg": 0.2,
+      "sku": "TS-001",
+      "status": "published",
+      "images": ["/uploads/demo/general/product-5.svg", "/uploads/demo/general/product-6.svg"],
+      "brandSlug": "styleco",
+      "categorySlugs": ["clothing", "mens-wear"],
+      "tags": ["clothing", "t-shirt", "casual"],
+      "productType": "physical",
+      "isHotDeal": true,
+      "isTopFeature": false,
+      "moq": 1,
+      "shipsAbroad": false
+    },
+    {
+      "title": "Women's Summer Dress",
+      "slug": "womens-summer-dress",
+      "regularPrice": 1990,
+      "salePrice": 1590,
+      "stock": 25,
+      "description": "<p>Elegant summer dress made from breathable fabric.</p>",
+      "shortDescription": "Elegant summer dress",
+      "weightKg": 0.3,
+      "sku": "DR-001",
+      "status": "published",
+      "images": ["/uploads/demo/general/product-7.svg", "/uploads/demo/general/product-8.svg"],
+      "brandSlug": "styleco",
+      "categorySlugs": ["clothing", "womens-wear"],
+      "tags": ["clothing", "dress", "summer"],
+      "productType": "physical",
+      "isHotDeal": false,
+      "isTopFeature": true,
+      "moq": 1,
+      "shipsAbroad": false
+    },
+    {
+      "title": "LED Desk Lamp",
+      "slug": "led-desk-lamp",
+      "regularPrice": 1490,
+      "salePrice": 1190,
+      "stock": 40,
+      "description": "<p>Adjustable LED desk lamp with multiple brightness levels.</p>",
+      "shortDescription": "Adjustable LED desk lamp",
+      "weightKg": 0.8,
+      "sku": "DL-001",
+      "status": "published",
+      "images": ["/uploads/demo/general/product-9.svg", "/uploads/demo/general/product-10.svg"],
+      "brandSlug": "homeessentials",
+      "categorySlugs": ["home-garden"],
+      "tags": ["home", "lighting", "desk"],
+      "productType": "physical",
+      "isHotDeal": true,
+      "isTopFeature": false,
+      "moq": 1,
+      "shipsAbroad": false
+    },
+    {
+      "title": "Stainless Steel Water Bottle",
+      "slug": "stainless-steel-water-bottle",
+      "regularPrice": 790,
+      "salePrice": 690,
+      "stock": 60,
+      "description": "<p>Insulated water bottle keeps drinks cold for 24 hours.</p>",
+      "shortDescription": "Insulated water bottle",
+      "weightKg": 0.4,
+      "sku": "WB-001",
+      "status": "published",
+      "images": ["/uploads/demo/general/product-11.svg", "/uploads/demo/general/product-12.svg"],
+      "brandSlug": "homeessentials",
+      "categorySlugs": ["home-garden"],
+      "tags": ["home", "bottle", "water"],
+      "productType": "physical",
+      "isHotDeal": false,
+      "isTopFeature": false,
+      "moq": 1,
+      "shipsAbroad": false
+    }
+  ],
+  "heroSlides": [
+    {
+      "image": "/uploads/demo/general/hero-1.svg",
+      "alt": "Welcome to our store",
+      "title": "Welcome to Our Store",
+      "subtitle": "Discover amazing products at great prices",
+      "buttonLabel": "Shop Now",
+      "linkUrl": "/products",
+      "active": true,
+      "sortOrder": 1
+    },
+    {
+      "image": "/uploads/demo/general/hero-2.svg",
+      "alt": "Special offers",
+      "title": "Special Offers",
+      "subtitle": "Up to 50% off on selected items",
+      "buttonLabel": "View Deals",
+      "linkUrl": "/products?sale=true",
+      "active": true,
+      "sortOrder": 2
+    },
+    {
+      "image": "/uploads/demo/general/hero-3.svg",
+      "alt": "New arrivals",
+      "title": "New Arrivals",
+      "subtitle": "Check out our latest collection",
+      "buttonLabel": "Explore",
+      "linkUrl": "/products?new=true",
+      "active": true,
+      "sortOrder": 3
+    }
+  ]
+}

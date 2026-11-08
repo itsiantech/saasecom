@@ -145,6 +145,38 @@ test("an invoice prints the logo of the store that owns the order", async () => 
   assert.doesNotMatch(res.text, /b-logo\.png/);
 });
 
+test("invoice and packing slip need a signed link or an authorized session", async () => {
+  const anonymous = await request(state.app)
+    .get(`/api/orders/${state.orderA._id}/invoice`)
+    .set("x-store-slug", "shop-a");
+  assert.equal(anonymous.status, 401);
+
+  const other = await as("b", "get", `/api/orders/${state.orderA._id}/invoice`);
+  assert.equal(other.status, 404);
+
+  const links = await as("a", "get", `/api/orders/${state.orderA._id}/doc-links`);
+  assert.equal(links.status, 200, JSON.stringify(links.body));
+  assert.match(links.body.invoice, /token=/);
+  assert.match(links.body.packingSlip, /packing-slip\?/);
+
+  const slip = await request(state.app).get(links.body.packingSlip).set("x-store-slug", "shop-a");
+  assert.equal(slip.status, 200);
+  assert.match(slip.text, /a-logo\.png/);
+
+  const invoice = await request(state.app).get(links.body.invoice).set("x-store-slug", "shop-a");
+  assert.equal(invoice.status, 200);
+  assert.match(invoice.text, /ORD-A-1/);
+
+  const tampered = links.body.invoice.replace(/token=[^&]+/, "token=broken");
+  const bad = await request(state.app).get(tampered).set("x-store-slug", "shop-a");
+  assert.equal(bad.status, 403);
+
+  const reused = await request(state.app)
+    .get(links.body.invoice.replace("store=shop-a", "store=shop-b"))
+    .set("x-store-slug", "shop-b");
+  assert.equal(reused.status, 403);
+});
+
 test("dashboard style is stored per store and normalized", async () => {
   const empty = await as("a", "get", "/api/settings/dashboard-style");
   assert.equal(empty.status, 200, JSON.stringify(empty.body));

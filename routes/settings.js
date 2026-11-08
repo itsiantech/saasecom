@@ -1,14 +1,26 @@
+const path = require("path");
 const express = require("express");
 const router = express.Router();
 const ctrl = require("../controllers/settingsController");
 const { auth, optionalAuth, requireAdmin } = require("../middleware/auth");
-const { upload } = require("../middleware/upload");
+const { makeImageUpload, singleImage, finalizeImage } = require("../middleware/upload");
+
+const genericImage = makeImageUpload({ maxBytes: 2 * 1024 * 1024 });
+const settingsImage = makeImageUpload({ maxBytes: 5 * 1024 * 1024, allowSvg: true });
+const SETTINGS_DIR = path.join(__dirname, "..", "public", "uploads", "settings");
 
 // image upload for logo / favicon / social icons / footer logo
-router.post("/upload", auth, requireAdmin, upload.single("image"), (req, res) => {
-  if (!req.file) return res.status(400).json({ message: "Image lagbe" });
-  res.json({ path: "/uploads/" + req.file.filename });
-});
+router.post(
+  "/upload",
+  auth,
+  requireAdmin,
+  singleImage(genericImage, "image"),
+  finalizeImage(),
+  (req, res) => {
+    if (!req.file) return res.status(400).json({ message: "Image lagbe" });
+    res.json({ path: "/uploads/" + req.file.filename });
+  }
+);
 
 // public (checkout) — specific routes before "/"
 router.get("/shipping", ctrl.shippingGet);
@@ -117,41 +129,26 @@ router.put("/admin", auth, requireAdmin, async (req, res) => {
   }
 });
 
-const multer = require("multer");
-const nodePath = require("path");
-const nodeFs = require("fs");
-
-const settingsUpload = multer({
-  storage: multer.diskStorage({
-    destination: (req, file, cb) => {
-      const dir = nodePath.join(__dirname, "../public/uploads/settings");
-      if (!nodeFs.existsSync(dir)) nodeFs.mkdirSync(dir, { recursive: true });
-      cb(null, dir);
-    },
-    filename: (req, file, cb) => {
-      cb(null, Date.now() + "-" + Math.round(Math.random() * 1e9) + nodePath.extname(file.originalname));
-    },
-  }),
-  limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    const ok = /jpeg|jpg|png|gif|ico|webp|svg/.test(nodePath.extname(file.originalname).toLowerCase());
-    cb(ok ? null : new Error("Images only (jpeg, jpg, png, gif, ico, webp, svg)"), ok);
-  },
-});
-
 for (const field of ["logo", "favicon"]) {
-  router.post(`/admin/${field}`, auth, requireAdmin, settingsUpload.single(field), async (req, res) => {
-    try {
-      if (!req.file) return res.status(400).json({ message: "No file uploaded" });
-      const url = `/uploads/settings/${req.file.filename}`;
-      const storeId = req.store?._id || null;
-      await storeSettings.setImage(storeId, field, url);
-      const settings = storeId ? await storeSettings.view(storeId) : await StoreSettings.findOne({ storeId });
-      res.json({ [field]: url, settings });
-    } catch (err) {
-      res.status(400).json({ message: err.message });
+  router.post(
+    `/admin/${field}`,
+    auth,
+    requireAdmin,
+    singleImage(settingsImage, field),
+    finalizeImage({ dir: SETTINGS_DIR, allowSvg: true }),
+    async (req, res) => {
+      try {
+        if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+        const url = `/uploads/settings/${req.file.filename}`;
+        const storeId = req.store?._id || null;
+        await storeSettings.setImage(storeId, field, url);
+        const settings = storeId ? await storeSettings.view(storeId) : await StoreSettings.findOne({ storeId });
+        res.json({ [field]: url, settings });
+      } catch (err) {
+        res.status(400).json({ message: err.message });
+      }
     }
-  });
+  );
 
   router.delete(`/admin/${field}`, auth, requireAdmin, async (req, res) => {
     try {

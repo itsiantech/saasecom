@@ -1,9 +1,9 @@
 const express = require("express");
 const router = express.Router();
-const Store = require("../models/Store");
 const Plan = require("../models/Plan");
 const Subscription = require("../models/Subscription");
 const { auth, requireAdmin } = require("../middleware/auth");
+const { applyPlanToStore } = require("../lib/storeProvisioning");
 
 // current store er subscription dekha
 router.get("/current", auth, async (req, res) => {
@@ -42,45 +42,12 @@ router.post("/upgrade", auth, requireAdmin, async (req, res) => {
       });
     }
 
-    let subscription = await Subscription.findOne({ store: req.store._id });
-    const now = new Date();
-
-    if (subscription) {
-      // Existing subscription update
-      subscription.plan = newPlan._id;
-      subscription.status = "active";
-      subscription.startDate = now;
-      subscription.endDate = new Date(now.getTime() + newPlan.durationDays * 24 * 60 * 60 * 1000);
-      subscription.trialEndsAt = newPlan.trialDays > 0
-        ? new Date(now.getTime() + newPlan.trialDays * 24 * 60 * 60 * 1000)
-        : null;
-      subscription.status = newPlan.trialDays > 0 ? "trial" : "active";
-      subscription.cancelledAt = null;
-      subscription.autoRenew = true;
-      subscription.lastPaymentAt = now;
-
-      await subscription.save();
-    } else {
-      // New subscription create
-      const startDate = now;
-      const endDate = new Date(now.getTime() + newPlan.durationDays * 24 * 60 * 60 * 1000);
-      const trialEndsAt = newPlan.trialDays > 0
-        ? new Date(now.getTime() + newPlan.trialDays * 24 * 60 * 60 * 1000)
-        : null;
-
-      subscription = await Subscription.create({
-        store: req.store._id,
-        plan: newPlan._id,
-        status: newPlan.trialDays > 0 ? "trial" : "active",
-        startDate,
-        endDate,
-        trialEndsAt,
-        lastPaymentAt: now,
-      });
-    }
-
-    // Update store plan
-    await Store.findByIdAndUpdate(req.store._id, { plan: newPlan._id });
+    const subscription = await applyPlanToStore({
+      store: req.store,
+      plan: newPlan,
+      startedAt: new Date(),
+      extend: false,
+    });
 
     res.json({ subscription, message: "Plan upgrade hoyeche" });
   } catch (err) {

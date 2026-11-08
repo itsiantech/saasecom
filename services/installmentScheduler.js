@@ -12,6 +12,7 @@ const { fromPaisa } = require("../lib/money");
 const { outstandingPaisa } = require("./installmentLedger");
 const { lateFeeForInstallment } = require("./installmentSchedule");
 const { cancelInstallmentOrder } = require("./installmentCancel");
+const { restoreOrderStock } = require("./orderStock");
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const REMINDER_DAYS = 3;
@@ -212,6 +213,11 @@ async function runStore(settings, now, sendTemplateFn, summary) {
       });
       if (!result.skipped) {
         summary.cancelled += 1;
+        try {
+          await restoreOrderStock(order);
+        } catch (err) {
+          console.error("order restock:", err.message);
+        }
         notifyOrderCancelled(order).catch(() => {});
       }
       continue;

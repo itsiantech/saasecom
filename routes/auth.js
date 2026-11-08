@@ -8,6 +8,42 @@ const { auth } = require("../middleware/auth");
 const { getStoreId } = require("../lib/tenantContext");
 const { hostKind } = require("../lib/hostKind");
 const { requestOtp, verifyOtp } = require("../lib/otp");
+const { rateLimit } = require("../lib/rateLimit");
+const { passwordIssue } = require("../lib/passwordPolicy");
+
+const MAX_FAILED_LOGINS = 5;
+const LOCK_MS = 15 * 60 * 1000;
+
+const identifierOf = (req) => {
+  const body = req.body || {};
+  return body.identifier || body.email || body.phone || "";
+};
+
+const ipBurstLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 80,
+  keyPrefix: "auth-ip",
+});
+
+const loginLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  keyPrefix: "auth-login",
+  keyOf: identifierOf,
+});
+
+const registerLimit = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 10,
+  keyPrefix: "auth-register",
+});
+
+const otpLimit = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: 5,
+  keyPrefix: "auth-otp",
+  keyOf: (req) => (req.body || {}).phone || "",
+});
 
 function signToken(user) {
   return jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
@@ -45,7 +81,7 @@ router.get("/config", (req, res) => {
 });
 
 // register — email ba phone (jekono ekta), password always required
-router.post("/register", async (req, res) => {
+router.post("/register", registerLimit, async (req, res) => {
   try {
     if (await onPanelHost(req)) {
       return res.status(403).json({ message: "এই ঠিকানায় নতুন অ্যাকাউন্ট খোলা যায় না — নিজের দোকানের সাইটে যান" });
@@ -58,6 +94,8 @@ router.post("/register", async (req, res) => {
     if (!name || !password) {
       return res.status(400).json({ message: "Name ar password lagbe" });
     }
+    const weakPassword = passwordIssue(password);
+    if (weakPassword) return res.status(400).json({ message: weakPassword });
     if (!email && !phone) {
       return res.status(400).json({ message: "Email ba phone number er ekta lagbe" });
     }
@@ -89,31 +127,66 @@ router.post("/register", async (req, res) => {
   }
 });
 
-// email ba phone (server nije detect kore) + password check
+// email ba phone (server nije detect kore) + password check.
+// Returns { user } on success, { lockedUntil } while locked, {} on bad credentials.
 async function credentialsUser(body) {
   const identifier = String(body.identifier || body.email || body.phone || "").trim();
   const password = String(body.password || "");
-  if (!identifier || !password) return null;
+  if (!identifier || !password) return {};
 
   let user = null;
   if (identifier.includes("@")) {
     user = await User.findOne({ email: identifier.toLowerCase() });
   } else {
     const phone = normalizePhone(identifier);
-    if (!PHONE_RE.test(phone)) return null;
+    if (!PHONE_RE.test(phone)) return {};
     user = await User.findOne({ phone });
   }
 
-  if (!user || !user.password) return null;
+  if (!user || !user.password) return {};
+
+  const now = new Date();
+  if (user.lockedUntil && user.lockedUntil > now) {
+    return { lockedUntil: user.lockedUntil };
+  }
+  if (user.lockedUntil) {
+    // lock expired — fresh slate
+    await User.updateOne({ _id: user._id }, { $set: { failedLoginAttempts: 0, lockedUntil: null } });
+    user.failedLoginAttempts = 0;
+    user.lockedUntil = null;
+  }
+
   const ok = await bcrypt.compare(password, user.password);
-  return ok ? user : null;
+  if (ok) {
+    if (Number(user.failedLoginAttempts) > 0) {
+      await User.updateOne({ _id: user._id }, { $set: { failedLoginAttempts: 0, lockedUntil: null } });
+    }
+    return { user };
+  }
+
+  const attempts = Number(user.failedLoginAttempts || 0) + 1;
+  const lock = attempts >= MAX_FAILED_LOGINS ? new Date(now.getTime() + LOCK_MS) : null;
+  await User.updateOne(
+    { _id: user._id },
+    { $set: { failedLoginAttempts: lock ? 0 : attempts, lockedUntil: lock } }
+  );
+  return {};
+}
+
+function lockedMessage(until) {
+  const minutes = Math.max(1, Math.ceil((new Date(until).getTime() - Date.now()) / 60000));
+  return `Onek bar bhul password — ${minutes} minute por abar cheshta korun`;
 }
 
 // login — store owner/staff/customer entry (shop subdomain or local dev)
-router.post("/login", async (req, res) => {
+router.post("/login", ipBurstLimit, loginLimit, async (req, res) => {
   try {
-    const user = await credentialsUser(req.body || {});
-    if (!user) return res.status(401).json({ message: "Email/phone ba password vul hoyeche" });
+    const result = await credentialsUser(req.body || {});
+    if (!result.user) {
+      if (result.lockedUntil) return res.status(429).json({ message: lockedMessage(result.lockedUntil) });
+      return res.status(401).json({ message: "Email/phone ba password vul hoyeche" });
+    }
+    const user = result.user;
     const kind = await hostKind(req);
     // superadmin has its own entry point and must not use a shop host
     if (kind === "store" && user.role === "superadmin") {
@@ -130,12 +203,16 @@ router.post("/login", async (req, res) => {
 });
 
 // platform login — api/platform host, superadmin account only
-router.post("/platform-login", async (req, res) => {
+router.post("/platform-login", ipBurstLimit, loginLimit, async (req, res) => {
   try {
     if ((await hostKind(req)) === "store") {
       return res.status(403).json({ message: "প্ল্যাটফর্ম লগইন দোকানের ঠিকানায় চলে না" });
     }
-    const user = await credentialsUser(req.body || {});
+    const result = await credentialsUser(req.body || {});
+    if (!result.user && result.lockedUntil) {
+      return res.status(429).json({ message: lockedMessage(result.lockedUntil) });
+    }
+    const user = result.user;
     if (!user || user.role !== "superadmin") {
       return res.status(401).json({ message: "শুধু প্ল্যাটফর্ম অ্যাডমিন অ্যাকাউন্ট দিয়ে লগইন করুন" });
     }
@@ -146,7 +223,7 @@ router.post("/platform-login", async (req, res) => {
 });
 
 // google login — frontend theke ID token ashe, verify kore login/register
-router.post("/google", async (req, res) => {
+router.post("/google", ipBurstLimit, async (req, res) => {
   try {
     if (!process.env.GOOGLE_CLIENT_ID) {
       return res.status(501).json({
@@ -197,7 +274,7 @@ function storeOf(req) {
   return (req.store && req.store._id) || getStoreId();
 }
 
-router.post("/otp/request", async (req, res) => {
+router.post("/otp/request", ipBurstLimit, otpLimit, async (req, res) => {
   const storeId = storeOf(req);
   if (!storeId) return res.status(400).json({ message: "Prothome store select korun" });
 
@@ -212,7 +289,7 @@ router.post("/otp/request", async (req, res) => {
   res.json({ ok: true, message: "OTP pathano hoyeche", minutes: result.minutes });
 });
 
-router.post("/otp/verify", async (req, res) => {
+router.post("/otp/verify", ipBurstLimit, otpLimit, async (req, res) => {
   const storeId = storeOf(req);
   if (!storeId) return res.status(400).json({ message: "Prothome store select korun" });
 

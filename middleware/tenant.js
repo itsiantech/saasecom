@@ -21,7 +21,7 @@ function getTokenUserId(req) {
   const header = req.headers.authorization || "";
   if (!header.startsWith("Bearer ")) return null;
   try {
-    return jwt.verify(header.slice(7), process.env.JWT_SECRET).id;
+    return jwt.verify(header.slice(7), process.env.JWT_SECRET, { algorithms: ["HS256"] }).id;
   } catch {
     return null;
   }

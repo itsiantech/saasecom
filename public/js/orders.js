@@ -949,16 +949,18 @@ function renderDetail(o) {
   `;
 
   el("odBack").addEventListener("click", () => switchView("orders"));
-  const docUrl = (path) => {
-    const base = "/api/orders/" + o.id + "/" + path;
-    return o.storeSlug ? base + "?store=" + encodeURIComponent(o.storeSlug) : base;
+  const openDoc = async (type) => {
+    try {
+      const res = await api("/api/orders/" + o.id + "/doc-links");
+      const links = await res.json().catch(() => ({}));
+      if (!res.ok || !links[type]) throw new Error(links.message || "লিংক তৈরি হয়নি");
+      window.open(links[type], "_blank", "noopener");
+    } catch (err) {
+      toast(err.message, "err");
+    }
   };
-  el("odInvoice").addEventListener("click", () => {
-    window.open(docUrl("invoice"), "_blank", "noopener");
-  });
-  el("odPacking").addEventListener("click", () => {
-    window.open(docUrl("packing-slip"), "_blank", "noopener");
-  });
+  el("odInvoice").addEventListener("click", () => openDoc("invoice"));
+  el("odPacking").addEventListener("click", () => openDoc("packingSlip"));
 
   const menuBtn = root.querySelector(".menu-btn");
   if (menuBtn) {

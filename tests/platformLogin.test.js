@@ -93,3 +93,57 @@ test("local dev still allows the superadmin through the normal login", async () 
   assert.equal(res.status, 200, JSON.stringify(res.body));
   assert.equal(res.body.user.role, "superadmin");
 });
+
+test("five bad passwords lock the account for a while", async () => {
+  const hash = await bcrypt.hash("correct123", 4);
+  const locked = await User.create({
+    name: "Locked",
+    email: "lock@example.com",
+    password: hash,
+    role: "customer",
+  });
+
+  for (let i = 0; i < 5; i += 1) {
+    const bad = await post("/api/auth/login", "localhost", {
+      email: "lock@example.com",
+      password: "wrong123",
+    });
+    assert.equal(bad.status, 401, JSON.stringify(bad.body));
+  }
+
+  const row = await User.findById(locked._id).lean();
+  assert.ok(row.lockedUntil && new Date(row.lockedUntil) > new Date());
+
+  const blocked = await post("/api/auth/login", "localhost", {
+    email: "lock@example.com",
+    password: "correct123",
+  });
+  assert.equal(blocked.status, 429);
+  assert.match(blocked.body.message, /minute/);
+
+  // An unlocked account can log in again.
+  await User.updateOne({ _id: locked._id }, { $set: { lockedUntil: null, failedLoginAttempts: 0 } });
+  const again = await post("/api/auth/login", "localhost", {
+    email: "lock@example.com",
+    password: "correct123",
+  });
+  assert.equal(again.status, 200, JSON.stringify(again.body));
+});
+
+test("registration refuses weak passwords", async () => {
+  const short = await post("/api/auth/register", "localhost", {
+    name: "Weak",
+    email: "weak@example.com",
+    password: "abc1",
+  });
+  assert.equal(short.status, 400);
+  assert.match(short.body.message, /8 character/);
+
+  const lettersOnly = await post("/api/auth/register", "localhost", {
+    name: "Weak",
+    email: "weak@example.com",
+    password: "abcdefgh",
+  });
+  assert.equal(lettersOnly.status, 400);
+  assert.match(lettersOnly.body.message, /letter ar number/);
+});

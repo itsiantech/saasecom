@@ -2656,6 +2656,16 @@
           <input type="checkbox" id="cpFreeDelivery" />
           <span>Free delivery (min order pouchale shipping charge 0)</span>
         </label>
+        <div class="grid-2">
+          <div class="field">
+            <label for="cpUsage">Total uses (0 = unlimited)</label>
+            <input id="cpUsage" type="number" min="0" step="1" placeholder="0" />
+          </div>
+          <div class="field">
+            <label for="cpPerCustomer">Uses per customer (0 = unlimited)</label>
+            <input id="cpPerCustomer" type="number" min="0" step="1" placeholder="0" />
+          </div>
+        </div>
         <div class="field">
           <label for="cpCategorySearch">Assigned categories</label>
           <input id="cpCategorySearch" type="search" placeholder="Search category…" autocomplete="off" />
@@ -2759,9 +2769,9 @@
   <script src="/js/product-form.js"></script>
   <script src="/js/settings-dashboard.js?v=7"></script>
   <script src="/js/installments-admin.js?v=1"></script>
-  <script src="/js/orders.js?v=2"></script>
+  <script src="/js/orders.js?v=3"></script>
   <script src="/js/product-catalog.js?v=1"></script>
-  <script src="/js/marketing.js?v=1"></script>
+  <script src="/js/marketing.js?v=2"></script>
   <script src="/js/hero-slider.js?v=2"></script>
   <script src="/js/customers.js?v=1"></script>
   <script src="/js/suppliers.js?v=2"></script>

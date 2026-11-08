@@ -153,6 +153,28 @@ test("an owner manages their own store's products only", async () => {
   assert.equal(String(createElsewhere.body.store), String(state.storeA._id));
 });
 
+test("product and staff create ignore client store / protected fields", async () => {
+  const product = await as("a", "post", "/api/products", {
+    body: {
+      name: "Scoped product",
+      price: 10,
+      store: state.storeB._id,
+      isDemo: true,
+      soldCount: 99,
+    },
+  });
+  assert.equal(product.status, 201, JSON.stringify(product.body));
+  assert.equal(String(product.body.store), String(state.storeA._id));
+  assert.equal(product.body.isDemo, false);
+  assert.equal(product.body.soldCount, 0);
+
+  const staff = await as("a", "post", "/api/staff", {
+    body: { name: "Helper", email: "helper@a.example", role: "viewer", store: state.storeB._id },
+  });
+  assert.equal(staff.status, 201, JSON.stringify(staff.body));
+  assert.equal(String(staff.body.store), String(state.storeA._id));
+});
+
 test("anonymous callers cannot read or write orders", async () => {
   const list = await request(state.app).get("/api/orders").set("x-store-slug", "shop-a");
   assert.equal(list.status, 401);
@@ -181,6 +203,41 @@ test("one store's admin never sees another store's order", async () => {
   const crossDelete = await as("a", "delete", `/api/orders/${state.orderB._id}`);
   assert.equal(crossDelete.status, 404);
   assert.ok(await Order.findById(state.orderB._id));
+});
+
+test("manual order create/update cannot forge store, totals or payment status", async () => {
+  const created = await as("a", "post", "/api/orders", {
+    body: {
+      orderNumber: "ORD-MANUAL-1",
+      customerName: "Manual Buyer",
+      customerPhone: "01711111111",
+      address: "Dhaka",
+      items: [{ product: state.aProduct._id, quantity: 2, unitPrice: 100, price: 1 }],
+      shippingAmount: 50,
+      totalAmount: 1,
+      paymentStatus: "paid",
+      store: state.storeB._id,
+      paymentMethod: "cod",
+    },
+  });
+  assert.equal(created.status, 201, JSON.stringify(created.body));
+  assert.equal(String(created.body.store), String(state.storeA._id));
+  assert.equal(created.body.totalAmount, 250);
+  assert.equal(created.body.paymentStatus, "pending");
+
+  const updated = await as("a", "put", `/api/orders/${state.orderA._id}`, {
+    body: {
+      customerName: "Rahim Updated",
+      totalAmount: 1,
+      paymentStatus: "paid",
+      store: state.storeB._id,
+    },
+  });
+  assert.equal(updated.status, 200, JSON.stringify(updated.body));
+  assert.equal(updated.body.customerName, "Rahim Updated");
+  assert.equal(updated.body.totalAmount, 100);
+  assert.equal(updated.body.paymentStatus, "pending");
+  assert.equal(String(updated.body.store), String(state.storeA._id));
 });
 
 test("the same panel APIs (categories, brands, staff) are admin-only too", async () => {

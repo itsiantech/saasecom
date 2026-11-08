@@ -4,6 +4,8 @@ const orderSchema = new mongoose.Schema(
   {
     orderNumber: { type: String, required: true, unique: true },
     invoiceNumber: { type: String, default: "" },
+    // Client-supplied replay key; unique per store when present.
+    idempotencyKey: { type: String, default: "", trim: true },
     customer: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
     customerName: { type: String, required: true },
     customerEmail: { type: String, default: "" },
@@ -82,6 +84,9 @@ const orderSchema = new mongoose.Schema(
     deliverySpeed: { type: String, default: "" },
     shippingBreakdown: { type: mongoose.Schema.Types.Mixed, default: null },
     installmentPlan: { type: mongoose.Schema.Types.Mixed, default: null },
+    // set by checkout after stock is decremented; cancel/delete restores it exactly once
+    stockDeducted: { type: Boolean, default: false },
+    stockRestored: { type: Boolean, default: false },
     // courier tracking (order list page + international shipments)
     courierName: { type: String, default: "" },
     status: {
@@ -105,5 +110,9 @@ const orderSchema = new mongoose.Schema(
 
 orderSchema.plugin(require("../lib/tenantPlugin"));
 orderSchema.plugin(require("../lib/planLimitPlugin"));
+orderSchema.index(
+  { store: 1, idempotencyKey: 1 },
+  { unique: true, partialFilterExpression: { idempotencyKey: { $gt: "" } } }
+);
 
 module.exports = mongoose.model("Order", orderSchema);

@@ -7,6 +7,16 @@ const requireTenant = require("../middleware/requireTenant");
 // staff list ekhane email/permission ache — shudhu oei dokan er admin
 const guard = [requireTenant, auth, requireAdmin];
 
+const STAFF_FIELDS = ["name", "email", "role", "permissions"];
+
+function staffPayload(body = {}) {
+  const out = {};
+  for (const key of STAFF_FIELDS) {
+    if (body[key] !== undefined) out[key] = body[key];
+  }
+  return out;
+}
+
 // shob staff dekha
 router.get("/", guard, async (req, res) => {
   const staff = await Staff.find();
@@ -27,7 +37,7 @@ router.get("/:id", guard, async (req, res) => {
 // notun staff add kora
 router.post("/", guard, async (req, res) => {
   try {
-    const staff = await Staff.create(req.body);
+    const staff = await Staff.create({ ...staffPayload(req.body), store: req.storeId });
     res.status(201).json(staff);
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -37,10 +47,11 @@ router.post("/", guard, async (req, res) => {
 // staff update kora (admin only)
 router.put("/:id", guard, async (req, res) => {
   try {
-    const staff = await Staff.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
-    });
+    const staff = await Staff.findOneAndUpdate(
+      { _id: req.params.id, store: req.storeId },
+      staffPayload(req.body),
+      { new: true, runValidators: true }
+    );
     if (!staff) return res.status(404).json({ message: "Staff pawa jayni" });
     res.json(staff);
   } catch (err) {

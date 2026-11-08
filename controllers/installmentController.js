@@ -131,10 +131,15 @@ function shapeOrder(order, installments, payments) {
   };
 }
 
-async function isAdminUser(req) {
+// Role alone is not enough: an admin of store A must not read store B's orders
+// by pointing ?store= at B. Only that store's owner (or the platform admin) counts.
+async function isStoreAdmin(req) {
   if (!req.user || !req.user.id) return false;
   const user = await User.findById(req.user.id).select("role");
-  return !!user && (user.role === "admin" || user.role === "superadmin");
+  if (!user) return false;
+  if (user.role === "superadmin") return true;
+  if (user.role !== "admin") return false;
+  return !!(req.store && req.store.owner && String(req.store.owner) === String(req.user.id));
 }
 
 async function loadCartPricing(req, storeId) {
@@ -155,9 +160,9 @@ function itemsAmountOf(cart) {
   );
 }
 
-async function discountedItemsOf(storeId, cart) {
+async function discountedItemsOf(storeId, cart, userId = null) {
   if (!cart || !cart.couponCode) return itemsAmountOf(cart);
-  const info = await cartCouponInfo(storeId, cart);
+  const info = await cartCouponInfo(storeId, cart, 0, userId);
   if (info.couponError) return itemsAmountOf(cart);
   return Math.max(0, info.subtotalPaisa - (info.discountPaisa || 0));
 }
@@ -223,7 +228,7 @@ async function getConfig(req, res, next) {
       goodsReleaseRule: settings.goodsReleaseRule,
       shippingInFirstInstallment: settings.shippingInFirstInstallment,
       graceDays: settings.graceDays,
-      itemsAmountPaisa: cart ? await discountedItemsOf(storeId, cart) : 0,
+      itemsAmountPaisa: cart ? await discountedItemsOf(storeId, cart, req.user && req.user.id) : 0,
       plans: plans.map(publicPlan),
     });
   } catch (err) {
@@ -252,7 +257,7 @@ async function preview(req, res, next) {
       return res.status(400).json({ message: "Wholesale shipping active nei" });
     }
 
-    const coupon = await cartCouponInfo(storeId, cart, shipping.totalPaisa);
+    const coupon = await cartCouponInfo(storeId, cart, shipping.totalPaisa, req.user && req.user.id);
     if (coupon.couponError) return res.status(400).json({ message: coupon.couponError });
     const discountedItemsPaisa = Math.max(
       0,
@@ -326,10 +331,12 @@ async function myOrders(req, res, next) {
 
 async function loadScopedOrder(req) {
   if (!mongoose.isValidObjectId(req.params.id)) return null;
-  const order = await Order.findById(req.params.id);
+  const storeId = storeOf(req);
+  if (!storeId) return null;
+  const order = await Order.findOne({ _id: req.params.id, store: storeId });
   if (!order || order.paymentMode !== "installment") return null;
   const owner = order.customer && String(order.customer) === String(req.user.id);
-  if (!owner && !(await isAdminUser(req))) return null;
+  if (!owner && !(await isStoreAdmin(req))) return null;
   return order;
 }
 
@@ -357,9 +364,13 @@ async function payInstallment(req, res, next) {
       return res.status(400).json({ message: "Cancelled order e payment kora jay na" });
     }
 
+    if (!mongoose.isValidObjectId(req.body.installmentId)) {
+      return res.status(400).json({ message: "Installment select korun" });
+    }
     const installment = await OrderInstallment.findOne({
       _id: req.body.installmentId,
       order: order._id,
+      store: order.store,
     });
     if (!installment) return res.status(404).json({ message: "Installment pawa jayni" });
     if (installment.status === "paid") {
@@ -392,9 +403,10 @@ async function payInstallment(req, res, next) {
     if (!transactionId) return res.status(400).json({ message: "Transaction ID lagbe" });
 
     const name = method.slice(method.indexOf(":") + 1).trim().toLowerCase();
+    const storeId = storeOf(req);
     const [mobileRows, bankRows] = await Promise.all([
-      PaymentMobileManual.find({}).lean(),
-      PaymentBankManual.find({}).lean(),
+      PaymentMobileManual.find({ store: storeId }).lean(),
+      PaymentBankManual.find({ store: storeId }).lean(),
     ]);
 
     let labelName = name;
@@ -449,13 +461,16 @@ async function receipt(req, res, next) {
     if (!mongoose.isValidObjectId(req.params.id)) {
       return res.status(404).json({ message: "Payment pawa jayni" });
     }
-    const payment = await Payment.findById(req.params.id).lean();
+    const storeId = storeOf(req);
+    if (!storeId) return res.status(400).json({ message: "Prothome store select korun" });
+
+    const payment = await Payment.findOne({ _id: req.params.id, store: storeId }).lean();
     if (!payment) return res.status(404).json({ message: "Payment pawa jayni" });
-    const order = await Order.findById(payment.order).lean();
+    const order = await Order.findOne({ _id: payment.order, store: storeId }).lean();
     if (!order) return res.status(404).json({ message: "Order pawa jayni" });
 
     const owner = order.customer && String(order.customer) === String(req.user.id);
-    if (!owner && !(await isAdminUser(req))) {
+    if (!owner && !(await isStoreAdmin(req))) {
       return res.status(403).json({ message: "Ei receipt dekhar permission nei" });
     }
 
@@ -518,7 +533,8 @@ async function receipt(req, res, next) {
  * ------------------------------------------------------------------ */
 async function adminListOrders(req, res, next) {
   try {
-    const orders = await Order.find({ paymentMode: "installment" })
+    const storeId = storeOf(req);
+    const orders = await Order.find({ store: storeId, paymentMode: "installment" })
       .sort({ createdAt: -1 })
       .limit(200)
       .populate("customer", "name phone email wholesaleApproved")
@@ -562,7 +578,8 @@ async function adminOrder(req, res, next) {
     if (!mongoose.isValidObjectId(req.params.id)) {
       return res.status(404).json({ message: "Installment order pawa jayni" });
     }
-    const order = await Order.findOne({ _id: req.params.id, paymentMode: "installment" })
+    const storeId = storeOf(req);
+    const order = await Order.findOne({ _id: req.params.id, store: storeId, paymentMode: "installment" })
       .populate("customer", "name phone email wholesaleApproved")
       .lean();
     if (!order) return res.status(404).json({ message: "Installment order pawa jayni" });
@@ -582,7 +599,8 @@ async function adminListPayments(req, res, next) {
     const status = ["pending", "verified", "rejected", "refunded"].includes(req.query.status)
       ? req.query.status
       : "pending";
-    const payments = await Payment.find({ installment: { $ne: null }, status })
+    const storeId = storeOf(req);
+    const payments = await Payment.find({ store: storeId, installment: { $ne: null }, status })
       .sort({ createdAt: 1 })
       .limit(200)
       .populate("order", "orderNumber customerName customerPhone paymentMode status")
@@ -600,8 +618,14 @@ async function adminListPayments(req, res, next) {
   }
 }
 
+async function ownedPayment(req) {
+  if (!mongoose.isValidObjectId(req.params.id)) return null;
+  return Payment.findOne({ _id: req.params.id, store: storeOf(req) }).select("_id").lean();
+}
+
 async function adminVerifyPayment(req, res, next) {
   try {
+    if (!(await ownedPayment(req))) return res.status(404).json({ message: "Payment pawa jayni" });
     const result = await verifyPendingPayment({
       paymentId: req.params.id,
       actorUserId: req.user.id,
@@ -627,6 +651,7 @@ async function adminVerifyPayment(req, res, next) {
 
 async function adminRejectPayment(req, res, next) {
   try {
+    if (!(await ownedPayment(req))) return res.status(404).json({ message: "Payment pawa jayni" });
     const payment = await rejectPendingPayment({
       paymentId: req.params.id,
       actorUserId: req.user.id,
@@ -661,34 +686,80 @@ function secretMatches(received, expected) {
   return a.length === b.length && a.length > 0 && crypto.timingSafeEqual(a, b);
 }
 
+function rawBodyOf(req) {
+  if (Buffer.isBuffer(req.rawBody)) return req.rawBody;
+  return Buffer.from(JSON.stringify(req.body || {}));
+}
+
+// HMAC over "<timestamp>.<raw body>" so an intercepted payload cannot be
+// replayed later or reused with a different amount.
+function signatureMatches(req, secret) {
+  const received = String(req.header("x-webhook-signature") || "").replace(/^sha256=/i, "");
+  const stamp = String(req.header("x-webhook-timestamp") || "").trim();
+  if (!received || !/^\d+$/.test(stamp)) return false;
+  if (Math.abs(Date.now() / 1000 - Number(stamp)) > 300) return false;
+
+  const expected = crypto
+    .createHmac("sha256", secret)
+    .update(stamp + ".")
+    .update(rawBodyOf(req))
+    .digest("hex");
+  const a = Buffer.from(received);
+  const b = Buffer.from(expected);
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
 async function webhook(req, res, next) {
   try {
     const secret = process.env.INSTALLMENT_WEBHOOK_SECRET;
     if (!secret) {
       return res.status(501).json({ message: "Installment webhook configured nei" });
     }
-    if (!secretMatches(req.header("x-webhook-secret"), secret)) {
-      return res.status(401).json({ message: "Webhook secret valid na" });
+    const signed = signatureMatches(req, secret);
+    const shared = secretMatches(req.header("x-webhook-secret"), secret);
+    if (!signed && !shared) {
+      return res.status(401).json({ message: "Webhook signature/secret valid na" });
     }
+
+    const storeId = storeOf(req);
+    if (!storeId) return res.status(400).json({ message: "Prothome store select korun" });
 
     const body = req.body || {};
     const status = String(body.status || "").toLowerCase();
     if (!["verified", "paid", "success"].includes(status)) {
       return res.status(400).json({ message: "Webhook status verified/paid hote hobe" });
     }
+    const amountPaisa = Number(body.amountPaisa);
+    if (!Number.isFinite(amountPaisa) || amountPaisa <= 0) {
+      return res.status(400).json({ message: "Webhook amountPaisa lagbe" });
+    }
 
     let payment = null;
-    if (body.paymentId && mongoose.isValidObjectId(body.paymentId)) {
-      payment = await Payment.findById(body.paymentId);
+    if (body.paymentId) {
+      if (!mongoose.isValidObjectId(body.paymentId)) {
+        return res.status(400).json({ message: "paymentId valid na" });
+      }
+      payment = await Payment.findOne({ _id: body.paymentId, store: storeId });
     } else if (body.trxId) {
-      payment = await Payment.findOne({ trxId: String(body.trxId).trim(), status: "pending" });
+      payment = await Payment.findOne({ trxId: String(body.trxId).trim(), store: storeId });
     }
-    if (!payment) return res.status(404).json({ message: "Pending payment pawa jayni" });
+    if (!payment) return res.status(404).json({ message: "Payment pawa jayni" });
+
+    const order = await Order.findOne({ _id: payment.order, store: storeId }).select("_id").lean();
+    if (!order) return res.status(404).json({ message: "Order pawa jayni" });
+
+    // Providers retry; a verified payment is acknowledged instead of failed.
+    if (payment.status === "verified") {
+      return res.json({ ok: true, duplicate: true, payment: { _id: payment._id, status: payment.status } });
+    }
+    if (payment.status !== "pending") {
+      return res.status(409).json({ message: "Payment pending state e nei" });
+    }
 
     const result = await verifyPendingPayment({
       paymentId: payment._id,
       source: "webhook",
-      expectedAmountPaisa: body.amountPaisa == null ? null : Number(body.amountPaisa),
+      expectedAmountPaisa: amountPaisa,
     });
 
     res.json({

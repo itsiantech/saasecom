@@ -62,10 +62,11 @@ test("customer note is trimmed, required and capped at 1000 chars", () => {
   assert.throws(() => normalizeNote("x".repeat(1001)), /1000 character/);
 });
 
-test("password reset requires 6+ chars and max 72 bytes", () => {
-  assert.throws(() => normalizePassword("12345"), /6 character/);
+test("password reset follows the shared policy: 8+ chars, letters and numbers", () => {
+  assert.throws(() => normalizePassword("abc1234"), /8 character/);
+  assert.throws(() => normalizePassword("abcdefgh"), /letter ar number/);
   assert.throws(() => normalizePassword("a".repeat(73)), /72 byte/);
-  assert.strictEqual(normalizePassword("secret1"), "secret1");
+  assert.strictEqual(normalizePassword("secret12"), "secret12");
 });
 
 test("resolveContact prefers account data and falls back to latest order", () => {

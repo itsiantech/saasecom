@@ -10,18 +10,40 @@ const Subscription = require("../models/Subscription");
 (async () => {
   await mongoose.connect(process.env.MONGO_URI);
 
-  const hash = await bcrypt.hash("demo1234", 10);
+  const isProd = process.env.NODE_ENV === "production";
+
+  // Production e demo account auto-create korle well-known password diye admin panel
+  // khule jay — tai explicit permission + explicit credentials chara seed colbe na.
+  if (isProd && process.env.ALLOW_DEMO_SEED !== "1") {
+    console.error("Demo seed production e bondho. Dorkar hole ALLOW_DEMO_SEED=1 din.");
+    process.exit(1);
+  }
+
+  // Read credentials from environment variables
+  const demoEmail = process.env.DEMO_EMAIL || (isProd ? "" : "admin@test.com");
+  const demoPassword = process.env.DEMO_PASSWORD || (isProd ? "" : "demo1234");
+  const superAdminEmail = process.env.SUPER_ADMIN_EMAIL || (isProd ? "" : "superadmin@test.com");
+  const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD || (isProd ? "" : "super1234");
+
+  if (!demoEmail || !demoPassword || !superAdminEmail || !superAdminPassword) {
+    console.error(
+      "Demo seed er jonno DEMO_EMAIL, DEMO_PASSWORD, SUPER_ADMIN_EMAIL, SUPER_ADMIN_PASSWORD env dite hobe."
+    );
+    process.exit(1);
+  }
+
+  const hash = await bcrypt.hash(demoPassword, 10);
   const user = await User.findOneAndUpdate(
-    { email: "admin@test.com" },
+    { email: demoEmail },
     { $set: { name: "Demo Admin", password: hash, role: "admin" } },
     { returnDocument: "after", upsert: true }
   );
   console.log("DEMO USER:", user.name, "|", user.email, "|", user.role);
 
   // super admin — platform er malik (shob store/plan manage kore)
-  const superHash = await bcrypt.hash("super1234", 10);
+  const superHash = await bcrypt.hash(superAdminPassword, 10);
   const superAdmin = await User.findOneAndUpdate(
-    { email: "superadmin@test.com" },
+    { email: superAdminEmail },
     { $set: { name: "Super Admin", password: superHash, role: "superadmin" } },
     { returnDocument: "after", upsert: true }
   );
