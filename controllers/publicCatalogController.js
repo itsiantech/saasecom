@@ -3,7 +3,10 @@ const Product = require("../models/Product");
 const ProductVariation = require("../models/ProductVariation");
 const ProductPriceTier = require("../models/ProductPriceTier");
 const Category = require("../models/Category");
+const ProductCategory = require("../models/ProductCategory");
 const Brand = require("../models/Brand");
+const Attribute = require("../models/Attribute");
+const AttributeTerm = require("../models/AttributeTerm");
 const Review = require("../models/Review");
 const HeroSlide = require("../models/HeroSlide");
 const SiteSetting = require("../models/SiteSetting");
@@ -108,6 +111,70 @@ async function resolveFacetIds(Model, storeId, raw) {
   return found.map((row) => row._id);
 }
 
+/* ------------------------------------------------------------------ *
+ * Categories live in two places: the product form writes ProductCategory
+ * join rows, seeded/legacy products only carry Product.categories. Every
+ * read below unions both, otherwise join-only products disappear from
+ * their category page (and an old backfill would be required per store).
+ * ------------------------------------------------------------------ */
+
+async function productIdsWithCategories(storeId, categoryIds) {
+  if (!categoryIds.length) return [];
+  const rows = await ProductCategory.find({ store: storeId, category: { $in: categoryIds } })
+    .select("product")
+    .lean();
+  return [...new Set(rows.map((row) => String(row.product)))].map(objectIdOr).filter(Boolean);
+}
+
+async function categoriesOfProducts(storeId, productIds) {
+  if (!productIds.length) return new Map();
+  const rows = await ProductCategory.find({ store: storeId, product: { $in: productIds } })
+    .select("product category")
+    .lean();
+  const map = new Map();
+  for (const row of rows) {
+    const key = String(row.product);
+    if (!map.has(key)) map.set(key, []);
+    map.get(key).push(String(row.category));
+  }
+  return map;
+}
+
+function mergeJoinedCategories(products, joined) {
+  for (const product of products) {
+    const extra = joined.get(String(product._id)) || [];
+    if (!extra.length) continue;
+    product.categories = [...new Set([...(product.categories || []).map(String), ...extra])];
+  }
+  return products;
+}
+
+// attrs=term,term — AND across attributes, OR within one attribute's terms.
+async function productIdsWithAttributeTerms(storeId, termIds) {
+  const terms = termIds.length
+    ? await AttributeTerm.find({ store: storeId, _id: { $in: termIds } }).select("_id attribute").lean()
+    : [];
+  if (!terms.length) return [];
+
+  const byAttribute = new Map();
+  for (const term of terms) {
+    const key = String(term.attribute);
+    if (!byAttribute.has(key)) byAttribute.set(key, []);
+    byAttribute.get(key).push(term._id);
+  }
+
+  let result = null;
+  for (const group of byAttribute.values()) {
+    const rows = await ProductVariation.find({ store: storeId, term: { $in: group } })
+      .select("product")
+      .lean();
+    const ids = new Set(rows.map((row) => String(row.product)));
+    result = result ? new Set([...result].filter((id) => ids.has(id))) : ids;
+    if (!result.size) return [];
+  }
+  return [...(result || [])].map(objectIdOr).filter(Boolean);
+}
+
 async function listProducts(req, res, next) {
   try {
     const store = req.publicStore;
@@ -135,12 +202,33 @@ async function listProducts(req, res, next) {
       const subtree = categoryIds.length
         ? (await getDescendantIds(Category, store._id, categoryIds)).map(objectIdOr).filter(Boolean)
         : [];
-      match.categories = { $in: subtree };
+      const joined = await productIdsWithCategories(store._id, subtree);
+      match.$and = [
+        ...(match.$and || []),
+        { $or: [{ categories: { $in: subtree } }, { _id: { $in: joined } }] },
+      ];
     }
 
     const brandRaw = String(req.query.brand || "").trim();
     const brandIds = await resolveFacetIds(Brand, store._id, brandRaw);
-    if (brandRaw) match.brand = { $in: brandIds };
+    if (brandRaw) {
+      // picking a parent brand must also show products filed under its sub-brands
+      const subtree = brandIds.length
+        ? (await getDescendantIds(Brand, store._id, brandIds)).map(objectIdOr).filter(Boolean)
+        : [];
+      match.brand = { $in: subtree };
+    }
+
+    const attrTermIds = [...new Set(
+      String(req.query.attrs || "")
+        .split(",")
+        .map((part) => part.trim())
+        .filter((part) => mongoose.isValidObjectId(part))
+    )].slice(0, 24);
+    if (String(req.query.attrs || "").trim()) {
+      const matched = await productIdsWithAttributeTerms(store._id, attrTermIds);
+      match.$and = [...(match.$and || []), { _id: { $in: matched } }];
+    }
 
     const minPrice = Number(req.query.minPrice);
     const maxPrice = Number(req.query.maxPrice);
@@ -197,6 +285,10 @@ async function listProducts(req, res, next) {
       total = count;
     }
 
+    // join-row categories are the source of truth after a product-form save;
+    // fold them in so flash-sale matching sees the full category set too
+    mergeJoinedCategories(rows, await categoriesOfProducts(store._id, rows.map((row) => row._id)));
+
     const [international, wholesale, flashSales, ratings] = await Promise.all([
       loadSettings(store._id),
       getWholesaleSettings(store._id),
@@ -227,7 +319,7 @@ async function listProducts(req, res, next) {
         return withRating(card, ratings, product._id);
       }),
       pagination: { page, limit, total, pages: Math.ceil(total / limit) || 1 },
-      filters: { sort: sortKey, query, category: categoryIds, brand: brandIds },
+      filters: { sort: sortKey, query, category: categoryIds, brand: brandIds, attrs: attrTermIds },
     });
   } catch (err) {
     next(err);
@@ -249,10 +341,71 @@ async function listCategories(req, res, next) {
 async function listBrands(req, res, next) {
   try {
     const rows = await Brand.find(baseFilter(req.publicStore._id, { status: "published", deletedAt: null }))
-      .select("name slug image")
+      .select("name slug parent ancestors level order image")
       .sort({ order: 1, name: 1 })
       .lean();
-    res.json({ brands: rows.map((row) => ({ id: row._id, name: row.name, slug: row.slug, image: row.image || "" })) });
+    res.json({
+      brands: rows.map((row) => ({
+        id: row._id,
+        name: row.name,
+        slug: row.slug,
+        parent: row.parent || null,
+        level: row.level || 0,
+        image: row.image || "",
+      })),
+      // main brand -> sub-brand tree for the shop filter sidebar
+      tree: buildTree(rows.map((row) => ({ ...row, children: undefined }))),
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Attribute facets for the shop sidebar: only attributes/terms that at least
+// one published product of THIS store actually uses.
+async function listAttributes(req, res, next) {
+  try {
+    const storeId = req.publicStore._id;
+    const storeOid = new mongoose.Types.ObjectId(String(storeId));
+    const used = await ProductVariation.aggregate([
+      { $match: { store: storeOid } },
+      { $lookup: { from: "products", localField: "product", foreignField: "_id", as: "productDoc" } },
+      { $unwind: "$productDoc" },
+      { $match: { "productDoc.store": storeOid, "productDoc.status": "published" } },
+      { $group: { _id: { attribute: "$attribute", term: "$term" }, count: { $sum: 1 } } },
+      { $match: { "_id.attribute": { $ne: null }, "_id.term": { $ne: null } } },
+    ]);
+    if (!used.length) return res.json({ attributes: [] });
+
+    const attributeIds = [...new Set(used.map((row) => String(row._id.attribute)))].map(objectIdOr).filter(Boolean);
+    const termIds = [...new Set(used.map((row) => String(row._id.term)))].map(objectIdOr).filter(Boolean);
+    const [attributes, terms] = await Promise.all([
+      Attribute.find({ store: storeId, _id: { $in: attributeIds } }).select("name").lean(),
+      AttributeTerm.find({ store: storeId, _id: { $in: termIds } }).select("name attribute").lean(),
+    ]);
+
+    const counts = new Map(used.map((row) => [String(row._id.term), row.count]));
+    const byAttribute = new Map();
+    for (const term of terms) {
+      const key = String(term.attribute);
+      if (!byAttribute.has(key)) byAttribute.set(key, []);
+      byAttribute.get(key).push({
+        id: term._id,
+        name: term.name,
+        count: counts.get(String(term._id)) || 0,
+      });
+    }
+
+    res.json({
+      attributes: attributes
+        .map((attribute) => ({
+          id: attribute._id,
+          name: attribute.name,
+          terms: (byAttribute.get(String(attribute._id)) || []).sort((a, b) => a.name.localeCompare(b.name)),
+        }))
+        .filter((attribute) => attribute.terms.length)
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    });
   } catch (err) {
     next(err);
   }
@@ -315,9 +468,23 @@ async function getProduct(req, res, next) {
     if (!key) return res.status(404).json({ message: "Product pawa jayni" });
 
     const filter = baseFilter(store._id, objectIdOr(key) ? { _id: objectIdOr(key) } : { slug: key.toLowerCase() });
-    // categories/brand are populated so the storefront can breadcrumb and show them
-    const product = await Product.findOne(filter).populate("categories", "name slug").populate("brand", "name slug").lean();
+    const product = await Product.findOne(filter)
+      .populate("brand", "name slug")
+      .lean();
     if (!product) return res.status(404).json({ message: "Product pawa jayni" });
+
+    // categories: legacy array ∪ join rows (see productIdsWithCategories)
+    const categoryLinks = await ProductCategory.find({ store: store._id, product: product._id })
+      .select("category")
+      .lean();
+    const categoryIds = [...new Set([
+      ...(product.categories || []).map(String),
+      ...categoryLinks.map((row) => String(row.category)),
+    ])].map(objectIdOr).filter(Boolean);
+    product.categories = categoryIds.length
+      ? await Category.find({ store: store._id, _id: { $in: categoryIds } }).select("name slug").lean()
+      : [];
+    product.brand = product.brand || null;
 
     const [international, wholesale, variations, tierRows, flashSales, reviews, related] = await Promise.all([
       loadSettings(store._id),
@@ -329,7 +496,7 @@ async function getProduct(req, res, next) {
       ProductPriceTier.find({ store: store._id, product: product._id }).sort({ minQty: 1 }).lean(),
       loadLiveFlashSales(store._id),
       reviewSummary(store._id, product._id),
-      findRelated(store._id, product),
+      findRelated(store._id, product, categoryIds),
     ]);
 
     const basePrice = product.salePrice > 0 ? product.salePrice : product.regularPrice || product.price || 0;
@@ -381,9 +548,14 @@ async function reviewSummary(storeId, productId, limit = 10) {
 }
 
 // same category, best sellers first, never the product itself
-async function findRelated(storeId, product) {
+async function findRelated(storeId, product, categoryIds = []) {
+  if (!categoryIds.length) return [];
+  const joined = await productIdsWithCategories(storeId, categoryIds);
   const rows = await Product.find(
-    baseFilter(storeId, { _id: { $ne: product._id }, categories: { $in: product.categories || [] } })
+    baseFilter(storeId, {
+      _id: { $ne: product._id },
+      $or: [{ categories: { $in: categoryIds } }, { _id: { $in: joined } }],
+    })
   )
     .select("title name slug images price regularPrice salePrice stock soldCount hasVariations internationalConfig.sizes")
     .sort({ soldCount: -1, createdAt: -1 })
@@ -476,11 +648,14 @@ async function listHome(req, res, next) {
 
     const productRows = await Promise.all(
       picked.map(async (row) => {
-        const subtree = await getDescendantIds(Category, store._id, [row.categoryDoc._id]);
+        const subtree = (await getDescendantIds(Category, store._id, [row.categoryDoc._id]))
+          .map(objectIdOr)
+          .filter(Boolean);
+        const joined = await productIdsWithCategories(store._id, subtree);
         return Product.find({
           store: store._id,
           status: "published",
-          categories: { $in: subtree.map(objectIdOr).filter(Boolean) },
+          $or: [{ categories: { $in: subtree } }, { _id: { $in: joined } }],
         })
           .select(HOME_SECTION_PROJECTION)
           .sort({ soldCount: -1, createdAt: -1 })
@@ -488,6 +663,8 @@ async function listHome(req, res, next) {
           .lean();
       })
     );
+
+    mergeJoinedCategories(productRows.flat(), await categoriesOfProducts(store._id, productRows.flat().map((row) => row._id)));
 
     const ratings = await ratingMapFor(store._id, productRows.flat().map((row) => row._id));
     const ctx = { international, wholesale, flashSales, ratings };
@@ -562,6 +739,7 @@ module.exports = {
   listHome,
   listCategories,
   listBrands,
+  listAttributes,
   listProducts,
   listHeroSlides,
   getProduct,

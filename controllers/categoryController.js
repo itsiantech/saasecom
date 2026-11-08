@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const Category = require("../models/Category");
 const Product = require("../models/Product");
+const ProductCategory = require("../models/ProductCategory");
 const { getStoreId } = require("../lib/tenantContext");
 const {
   escapeRegex,
@@ -106,12 +107,26 @@ async function list(req, res) {
   });
 
   // Attach direct product count + children count to every row.
-  const productCounts = await Product.aggregate([
-    { $match: { store: storeId, categories: { $exists: true, $ne: [] } } },
-    { $unwind: "$categories" },
-    { $group: { _id: "$categories", count: { $sum: 1 } } },
+  // Counts union both storages: legacy Product.categories and the ProductCategory
+  // join rows the product form writes, so neither kind of product reads as 0.
+  const [productCounts, linkCounts] = await Promise.all([
+    Product.aggregate([
+      { $match: { store: storeId, categories: { $exists: true, $ne: [] } } },
+      { $unwind: "$categories" },
+      { $group: { _id: "$categories", products: { $addToSet: "$_id" } } },
+    ]),
+    ProductCategory.aggregate([
+      { $match: { store: storeId } },
+      { $group: { _id: "$category", products: { $addToSet: "$product" } } },
+    ]),
   ]);
-  const pcMap = new Map(productCounts.map((p) => [p._id.toString(), p.count]));
+  const pcSets = new Map();
+  for (const row of [...productCounts, ...linkCounts]) {
+    const key = String(row._id);
+    const set = pcSets.get(key) || new Set();
+    row.products.forEach((id) => set.add(String(id)));
+    pcSets.set(key, set);
+  }
 
   const childCounts = await Category.aggregate([
     { $match: { store: storeId, parent: { $ne: null } } },
@@ -121,7 +136,7 @@ async function list(req, res) {
 
   const enriched = categories.map((c) => ({
     ...c,
-    productCount: pcMap.get(c._id.toString()) || 0,
+    productCount: (pcSets.get(c._id.toString()) || new Set()).size,
     childrenCount: ccMap.get(c._id.toString()) || 0,
   }));
 
@@ -181,17 +196,24 @@ async function getOne(req, res) {
   }));
 
   // Products directly under this category (optionally include sub-category products).
+  // Same union as the public catalog: legacy array OR product-form join rows.
   const includeSub = req.query.includeSub === "true";
-  let productFilter = { store: storeId };
+  let categoryScope = [category._id];
   if (includeSub) {
     const desc = await Category.find({ store: storeId, ancestors: category._id })
       .select("_id")
       .lean();
-    productFilter.categories = { $in: [category._id, ...desc.map((d) => d._id)] };
-  } else {
-    productFilter.categories = category._id;
+    categoryScope = [category._id, ...desc.map((d) => d._id)];
   }
-  const products = await Product.find(productFilter).lean();
+  const linked = await ProductCategory.find({ store: storeId, category: { $in: categoryScope } })
+    .select("product")
+    .lean();
+  const linkedIds = [...new Set(linked.map((row) => String(row.product)))]
+    .filter((id) => mongoose.isValidObjectId(id));
+  const products = await Product.find({
+    store: storeId,
+    $or: [{ categories: { $in: categoryScope } }, { _id: { $in: linkedIds } }],
+  }).lean();
 
   res.json({ category, breadcrumb, children: childrenTree, products });
 }

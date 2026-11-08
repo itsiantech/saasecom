@@ -33,6 +33,7 @@ router.get("/store", catalog.getStoreInfo);
 router.get("/home", catalog.listHome);
 router.get("/categories", catalog.listCategories);
 router.get("/brands", catalog.listBrands);
+router.get("/attributes", catalog.listAttributes);
 router.get("/products", catalog.listProducts);
 router.get("/products/suggestions", catalog.suggestions);
 router.get("/products/:slug", catalog.getProduct);
