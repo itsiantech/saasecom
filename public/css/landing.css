@@ -52,10 +52,22 @@ a { color: inherit; text-decoration: none; }
 }
 
 .ld-brand {
+  display: inline-flex;
+  align-items: center;
   font-size: 22px;
   font-weight: 700;
   letter-spacing: 0.14em;
 }
+
+.ld-brand.has-logo img {
+  display: block;
+  height: 34px;
+  width: auto;
+  max-width: 190px;
+  object-fit: contain;
+}
+
+.ld-footer .ld-brand.has-logo img { height: 28px; max-width: 160px; }
 
 .ld-brand-dot { color: var(--accent); }
 
@@ -448,6 +460,8 @@ a { color: inherit; text-decoration: none; }
 @media (max-width: 900px) {
   .ld-hero-in,
   .ld-address-in { grid-template-columns: 1fr; gap: 40px; }
+  .ld-hero-in > *,
+  .ld-address-in > * { min-width: 0; }
   .ld-nav { display: none; }
   .ld-hero { padding: 56px 0 76px; }
   .ld-plans, .ld-address { padding: 66px 0; }
@@ -456,6 +470,7 @@ a { color: inherit; text-decoration: none; }
 
 @media (max-width: 520px) {
   .ld-header-in { height: 60px; gap: 12px; }
+  .ld-brand.has-logo img { height: 28px; max-width: 140px; }
   .ld-actions { gap: 10px; }
   .ld-link { display: none; }
   .ld-btn { padding: 10px 16px; font-size: 14px; }

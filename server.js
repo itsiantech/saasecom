@@ -58,10 +58,11 @@ app.use("/api/promotions", require("./routes/promotions"));
 app.use("/api/flash-sales", require("./routes/flashSales"));
 app.use("/api/coupons", require("./routes/coupons"));
 app.use("/api/hero-slides", require("./routes/heroSlides"));
-// ---- tenant host (amar-dokan.platform.com ba dokan.com) — ekhane shudhu storefront cholbe
+// ---- tenant host (amar-dokan.platform.com ba dokan.com) — ekhane storefront ar store panel cholbe
 const { resolveHostStore } = require("./lib/hostStore");
 const { storefrontUrl } = require("./lib/storefrontUrl");
-const PANEL_PAGES = new Set(["/dashboard.html", "/admin.html", "/portal.html", "/setup.html", "/account.html", "/index.html", "/plan-checkout.html"]);
+// platform-only pages must not open on a shop host; shop pages are allowed there
+const PLATFORM_ONLY_PAGES = new Set(["/admin.html", "/admin-login.html", "/index.html", "/setup.html", "/plan-checkout.html"]);
 
 // store er frontend = Next.js themed site (Store Settings → Appearance er published theme)
 async function toStorefront(res, req, store) {
@@ -72,12 +73,14 @@ async function toStorefront(res, req, store) {
   return true;
 }
 
+app.use(require("./middleware/hostGate"));
+
 app.use(async (req, res, next) => {
   if (req.method !== "GET" && req.method !== "HEAD") return next();
   try {
     const store = await resolveHostStore(req);
     if (!store) return next();
-    if (PANEL_PAGES.has(req.path)) return res.status(404).send("এই ঠিকানায় প্যানেল নেই — দোকান ম্যানেজ করতে প্ল্যাটফর্মের ঠিকানা ব্যবহার করুন।");
+    if (PLATFORM_ONLY_PAGES.has(req.path)) return res.status(404).send("এই ঠিকানায় প্ল্যাটফর্ম পেজ নেই — দোকান ম্যানেজ করতে ড্যাশবোর্ড ব্যবহার করুন।");
     if (req.path === "/") {
       if (await toStorefront(res, req, store)) return;
       return res.sendFile(path.join(__dirname, "public", "shop.html"));

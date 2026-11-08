@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/css/style.css" />
-  <link rel="stylesheet" href="/css/admin.css?v=8" />
+  <link rel="stylesheet" href="/css/admin.css?v=11" />
   <script>
     (function () {
       try {
@@ -37,6 +37,7 @@
         <a href="#payments">পেমেন্ট</a>
         <a href="#billing">পেমেন্ট সেটিংস</a>
         <a href="#settings">সেটিংস</a>
+        <a href="#landing">ল্যান্ডিং পেজ</a>
         <a href="#theme">ডিজাইন</a>
       </nav>
       <div class="sb-bottom">
@@ -175,6 +176,66 @@
           </label>
         </div>
       </section>
+
+      <!-- landing page branding -->
+      <section class="panel" id="landing">
+        <div class="panel-head">
+          <div>
+            <h3>ল্যান্ডিং পেজ সেটিংস</h3>
+            <p class="count">টাইটেল, লোগো, ফ্যাভিকন আর ফুটার টেক্সট — সেভ করলেই ল্যান্ডিং পেজে লাইভ হবে</p>
+          </div>
+          <button class="btn-add" id="landingSaveBtn" type="button">সেভ করুন</button>
+        </div>
+        <div class="landing-body">
+          <div class="landing-grid">
+            <div class="field">
+              <label for="lbTitle">টাইটেল</label>
+              <input id="lbTitle" type="text" maxlength="140" placeholder="LUXE — নিজের অনলাইন দোকান, মিনিটে" />
+            </div>
+            <div class="field">
+              <label for="lbFooterLeft">ফুটার টেক্সট (বাম)</label>
+              <input id="lbFooterLeft" type="text" maxlength="240" placeholder="ছোট ব্যবসার জন্য সহজ অনলাইন দোকান।" />
+            </div>
+            <div class="field">
+              <label for="lbCopyright">কপিরাইট</label>
+              <input id="lbCopyright" type="text" maxlength="240" placeholder="Design and Developed by ITSIAN" />
+            </div>
+            <div class="field">
+              <label for="lbFooterRight">ফুটার টেক্সট (ডান)</label>
+              <input id="lbFooterRight" type="text" maxlength="240" placeholder="Made for small shops in Bangladesh" />
+            </div>
+          </div>
+
+          <div class="landing-images">
+            <div class="landing-image-card">
+              <div class="landing-image-title">লোগো</div>
+              <div class="landing-image-preview" id="lbLogoPreview">LUXE.</div>
+              <div class="landing-image-actions">
+                <label class="btn-mini link" for="lbLogoInput">আপলোড</label>
+                <input id="lbLogoInput" type="file" accept="image/*,.ico" hidden />
+                <button class="btn-mini no" id="lbLogoRemove" type="button">সরান</button>
+              </div>
+              <p class="landing-image-hint">PNG/SVG (স্বচ্ছ ব্যাকগ্রাউন্ড ভালো) · সর্বোচ্চ 10MB</p>
+            </div>
+            <div class="landing-image-card">
+              <div class="landing-image-title">ফ্যাভিকন</div>
+              <div class="landing-image-preview is-icon" id="lbFaviconPreview">—</div>
+              <div class="landing-image-actions">
+                <label class="btn-mini link" for="lbFaviconInput">আপলোড</label>
+                <input id="lbFaviconInput" type="file" accept="image/*,.ico" hidden />
+                <button class="btn-mini no" id="lbFaviconRemove" type="button">সরান</button>
+              </div>
+              <p class="landing-image-hint">ব্রাউজার ট্যাবের আইকন · PNG/ICO/SVG</p>
+            </div>
+          </div>
+
+          <div class="landing-foot">
+            <span class="theme-note" id="landingNote"></span>
+            <span class="billing-hint">লোগো সেট করলে সুপার অ্যাডমিন সাইডবারেও একই লোগো দেখাবে। খালি রাখলে LUXE. ডিফল্ট থাকবে।</span>
+          </div>
+        </div>
+      </section>
+
       <!-- theme / design colors -->
       <section class="panel" id="theme">
         <div class="panel-head">
@@ -264,6 +325,6 @@
 
   <div class="toast" id="toast"></div>
 
-  <script src="/js/admin.js?v=10"></script>
+  <script src="/js/admin.js?v=14"></script>
 </body>
 </html>

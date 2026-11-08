@@ -288,6 +288,45 @@ select.plan-select:focus { border-color: var(--gold); }
 .theme-note.ok { color: var(--ok); }
 .theme-note.err { color: var(--danger); }
 
+/* ---- landing page branding ---- */
+.landing-body { padding: 20px 24px 24px; }
+.landing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0 26px; }
+.landing-images { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-top: 20px; }
+.landing-image-card { border: 1px solid var(--line-soft); border-radius: 12px; background: var(--input-bg); padding: 16px; }
+.landing-image-title {
+  font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 10px;
+}
+.landing-image-preview {
+  height: 76px; border-radius: 9px; border: 1px dashed var(--line-soft);
+  display: flex; align-items: center; justify-content: center; overflow: hidden;
+  font-family: "Playfair Display", serif; font-size: 20px; letter-spacing: 0.14em;
+  color: var(--text); background: rgba(0, 0, 0, 0.16);
+}
+.landing-image-preview.is-icon { width: 76px; height: 76px; }
+.landing-image-preview img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
+.landing-image-actions { display: flex; gap: 8px; margin-top: 12px; }
+.landing-image-actions label.btn-mini { cursor: pointer; }
+.btn-mini:disabled { opacity: 0.45; cursor: not-allowed; }
+.landing-image-hint { font-size: 11.5px; color: var(--muted); margin: 10px 0 0; }
+.landing-foot {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 12px;
+  margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line-soft);
+}
+
+/* sidebar logo (falls back to the letter mark) */
+.sb-brand.has-logo { flex-direction: column; align-items: flex-start; gap: 10px; }
+.sb-brand.has-logo .mark {
+  width: 100%; max-width: 200px; height: auto;
+  border: 0; border-radius: 0; padding: 0; background: none;
+}
+.sb-brand.has-logo .mark img {
+  display: block; width: 100%; height: auto; max-height: 64px;
+  border-radius: 8px;
+  object-fit: contain; object-position: left center;
+}
+.sb-brand.has-logo .name { display: none; }
+
 /* ---- billing: payments table + settings ---- */
 .pay-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .pay-search {

@@ -5,6 +5,7 @@ const catalog = require("../controllers/publicCatalogController");
 const shop = require("../controllers/publicShopController");
 const settings = require("../controllers/settingsController");
 const appearance = require("../controllers/appearanceController");
+const landingBranding = require("../lib/landingBranding");
 const { auth, optionalAuth } = require("../middleware/auth");
 
 /* ------------------------------------------------------------------ *
@@ -14,6 +15,17 @@ const { auth, optionalAuth } = require("../middleware/auth");
  * only — never from the JWT, so a logged-in shopper cannot read another
  * store's catalog by accident.
  * ------------------------------------------------------------------ */
+
+// platform branding is host-independent — must answer before publicStore,
+// which 404s on the platform host (there is no shop there).
+router.get("/branding", async (_req, res) => {
+  try {
+    res.set("Cache-Control", "no-store");
+    res.json({ branding: await landingBranding.getBranding() });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
 
 router.use(publicStore);
 

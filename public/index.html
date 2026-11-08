@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="LUXE — নিজের অনলাইন দোকান খুলুন মিনিটে। প্যাকেজ বেছে নিন, দোকানের নাম দিন, আর আপনার নিজের ঠিকানায় (luxe.shop/apnar-dokan) দোকান চালু করুন।" />
   <title>LUXE — নিজের অনলাইন দোকান, মিনিটে</title>
-  <link rel="stylesheet" href="/css/landing.css?v=1" />
+  <link rel="stylesheet" href="/css/landing.css?v=3" />
 </head>
 <body>
   <header class="ld-header">
     <div class="ld-wrap ld-header-in">
-      <a class="ld-brand" href="/">LUXE<span class="ld-brand-dot">.</span></a>
+      <a class="ld-brand" id="ldBrand" href="/">LUXE<span class="ld-brand-dot">.</span></a>
       <nav class="ld-nav" aria-label="প্রধান মেনু">
         <a href="#plans">প্যাকেজ</a>
         <a href="#address">দোকানের ঠিকানা</a>
@@ -102,22 +102,23 @@
   <footer class="ld-footer">
     <div class="ld-wrap ld-footer-in">
       <div>
-        <a class="ld-brand" href="/">LUXE<span class="ld-brand-dot">.</span></a>
-        <p class="ld-footer-tag">ছোট ব্যবসার জন্য সহজ অনলাইন দোকান।</p>
+        <a class="ld-brand" id="ldFooterBrand" href="/">LUXE<span class="ld-brand-dot">.</span></a>
+        <p class="ld-footer-tag" id="ldFooterLeft">ছোট ব্যবসার জন্য সহজ অনলাইন দোকান।</p>
       </div>
       <nav class="ld-footer-nav" aria-label="ফুটার মেনু">
         <a href="#plans">প্যাকেজ</a>
         <a href="#address">দোকানের ঠিকানা</a>
         <a href="/login.html">লগ-ইন</a>
         <a href="/login.html?next=%2Fportal.html">দোকান খুলুন</a>
+        <a href="/admin-login.html">প্ল্যাটফর্ম অ্যাডমিন</a>
       </nav>
     </div>
     <div class="ld-wrap ld-footer-bottom">
-      <span>© <span id="ldYear"></span> LUXE — সর্বস্বত্ব সংরক্ষিত</span>
-      <span>Made for small shops in Bangladesh</span>
+      <span id="ldCopyright">© <span id="ldYear"></span> LUXE — সর্বস্বত্ব সংরক্ষিত</span>
+      <span id="ldFooterRight">Made for small shops in Bangladesh</span>
     </div>
   </footer>
 
-  <script src="/js/landing.js?v=2"></script>
+  <script src="/js/landing.js?v=3"></script>
 </body>
 </html>

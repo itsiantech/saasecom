@@ -6,6 +6,7 @@ const { OAuth2Client } = require("google-auth-library");
 const User = require("../models/User");
 const { auth } = require("../middleware/auth");
 const { getStoreId } = require("../lib/tenantContext");
+const { hostKind } = require("../lib/hostKind");
 const { requestOtp, verifyOtp } = require("../lib/otp");
 
 function signToken(user) {
@@ -33,6 +34,11 @@ function publicUser(user) {
   };
 }
 
+// api.* is the platform host — only the superadmin account may exist/log in there
+async function onPanelHost(req) {
+  return (await hostKind(req)) === "panel";
+}
+
 // frontend e google button dekhano jabe kina
 router.get("/config", (req, res) => {
   res.json({ googleClientId: process.env.GOOGLE_CLIENT_ID || null });
@@ -41,6 +47,9 @@ router.get("/config", (req, res) => {
 // register — email ba phone (jekono ekta), password always required
 router.post("/register", async (req, res) => {
   try {
+    if (await onPanelHost(req)) {
+      return res.status(403).json({ message: "এই ঠিকানায় নতুন অ্যাকাউন্ট খোলা যায় না — নিজের দোকানের সাইটে যান" });
+    }
     const name = String(req.body.name || "").trim();
     const email = String(req.body.email || "").trim().toLowerCase() || null;
     const phone = normalizePhone(req.body.phone) || null;
@@ -80,31 +89,56 @@ router.post("/register", async (req, res) => {
   }
 });
 
-// login — email ba phone (server nije detect kore)
+// email ba phone (server nije detect kore) + password check
+async function credentialsUser(body) {
+  const identifier = String(body.identifier || body.email || body.phone || "").trim();
+  const password = String(body.password || "");
+  if (!identifier || !password) return null;
+
+  let user = null;
+  if (identifier.includes("@")) {
+    user = await User.findOne({ email: identifier.toLowerCase() });
+  } else {
+    const phone = normalizePhone(identifier);
+    if (!PHONE_RE.test(phone)) return null;
+    user = await User.findOne({ phone });
+  }
+
+  if (!user || !user.password) return null;
+  const ok = await bcrypt.compare(password, user.password);
+  return ok ? user : null;
+}
+
+// login — store owner/staff/customer entry (shop subdomain or local dev)
 router.post("/login", async (req, res) => {
   try {
-    const identifier = String(req.body.identifier || req.body.email || req.body.phone || "").trim();
-    const password = String(req.body.password || "");
-    if (!identifier || !password) {
-      return res.status(401).json({ message: "Email/phone ba password vul hoyeche" });
+    const user = await credentialsUser(req.body || {});
+    if (!user) return res.status(401).json({ message: "Email/phone ba password vul hoyeche" });
+    const kind = await hostKind(req);
+    // superadmin has its own entry point and must not use a shop host
+    if (kind === "store" && user.role === "superadmin") {
+      return res.status(403).json({ message: "সুপার অ্যাডমিন লগইন প্ল্যাটফর্মের ঠিকানা (api) থেকে করুন" });
     }
+    // api host is superadmin-only — owners/customers log in on their shop host
+    if (kind === "panel" && user.role !== "superadmin") {
+      return res.status(403).json({ message: "এই ঠিকানায় শুধু প্ল্যাটফর্ম অ্যাডমিন লগইন করে" });
+    }
+    res.json({ token: signToken(user), user: publicUser(user) });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
 
-    let user = null;
-    if (identifier.includes("@")) {
-      user = await User.findOne({ email: identifier.toLowerCase() });
-    } else {
-      const phone = normalizePhone(identifier);
-      if (!PHONE_RE.test(phone)) {
-        return res.status(401).json({ message: "Email/phone ba password vul hoyeche" });
-      }
-      user = await User.findOne({ phone });
+// platform login — api/platform host, superadmin account only
+router.post("/platform-login", async (req, res) => {
+  try {
+    if ((await hostKind(req)) === "store") {
+      return res.status(403).json({ message: "প্ল্যাটফর্ম লগইন দোকানের ঠিকানায় চলে না" });
     }
-
-    if (!user || !user.password) {
-      return res.status(401).json({ message: "Email/phone ba password vul hoyeche" });
+    const user = await credentialsUser(req.body || {});
+    if (!user || user.role !== "superadmin") {
+      return res.status(401).json({ message: "শুধু প্ল্যাটফর্ম অ্যাডমিন অ্যাকাউন্ট দিয়ে লগইন করুন" });
     }
-    const ok = await bcrypt.compare(password, user.password);
-    if (!ok) return res.status(401).json({ message: "Email/phone ba password vul hoyeche" });
     res.json({ token: signToken(user), user: publicUser(user) });
   } catch (err) {
     res.status(500).json({ message: err.message });

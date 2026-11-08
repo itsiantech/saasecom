@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex" />
+  <title>LUXE — Platform Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/auth.css?v=3" />
+</head>
+<body class="auth-body">
+  <main class="auth-wrap">
+    <section class="brand-panel">
+      <div class="brand-mark">L</div>
+      <h1>LUXE</h1>
+      <p class="tagline">Platform Control</p>
+      <ul class="brand-points">
+        <li>শুধু প্ল্যাটফর্মের মালিকের জন্য</li>
+        <li>দোকান অনুমোদন, প্যাকেজ আর বিলিং</li>
+        <li>দোকান মালিক ও কাস্টমার এই ঠিকানায় লগইন করবে না</li>
+      </ul>
+      <p class="brand-foot">© 2026 LUXE COMMERCE</p>
+    </section>
+
+    <section class="form-panel">
+      <div class="card">
+        <h2>Platform Admin</h2>
+        <p class="sub">সুপার অ্যাডমিন অ্যাকাউন্ট দিয়ে লগইন করুন</p>
+
+        <form id="authForm" novalidate>
+          <div class="field">
+            <label for="email">Email</label>
+            <input id="email" type="email" autocomplete="username" placeholder="admin@example.com" required />
+          </div>
+          <div class="field">
+            <label for="password">Password</label>
+            <input id="password" type="password" autocomplete="current-password" placeholder="••••••••" required />
+          </div>
+          <button class="btn-gold" id="submitBtn" type="submit">Login</button>
+        </form>
+
+        <p class="msg" id="msg"></p>
+        <p class="switch"><a id="backLink" href="/" hidden>← প্ল্যাটফর্ম সাইটে ফিরুন</a></p>
+      </div>
+    </section>
+  </main>
+
+  <script src="/js/admin-login.js?v=3"></script>
+</body>
+</html>

@@ -105,6 +105,56 @@
     }
   }
 
+  /* ---- platform branding (super admin → Landing Page Settings) ---- */
+
+  function brandImage(el, url) {
+    if (!el || !url) return;
+    const img = document.createElement("img");
+    img.src = url;
+    img.alt = "";
+    el.textContent = "";
+    el.appendChild(img);
+    el.classList.add("has-logo");
+  }
+
+  function setFavicon(url) {
+    if (!url) return;
+    let link = document.querySelector('link[rel="icon"]');
+    if (!link) {
+      link = document.createElement("link");
+      link.rel = "icon";
+      document.head.appendChild(link);
+    }
+    link.href = url;
+  }
+
+  function setFooterText(id, value) {
+    const el = document.getElementById(id);
+    if (!el || typeof value !== "string") return;
+    el.textContent = value;
+    el.hidden = !value;
+  }
+
+  async function loadBranding() {
+    let branding;
+    try {
+      const res = await fetch("/api/public/branding", { cache: "no-store" });
+      if (!res.ok) return;
+      const data = await res.json();
+      branding = (data && data.branding) || {};
+    } catch {
+      return; // offline — hardcoded default branding stays
+    }
+    if (branding.title) document.title = branding.title;
+    setFavicon(branding.favicon);
+    brandImage(document.getElementById("ldBrand"), branding.logo);
+    brandImage(document.getElementById("ldFooterBrand"), branding.logo);
+    setFooterText("ldFooterLeft", branding.footerLeft);
+    setFooterText("ldFooterRight", branding.footerRight);
+    setFooterText("ldCopyright", branding.copyright);
+  }
+
+  loadBranding();
   loadPlans();
   markSession();
 })();

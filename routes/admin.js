@@ -1,4 +1,7 @@
 const express = require("express");
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
 const router = express.Router();
 const Store = require("../models/Store");
 const Plan = require("../models/Plan");
@@ -8,6 +11,7 @@ const Settings = require("../models/Settings");
 const PlatformPayment = require("../models/PlatformPayment");
 const { auth, requireSuperAdmin } = require("../middleware/auth");
 const { normalizeTheme, parseTheme } = require("../lib/adminTheme");
+const { getBranding, saveBranding } = require("../lib/landingBranding");
 const billing = require("../lib/platformBilling");
 const { approvePayment, rejectPayment } = require("../lib/billingApproval");
 
@@ -83,6 +87,87 @@ router.put("/settings/theme", auth, requireSuperAdmin, async (req, res) => {
   );
   res.json({ theme });
 });
+
+/* ------------------------------------------------- landing page branding */
+
+const BRANDING_DIR = path.join(__dirname, "..", "public", "uploads", "branding");
+
+const brandingUpload = multer({
+  storage: multer.diskStorage({
+    destination: (_req, _file, cb) => {
+      try {
+        fs.mkdirSync(BRANDING_DIR, { recursive: true });
+        cb(null, BRANDING_DIR);
+      } catch (err) {
+        cb(err);
+      }
+    },
+    filename: (_req, file, cb) => {
+      const ext = path.extname(file.originalname || "").toLowerCase();
+      cb(null, Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8) + ext);
+    },
+  }),
+  limits: { fileSize: 10 * 1024 * 1024, files: 1 },
+  fileFilter: (_req, file, cb) => {
+    const ext = path.extname(file.originalname || "").toLowerCase();
+    const okExt = /^\.(jpe?g|png|gif|ico|webp|svg)$/.test(ext);
+    // some browsers send .ico as application/octet-stream
+    const okType = /^image\//.test(file.mimetype || "") || ext === ".ico";
+    if (okExt && okType) return cb(null, true);
+    const err = new Error("শুধু image ফাইল অনুমোদিত (jpg, png, gif, ico, webp, svg)");
+    err.status = 400;
+    cb(err);
+  },
+});
+
+function brandingUploader(field) {
+  return (req, res, next) => {
+    brandingUpload.single(field)(req, res, (err) => {
+      if (!err) return next();
+      const message = err.code === "LIMIT_FILE_SIZE" ? "ফাইল অনেক বড় — সর্বোচ্চ 10MB" : err.message;
+      return res.status(err.status || 400).json({ message });
+    });
+  };
+}
+
+router.get("/settings/landing", auth, requireSuperAdmin, async (req, res) => {
+  try {
+    res.json({ branding: await getBranding() });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+router.put("/settings/landing", auth, requireSuperAdmin, async (req, res) => {
+  try {
+    const patch = (req.body && req.body.branding) || req.body || {};
+    res.json({ branding: await saveBranding(patch) });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+for (const field of ["logo", "favicon"]) {
+  router.post(`/settings/landing/${field}`, auth, requireSuperAdmin, brandingUploader(field), async (req, res) => {
+    try {
+      if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+      const url = "/uploads/branding/" + req.file.filename;
+      const branding = await saveBranding({ [field]: url });
+      res.json({ [field]: url, branding });
+    } catch (err) {
+      res.status(400).json({ message: err.message });
+    }
+  });
+
+  router.delete(`/settings/landing/${field}`, auth, requireSuperAdmin, async (req, res) => {
+    try {
+      const branding = await saveBranding({ [field]: "" });
+      res.json({ [field]: "", branding });
+    } catch (err) {
+      res.status(400).json({ message: err.message });
+    }
+  });
+}
 
 /* ------------------------------------------------------------ billing */
 

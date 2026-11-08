@@ -1,6 +1,6 @@
 const TOKEN_KEY = "luxe_token";
 const token = localStorage.getItem(TOKEN_KEY);
-const LOGIN_URL = "/login.html?next=" + encodeURIComponent("/admin.html");
+const LOGIN_URL = "/admin-login.html";
 
 if (!token) location.href = LOGIN_URL;
 
@@ -12,18 +12,26 @@ function esc(s) {
 }
 
 async function api(url, options = {}) {
-  const res = await fetch(url, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + token,
-      ...(options.headers || {}),
-    },
-  });
+  let res;
+  try {
+    res = await fetch(url, {
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + token,
+        ...(options.headers || {}),
+      },
+    });
+  } catch {
+    throw new Error("সার্ভারের সাথে যোগাযোগ হচ্ছে না — সার্ভার চালু আছে কিনা দেখুন");
+  }
   const text = await res.text();
   let data;
   try { data = text ? JSON.parse(text) : null; } catch { data = text; }
-  if (!res.ok) throw new Error((data && data.message) || "Request fail hoyeche");
+  if (!res.ok) {
+    const html = typeof data === "string" && /^\s*</.test(data);
+    throw new Error(html ? "সার্ভার এই অনুরোধ চিনছে না — সার্ভার রিস্টার্ট করুন" : (data && data.message) || "Request fail hoyeche");
+  }
   return data;
 }
 
@@ -67,7 +75,7 @@ const fmtLimit = (n) => (n === 0 ? "∞" : Number(n || 0).toLocaleString("en-IN"
     return;
   }
 
-  await Promise.all([loadStats(), loadPlans(), loadStores(), loadSaas(), loadTheme(), loadPayments(), loadBillingSettings()]);
+  await Promise.all([loadStats(), loadPlans(), loadStores(), loadSaas(), loadTheme(), loadLanding(), loadPayments(), loadBillingSettings()]);
 })();
 
 /* ---------- stats ---------- */
@@ -601,6 +609,177 @@ async function saveTheme() {
   }
 }
 
+/* ---------- landing page branding ---------- */
+
+function imageNode(src) {
+  const img = document.createElement("img");
+  img.src = src;
+  img.alt = "";
+  return img;
+}
+
+function setPanelFavicon(url) {
+  let link = document.querySelector('link[rel="icon"]');
+  if (!url) {
+    if (link && link.dataset.dynamic) link.remove();
+    return;
+  }
+  if (!link) {
+    link = document.createElement("link");
+    link.rel = "icon";
+    document.head.appendChild(link);
+  }
+  link.dataset.dynamic = "1";
+  link.href = url;
+}
+
+function setSidebarLogo(url) {
+  const brand = document.querySelector(".sb-brand");
+  const mark = brand && brand.querySelector(".mark");
+  if (!brand || !mark) return;
+  brand.classList.toggle("has-logo", !!url);
+  mark.classList.toggle("has-logo", !!url);
+  if (url) {
+    mark.textContent = "";
+    mark.appendChild(imageNode(url));
+  } else {
+    mark.textContent = "L";
+  }
+}
+
+function setPreview(el, url, fallback) {
+  if (!el) return;
+  if (url) {
+    el.classList.add("has-image");
+    el.textContent = "";
+    el.appendChild(imageNode(url));
+  } else {
+    el.classList.remove("has-image");
+    el.textContent = fallback;
+  }
+}
+
+function renderLanding(branding) {
+  const b = branding || {};
+  $("lbTitle").value = b.title || "";
+  $("lbFooterLeft").value = b.footerLeft || "";
+  $("lbCopyright").value = b.copyright || "";
+  $("lbFooterRight").value = b.footerRight || "";
+  setPreview($("lbLogoPreview"), b.logo, "LUXE.");
+  setPreview($("lbFaviconPreview"), b.favicon, "—");
+  $("lbLogoRemove").disabled = !b.logo;
+  $("lbFaviconRemove").disabled = !b.favicon;
+  setSidebarLogo(b.logo);
+  setPanelFavicon(b.favicon);
+
+  // the "view landing" button must leave the api/admin host
+  const landingLink = document.querySelector(".sb-bottom .sb-ghost");
+  if (landingLink) {
+    const host = location.hostname;
+    const isIP = /^\d{1,3}(\.\d{1,3}){3}$/.test(host) || host.includes(":");
+    const labels = host.split(".");
+    if (!isIP && labels.length > 2) landingLink.href = "https://" + labels.slice(1).join(".");
+  }
+}
+
+let landingNoteTimer;
+function landingNote(text, type) {
+  const el = $("landingNote");
+  if (!el) return;
+  el.textContent = text;
+  el.className = "theme-note " + (type || "");
+  clearTimeout(landingNoteTimer);
+  landingNoteTimer = setTimeout(() => { el.textContent = ""; el.className = "theme-note"; }, 3000);
+}
+
+async function loadLanding() {
+  try {
+    const data = await api("/api/admin/settings/landing");
+    renderLanding(data && data.branding);
+  } catch (err) {
+    toast(err.message, "err");
+  }
+}
+
+async function saveLanding() {
+  const btn = $("landingSaveBtn");
+  if (!btn) return;
+  btn.disabled = true;
+  btn.textContent = "সেভ হচ্ছে...";
+  try {
+    const data = await api("/api/admin/settings/landing", {
+      method: "PUT",
+      body: JSON.stringify({
+        branding: {
+          title: $("lbTitle").value,
+          footerLeft: $("lbFooterLeft").value,
+          copyright: $("lbCopyright").value,
+          footerRight: $("lbFooterRight").value,
+        },
+      }),
+    });
+    renderLanding(data && data.branding);
+    landingNote("সেভ হয়েছে — ল্যান্ডিং পেজে লাইভ", "ok");
+  } catch (err) {
+    landingNote(err.message, "err");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "সেভ করুন";
+  }
+}
+
+async function uploadLandingImage(field, file) {
+  const input = field === "logo" ? $("lbLogoInput") : $("lbFaviconInput");
+  if (!file) return;
+  const form = new FormData();
+  form.append(field, file);
+  landingNote("আপলোড হচ্ছে...", "");
+  try {
+    let res;
+    try {
+      res = await fetch("/api/admin/settings/landing/" + field, {
+        method: "POST",
+        headers: { Authorization: "Bearer " + token },
+        body: form,
+      });
+    } catch {
+      throw new Error("সার্ভারের সাথে যোগাযোগ হচ্ছে না — সার্ভার চালু আছে কিনা দেখুন");
+    }
+    const text = await res.text();
+    let data = {};
+    try { data = text ? JSON.parse(text) : {}; } catch {
+      data = { message: /^\s*</.test(text) ? "সার্ভার এই অনুরোধ চিনছে না — সার্ভার রিস্টার্ট করুন" : "" };
+    }
+    if (!res.ok) throw new Error(data.message || "আপলোড হয়নি");
+    renderLanding(data.branding);
+    landingNote(field === "logo" ? "লোগো আপলোড হয়েছে" : "ফ্যাভিকন আপলোড হয়েছে", "ok");
+  } catch (err) {
+    landingNote(err.message, "err");
+  } finally {
+    if (input) input.value = "";
+  }
+}
+
+async function removeLandingImage(field) {
+  try {
+    const data = await api("/api/admin/settings/landing/" + field, { method: "DELETE" });
+    renderLanding(data.branding);
+    landingNote(field === "logo" ? "লোগো সরানো হয়েছে" : "ফ্যাভিকন সরানো হয়েছে", "ok");
+  } catch (err) {
+    landingNote(err.message, "err");
+  }
+}
+
+$("landingSaveBtn").addEventListener("click", saveLanding);
+$("lbLogoInput").addEventListener("change", (e) => {
+  uploadLandingImage("logo", e.target.files && e.target.files[0]);
+});
+$("lbFaviconInput").addEventListener("change", (e) => {
+  uploadLandingImage("favicon", e.target.files && e.target.files[0]);
+});
+$("lbLogoRemove").addEventListener("click", () => removeLandingImage("logo"));
+$("lbFaviconRemove").addEventListener("click", () => removeLandingImage("favicon"));
+
 /* ---------- platform payments ---------- */
 const PAY_STATUS = {
   pending: { label: "অপেক্ষমাণ", cls: "warn" },
@@ -999,7 +1178,7 @@ $("billingSaveBtn").addEventListener("click", async () => {
 /* ---------- misc ---------- */
 $("logoutBtn").addEventListener("click", () => {
   localStorage.removeItem(TOKEN_KEY);
-  location.href = "/login.html";
+  location.href = "/admin-login.html";
 });
 
 const sidebar = $("sidebar");
