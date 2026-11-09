@@ -8,7 +8,7 @@ const InternationalSettings = require("../models/InternationalSettings");
 const SiteSetting = require("../models/SiteSetting");
 const ShopFavicon = require("../models/ShopFavicon");
 const { publicSlide, sortForPublic } = require("../lib/heroSlides");
-const { readSliderLayout } = require("../lib/sliderSettings");
+const { readSliderSettings } = require("../lib/sliderSettings");
 const { defaultSettings, normalizeSettings } = require("../lib/internationalDefaults");
 const { getWholesaleSettings } = require("../lib/wholesaleSettings");
 const { toPaisa, fromPaisa } = require("../lib/money");
@@ -94,7 +94,7 @@ async function listHeroSlides(req, res, next) {
     const store = await findStore(req.params.slug);
     if (!store) return res.status(404).json({ message: "Store pawa jayni" });
     const rows = await HeroSlide.find({ store: store._id }).lean();
-    res.json({ slides: sortForPublic(rows).map(publicSlide), layout: await readSliderLayout(store._id) });
+    res.json({ slides: sortForPublic(rows).map(publicSlide), ...(await readSliderSettings(store._id)) });
   } catch (err) {
     next(err);
   }

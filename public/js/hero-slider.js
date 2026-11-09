@@ -16,8 +16,9 @@
     busy: false,
     storeSlug: "",
     sortable: null,
-    settings: { layout: "", theme: "" },
+    settings: { layout: "", theme: "", height: 420, transition: "", autoplay: 3 },
     savingLayout: false,
+    savingSettings: false,
   };
 
   async function api(path, options = {}) {
@@ -197,11 +198,63 @@
     }
   }
 
+  // theme2's hero is a crossfade by design, so an unsaved transition falls
+  // back to that theme's own default (same idea as effectiveLayout above)
+  function effectiveTransition() {
+    if (state.settings.transition) return state.settings.transition;
+    return state.settings.theme === "theme2" ? "fade" : "slide-right-to-left";
+  }
+
+  function renderSettingsForm() {
+    $("hsHeight").value = String(state.settings.height || 420);
+    $("hsTransition").value = effectiveTransition();
+    $("hsAutoplay").value = String(state.settings.autoplay || 3);
+    $("hsSaveSettings").disabled = state.savingSettings;
+  }
+
+  async function saveSettings() {
+    if (state.savingSettings) return;
+    const height = Number($("hsHeight").value);
+    const autoplay = Number($("hsAutoplay").value);
+    const transition = $("hsTransition").value;
+    if (!Number.isFinite(height) || height < 150 || height > 900) {
+      toast("Height 150–900 px er moddhe hote hobe", "err");
+      return;
+    }
+    if (!Number.isFinite(autoplay) || autoplay < 1 || autoplay > 15) {
+      toast("Autoplay speed 1–15 second er moddhe hote hobe", "err");
+      return;
+    }
+
+    state.savingSettings = true;
+    const button = $("hsSaveSettings");
+    const label = button.textContent;
+    button.textContent = "Saving…";
+    button.disabled = true;
+    try {
+      const data = await json("/api/hero-slides/settings", {
+        method: "PUT",
+        body: JSON.stringify({ height, transition, autoplay }),
+      });
+      state.settings = Object.assign({}, state.settings, data.settings || {});
+      renderSettingsForm();
+      toast("Slider settings save hoyeche", "ok");
+    } catch (err) {
+      toast(err.message, "err");
+    } finally {
+      state.savingSettings = false;
+      button.textContent = label;
+      button.disabled = false;
+    }
+  }
+
   $("hsSettings").addEventListener("click", (event) => {
     const button = event.target.closest("[data-hs-layout]");
     if (!button) return;
     chooseLayout(button.dataset.hsLayout);
   });
+
+  $("hsSaveSettings").addEventListener("click", saveSettings);
 
   async function load() {
     const root = $("hsListRoot");
@@ -210,8 +263,9 @@
     try {
       const data = await json("/api/hero-slides");
       state.items = Array.isArray(data.items) ? data.items : [];
-      state.settings = Object.assign({ layout: "", theme: "" }, data.settings || {});
+      state.settings = Object.assign({ layout: "", theme: "", height: 420, transition: "", autoplay: 3 }, data.settings || {});
       renderLayout();
+      renderSettingsForm();
       render();
     } catch (err) {
       root.textContent = "";

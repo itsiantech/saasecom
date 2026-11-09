@@ -1,0 +1,72 @@
+/* Long sidebar menus: brand stays on top, the menu itself scrolls, and the
+   account block stays pinned at the bottom. Loaded after dashboard.css so it
+   only overrides the overflow behaviour, not the look. */
+
+.sidebar {
+  overflow: hidden;
+}
+
+.sb-nav {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(212, 175, 122, 0.38) transparent;
+  /* keep the seamless active tab flush with the sidebar edge */
+  margin-right: -21px;
+  padding-right: 21px;
+}
+
+/* a slim scrollbar appears only when the menu actually overflows */
+.sb-nav::-webkit-scrollbar {
+  width: 6px;
+  height: 0;
+}
+.sb-nav::-webkit-scrollbar-button,
+.sb-nav::-webkit-scrollbar-button:vertical:start:decrement,
+.sb-nav::-webkit-scrollbar-button:vertical:end:increment {
+  display: none !important;
+  width: 0;
+  height: 0;
+  background: transparent;
+}
+.sb-nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+.sb-nav::-webkit-scrollbar-thumb {
+  background: rgba(212, 175, 122, 0.35);
+  border-radius: 999px;
+}
+.sb-nav:hover::-webkit-scrollbar-thumb {
+  background: rgba(212, 175, 122, 0.65);
+}
+
+/* short laptop screens: trim vertical spacing so more menu rows fit */
+@media (max-height: 860px) {
+  .sb-brand {
+    padding-bottom: 14px;
+  }
+  .sb-nav {
+    margin-top: 14px;
+    gap: 4px;
+  }
+  .sb-nav a {
+    padding: 9px 14px;
+  }
+  .nav-sub .nav-item {
+    padding: 8px 12px;
+  }
+  .sb-bottom {
+    padding-top: 10px;
+  }
+  .sb-user {
+    padding: 2px 10px;
+  }
+  .theme-btn,
+  .logout-btn {
+    margin-top: 8px;
+    padding: 9px;
+  }
+}

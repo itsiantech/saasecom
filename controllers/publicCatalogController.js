@@ -14,7 +14,7 @@ const ShopFavicon = require("../models/ShopFavicon");
 const SocialLink = require("../models/SocialLink");
 const StoreSettings = require("../models/StoreSettings");
 const { publicSlide, sortForPublic } = require("../lib/heroSlides");
-const { readSliderLayout } = require("../lib/sliderSettings");
+const { readSliderSettings } = require("../lib/sliderSettings");
 const { buildTree, getDescendantIds } = require("../lib/categoryHelpers");
 const { toCard, brandingFor, loadSettings, escapeRegex } = require("./storefrontController");
 const { getWholesaleSettings } = require("../lib/wholesaleSettings");
@@ -574,8 +574,8 @@ async function listHeroSlides(req, res, next) {
     const rows = await HeroSlide.find({ store: req.publicStore._id }).lean();
     res.json({
       slides: sortForPublic(rows).map(publicSlide),
-      // "" = admin never picked one; the theme decides its own default
-      layout: await readSliderLayout(req.publicStore._id),
+      // layout / transition "" = admin never picked one; the theme decides its own default
+      ...(await readSliderSettings(req.publicStore._id)),
     });
   } catch (err) {
     next(err);

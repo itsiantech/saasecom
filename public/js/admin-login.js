@@ -37,6 +37,8 @@
         link.href = branding.favicon;
         document.head.appendChild(link);
       }
+      const foot = document.querySelector(".brand-foot");
+      if (foot && branding.copyright) foot.textContent = branding.copyright;
     } catch {
       /* offline — default LUXE mark stays */
     }

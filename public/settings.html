@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="/css/style.css" />
   <link rel="stylesheet" href="/css/admin.css?v=2" />
   <link rel="stylesheet" href="/css/settings.css" />
-  <link rel="stylesheet" href="/css/appearance.css" />
+  <link rel="stylesheet" href="/css/appearance.css?v=3" />
 </head>
 <body>
   <div class="dash">
@@ -434,7 +434,31 @@
                     <div class="ap-pv-announce" data-pv="announce">আজকের অফার — সারা দেশে ডেলিভারি</div>
                     <div class="ap-pv-head">
                       <span class="ap-pv-logo" data-pv="logo">আপনার দোকান</span>
-                      <span class="ap-pv-search" data-pv="search">পণ্য খুঁজুন…<i>খুঁজুন</i></span>
+                      <span class="ap-pv-search" data-pv="search">
+                        <span class="ap-pv-search-field" data-pv="search-field">
+                          <span class="ap-pv-search-ph" data-pv="search-ph">পণ্য খুঁজুন…</span>
+                          <span class="ap-pv-search-btn" data-pv="search-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" stroke-linecap="round" /></svg>
+                          </span>
+                        </span>
+                        <span class="ap-pv-image" data-pv="image">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 8h2.5l1.4-2h8.2l1.4 2H20a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z" stroke-linejoin="round" /><circle cx="12" cy="13" r="3.4" /></svg>
+                        </span>
+                      </span>
+                      <span class="ap-pv-actions">
+                        <span class="ap-pv-action" data-pv="account">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="8" r="4" /><path d="M4 20c1.4-3.6 4.2-5.4 8-5.4s6.6 1.8 8 5.4" stroke-linecap="round" /></svg>
+                          <small>অ্যাকাউন্ট</small>
+                        </span>
+                        <span class="ap-pv-action" data-pv="wish">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 20s-7-4.4-7-9.4A4.6 4.6 0 0 1 12 7a4.6 4.6 0 0 1 7 3.6c0 5-7 9.4-7 9.4Z" stroke-linejoin="round" /></svg>
+                          <small>উইশলিস্ট</small>
+                        </span>
+                        <span class="ap-pv-action" data-pv="cart">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h7.4a2 2 0 0 0 2-1.5L21 8H6" stroke-linecap="round" stroke-linejoin="round" /><circle cx="10" cy="20" r="1.4" /><circle cx="18" cy="20" r="1.4" /></svg>
+                          <small>কার্ট</small>
+                        </span>
+                      </span>
                     </div>
                     <div class="ap-pv-strip" data-pv="strip">Men · Women · Accessories · New Arrivals</div>
                     <div class="ap-pv-hero" data-pv="hero">
@@ -482,6 +506,6 @@
 
   <script src="/js/store-hint.js?v=1"></script>
   <script src="/js/settings.js?v=5"></script>
-  <script src="/js/appearance.js?v=2"></script>
+  <script src="/js/appearance.js?v=3"></script>
 </body>
 </html>

@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/css/style.css" />
   <link rel="stylesheet" href="/css/dashboard.css?v=7" />
+  <link rel="stylesheet" href="/css/sidebar-scroll.css?v=1" />
   <link rel="stylesheet" href="/css/style-settings.css?v=1" />
   <link rel="stylesheet" href="/css/categories.css" />
   <link rel="stylesheet" href="/css/product-form.css" />
@@ -17,7 +18,7 @@
   <link rel="stylesheet" href="/css/product-catalog.css?v=1" />
   <link rel="stylesheet" href="/css/order-catalog.css?v=2" />
   <link rel="stylesheet" href="/css/marketing.css?v=1" />
-  <link rel="stylesheet" href="/css/hero-slider.css?v=2" />
+  <link rel="stylesheet" href="/css/hero-slider.css?v=3" />
   <link rel="stylesheet" href="/css/customers.css?v=1" />
   <link rel="stylesheet" href="/css/suppliers.css?v=1" />
   <link rel="stylesheet" href="/css/reports.css?v=2" />
@@ -2215,11 +2216,36 @@
         <div class="hs-settings" id="hsSettings">
           <div class="hs-settings-info">
             <h3>Slider settings</h3>
-            <p>Design onujayi width choose korun. <strong>Full width</strong> e slider header er niche edge-to-edge jay; <strong>Boxed</strong> e page container er vitor rounded card hoy — mobile ar desktop dutotei responsiveness thik thake. Change save hole storefront e 10–20 second er moddhe dekhabe.</p>
+            <p>Height, transition effect ar autoplay speed set kore <strong>Save settings</strong> chapun. Width choose korun — <strong>Full width</strong> e slider header er niche edge-to-edge jay; <strong>Boxed</strong> e page container er vitor rounded card hoy — mobile ar desktop dutotei responsiveness thik thake. Change save hole storefront e 10–20 second er moddhe dekhabe.</p>
           </div>
           <div class="hs-layout" role="radiogroup" aria-label="Slider layout">
             <button type="button" class="hs-layout-btn" data-hs-layout="boxed" aria-pressed="false">Boxed</button>
             <button type="button" class="hs-layout-btn" data-hs-layout="full" aria-pressed="false">Full width</button>
+          </div>
+          <div class="hs-controls">
+            <label class="hs-field">
+              <span>Height (px)</span>
+              <input type="number" id="hsHeight" min="150" max="900" step="10" inputmode="numeric" value="420" />
+              <small>150–900 px</small>
+            </label>
+            <label class="hs-field">
+              <span>Transition effect</span>
+              <select id="hsTransition">
+                <option value="slide-right-to-left">Slide — right to left</option>
+                <option value="slide-left-to-right">Slide — left to right</option>
+                <option value="slide-top-to-bottom">Slide — top to bottom</option>
+                <option value="slide-bottom-to-top">Slide — bottom to top</option>
+                <option value="fade">Fade</option>
+                <option value="zoom">Zoom</option>
+              </select>
+              <small>0.7s ease</small>
+            </label>
+            <label class="hs-field">
+              <span>Autoplay speed (sec)</span>
+              <input type="number" id="hsAutoplay" min="1" max="15" step="1" inputmode="numeric" value="3" />
+              <small>1–15 seconds</small>
+            </label>
+            <button type="button" class="btn-add hs-save" id="hsSaveSettings">Save settings</button>
           </div>
         </div>
 
@@ -2772,10 +2798,11 @@
   <script src="/js/orders.js?v=3"></script>
   <script src="/js/product-catalog.js?v=1"></script>
   <script src="/js/marketing.js?v=2"></script>
-  <script src="/js/hero-slider.js?v=2"></script>
+  <script src="/js/hero-slider.js?v=3"></script>
   <script src="/js/customers.js?v=1"></script>
   <script src="/js/suppliers.js?v=2"></script>
   <script src="/js/reports.js?v=2"></script>
+  <script src="/js/sidebar-scroll.js?v=1"></script>
 </body>
 </html>
 

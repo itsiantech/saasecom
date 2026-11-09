@@ -26,6 +26,22 @@
     colorSuccess: "Success",
     colorFooterBg: "Footer background",
     colorFooterText: "Footer text",
+    searchFieldRadius: "Search field radius (9999px = round, 0 = square)",
+    searchFieldBg: "Search field background",
+    searchFieldIconColor: "Search icon color",
+    searchFieldIconBg: "Search icon background",
+    searchFieldPlaceholder: "Search placeholder color",
+    imageSearchIconColor: "Image search icon color",
+    imageSearchBg: "Image search background",
+    accountIconColor: "Account icon color",
+    accountTextColor: "Account text color",
+    accountBg: "Account background (transparent = none)",
+    wishIconColor: "Wishlist icon color",
+    wishTextColor: "Wishlist text color",
+    wishBg: "Wishlist background (transparent = none)",
+    cartIconColor: "Cart icon color",
+    cartTextColor: "Cart text color",
+    cartBg: "Cart background (transparent = none)",
     radiusCard: "Card radius",
     radiusControl: "Button radius",
     fontBody: "Body font",
@@ -34,6 +50,18 @@
     headerSticky: "Sticky header (1/0)",
     cardShadow: "Card shadow",
   };
+
+  // Colours don't always start with "color" (searchFieldBg, accountBg,
+  // searchFieldPlaceholder), so decide by suffix as well.
+  const COLOR_KEY = /color|bg$|placeholder/i;
+  const HEX_RE = /^#[0-9a-f]{3}([0-9a-f]{3})?$/i;
+
+  function hexForPicker(value) {
+    const text = String(value || "").trim();
+    if (/^#[0-9a-f]{6}$/i.test(text)) return text;
+    if (/^#[0-9a-f]{3}$/i.test(text)) return "#" + text.slice(1).split("").map((ch) => ch + ch).join("");
+    return "#ffffff";
+  }
 
   let storeSlug = new URLSearchParams(location.search).get("store") || localStorage.getItem("luxe_store_slug") || "";
 
@@ -123,12 +151,12 @@
         const value = saved[key] != null ? String(saved[key]) : fallback;
         const label = LABELS[key] || key;
         const labelHtml = `<span class="token-label">${esc(label)}<em>${esc(key)}</em></span>`;
-        if (/^color/i.test(key) && /^#[0-9a-f]{3,8}$/i.test(value)) {
+        if (COLOR_KEY.test(key)) {
           return `
             <div class="token-field token-color">
               ${labelHtml}
               <div class="token-row">
-                <input type="color" data-color-for="${esc(key)}" value="${esc(value)}" />
+                <input type="color" data-color-for="${esc(key)}" value="${esc(hexForPicker(value))}" />
                 <input type="text" data-token="${esc(key)}" value="${esc(value)}" spellcheck="false" />
               </div>
             </div>`;
@@ -148,9 +176,9 @@
     if (target.dataset.colorFor) {
       const text = $("tokenFields").querySelector(`input[data-token="${target.dataset.colorFor}"]`);
       if (text) text.value = target.value;
-    } else if (target.dataset.token && /^color/i.test(target.dataset.token) && /^#[0-9a-f]{3,8}$/i.test(target.value.trim())) {
+    } else if (target.dataset.token && COLOR_KEY.test(target.dataset.token) && HEX_RE.test(target.value.trim())) {
       const picker = $("tokenFields").querySelector(`input[data-color-for="${target.dataset.token}"]`);
-      if (picker) picker.value = target.value.trim();
+      if (picker) picker.value = hexForPicker(target.value);
     }
     state.localDirty = true;
     applyPreview();
@@ -189,6 +217,22 @@
     set("--pv-ink", tokens.colorInk);
     set("--pv-muted", tokens.colorMuted);
     set("--pv-line", tokens.colorLine);
+    set("--pv-search-bg", tokens.searchFieldBg || tokens.colorSurface);
+    set("--pv-search-radius", tokens.searchFieldRadius || tokens.radiusControl);
+    set("--pv-search-icon", tokens.searchFieldIconColor || tokens.colorPrimary);
+    set("--pv-search-icon-bg", tokens.searchFieldIconBg || tokens.colorBg);
+    set("--pv-search-ph", tokens.searchFieldPlaceholder || tokens.colorMuted);
+    set("--pv-image-icon", tokens.imageSearchIconColor || tokens.colorPrimary);
+    set("--pv-image-bg", tokens.imageSearchBg || tokens.colorSurface);
+    set("--pv-account-icon", tokens.accountIconColor || "#ffffff");
+    set("--pv-account-text", tokens.accountTextColor || "#ffffff");
+    set("--pv-account-bg", tokens.accountBg || "transparent");
+    set("--pv-wish-icon", tokens.wishIconColor || "#ffffff");
+    set("--pv-wish-text", tokens.wishTextColor || "#ffffff");
+    set("--pv-wish-bg", tokens.wishBg || "transparent");
+    set("--pv-cart-icon", tokens.cartIconColor || "#ffffff");
+    set("--pv-cart-text", tokens.cartTextColor || "#ffffff");
+    set("--pv-cart-bg", tokens.cartBg || "transparent");
     set("--pv-radius", tokens.radiusCard);
     set("--pv-radius-control", tokens.radiusControl);
     set("--pv-font", tokens.fontBody);

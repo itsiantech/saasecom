@@ -90,6 +90,62 @@
 
 .hs-layout-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
+.hs-controls {
+  flex: 1 1 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.hs-field {
+  display: grid;
+  gap: 6px;
+  flex: 1 1 160px;
+  min-width: 0;
+}
+
+.hs-field > span {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.hs-field input,
+.hs-field select {
+  width: 100%;
+  height: 38px;
+  padding: 0 11px;
+  border: 1px solid var(--line-soft);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13px;
+}
+
+.hs-field select { cursor: pointer; }
+.hs-field option { background: var(--panel); color: var(--text); }
+
+.hs-field input:focus,
+.hs-field select:focus {
+  outline: none;
+  border-color: var(--gold);
+}
+
+.hs-field small { font-size: 10.5px; color: var(--muted); }
+
+.hs-save {
+  flex: 0 0 auto;
+  height: 38px;
+}
+
+.hs-save:disabled { opacity: 0.6; cursor: not-allowed; }
+
 .hs-list {
   display: grid;
   gap: 12px;

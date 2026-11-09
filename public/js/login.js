@@ -1,5 +1,34 @@
 const TOKEN_KEY = "luxe_token";
 
+// platform branding — superadmin logo / favicon / copyright on the brand panel
+(async function loadBranding() {
+  try {
+    const res = await fetch("/api/public/branding", { cache: "no-store" });
+    if (!res.ok) return;
+    const branding = ((await res.json()) || {}).branding || {};
+    const mark = document.querySelector(".brand-mark");
+    if (mark && branding.logo) {
+      const img = document.createElement("img");
+      img.src = branding.logo;
+      img.alt = "";
+      mark.textContent = "";
+      mark.appendChild(img);
+      mark.classList.add("has-logo");
+      document.querySelector(".brand-panel")?.classList.add("has-logo");
+    }
+    const foot = document.querySelector(".brand-foot");
+    if (foot && branding.copyright) foot.textContent = branding.copyright;
+    if (branding.favicon) {
+      const link = document.createElement("link");
+      link.rel = "icon";
+      link.href = branding.favicon;
+      document.head.appendChild(link);
+    }
+  } catch {
+    /* offline — default LUXE mark/footer stays */
+  }
+})();
+
 const form = document.getElementById("authForm");
 const formTitle = document.getElementById("formTitle");
 const formSub = document.getElementById("formSub");

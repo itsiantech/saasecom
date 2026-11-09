@@ -3,7 +3,7 @@ const HeroSlide = require("../models/HeroSlide");
 const Appearance = require("../models/Appearance");
 const { getStoreId } = require("../lib/tenantContext");
 const { MAX_SLIDES, normalizeSlide } = require("../lib/heroSlides");
-const { readSliderLayout, saveSliderLayout } = require("../lib/sliderSettings");
+const { readSliderSettings, saveSliderSettings } = require("../lib/sliderSettings");
 
 function storeIdOf(req) {
   if (req.store && req.store._id) return req.store._id;
@@ -55,15 +55,15 @@ function fail(res, next, err) {
   next(err);
 }
 
-// store-level slider settings: the saved layout ("" = never saved) and the
-// published theme, so the client can pick that theme's own default layout
+// store-level slider settings plus the published theme, so the client can
+// pick that theme's own default layout / transition when none was saved
 async function sliderSettings(storeId) {
-  const [layout, doc] = await Promise.all([
-    readSliderLayout(storeId),
+  const [settings, doc] = await Promise.all([
+    readSliderSettings(storeId),
     Appearance.findOne({ store: storeId }).select("published.theme draft.theme").lean(),
   ]);
   const theme = (doc && ((doc.published && doc.published.theme) || (doc.draft && doc.draft.theme))) || "";
-  return { layout, theme };
+  return { ...settings, theme };
 }
 
 async function list(req, res, next) {
@@ -81,8 +81,7 @@ async function updateSettings(req, res, next) {
   try {
     const storeId = storeIdOf(req);
     if (!storeId) return res.status(400).json({ message: "Store pawa jayni" });
-    const body = req.body || {};
-    if (body.layout !== undefined) await saveSliderLayout(storeId, body.layout);
+    await saveSliderSettings(storeId, req.body || {});
     res.json({ ok: true, settings: await sliderSettings(storeId) });
   } catch (err) {
     fail(res, next, err);
