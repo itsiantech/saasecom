@@ -139,7 +139,10 @@ html[data-theme="light"] .s-store a:hover {
   border-radius: 10px;
   color: var(--muted);
   text-decoration: none;
-  font-size: 14px;
+  font-family: "Inter", "Hind Siliguri", sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  text-transform: uppercase;
   transition: background 0.2s, color 0.2s;
 }
 
@@ -230,8 +233,8 @@ html[data-theme="light"] .s-store a:hover {
 .sb-nav a svg { color: var(--nav-icon, currentColor); }
 .sb-nav a.active svg { color: var(--nav-active-icon, var(--nav-icon, currentColor)); }
 .sb-nav a.active {
-  font-family: var(--nav-active-font, inherit);
-  font-weight: var(--nav-active-weight, inherit);
+  font-family: var(--nav-active-font, "Inter", "Hind Siliguri", sans-serif);
+  font-weight: var(--nav-active-weight, 500);
 }
 
 /* parent ektu highlight thake jokhon tar child active */
