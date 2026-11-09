@@ -257,16 +257,12 @@ function applyTheme(theme) {
 async function loadStoreInfo() {
   const banner = document.getElementById("setupBanner");
   try {
-    const res = await api("/api/stores/mine");
-    const stores = await res.json();
+    // jei dokaner panel khola, tar link — amar owned list er first na
+    const res = await api("/api/stores/current");
+    const store = res.ok ? await res.json() : null;
     const el = document.getElementById("storeName");
     const siteBtn = document.getElementById("siteViewBtn");
-    if (stores.length) {
-      const wanted =
-        new URLSearchParams(location.search).get("store") ||
-        localStorage.getItem("luxe_store_slug") ||
-        "";
-      const store = stores.find((s) => s.slug === wanted) || stores[0];
+    if (store && store.slug) {
       localStorage.setItem("luxe_store_slug", store.slug);
       const settingsNav = [...document.querySelectorAll(".nav-item")].find((a) =>
         String(a.getAttribute("href") || "").startsWith("/settings.html")

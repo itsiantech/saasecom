@@ -86,6 +86,17 @@ router.get("/mine", auth, async (req, res) => {
   res.json(rows);
 });
 
+// panel e je dokan khola ache — super admin onner dokan khullao eta e return kore
+router.get("/current", auth, async (req, res) => {
+  const store = req.store;
+  if (!store) return res.status(404).json({ message: "Store pawa jayni" });
+  res.json({
+    slug: store.slug,
+    name: store.name,
+    storefrontUrl: await storefrontUrl(store),
+  });
+});
+
 // je slug gulo app er nijer path — dokaner thikana e use kora jabe na
 // dokaner thikana (slug) poroborton — shudhu malik ba super admin
 router.patch("/:id/slug", auth, async (req, res) => {
