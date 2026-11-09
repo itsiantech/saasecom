@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/css/style.css" />
-  <link rel="stylesheet" href="/css/dashboard.css?v=7" />
+  <link rel="stylesheet" href="/css/dashboard.css?v=14" />
   <link rel="stylesheet" href="/css/sidebar-scroll.css?v=1" />
   <link rel="stylesheet" href="/css/style-settings.css?v=1" />
   <link rel="stylesheet" href="/css/categories.css" />
@@ -35,7 +35,6 @@
         <div class="mark">L</div>
         <div>
           <div class="name">LUXE</div>
-          <div class="role">Admin Panel</div>
           <div class="s-store" id="storeName" hidden></div>
         </div>
       </div>
@@ -43,7 +42,7 @@
       <nav class="sb-nav">
         <div class="nav-group" id="navGroupProducts">
           <div class="nav-parent-row">
-            <a href="#" class="nav-item active" data-view="products">
+            <a href="#" class="nav-item active" data-view="product-list">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><path d="M3.3 8.3L12 13l8.7-4.7M12 13v9"/></svg>
               Products
             </a>
@@ -157,22 +156,6 @@
           Store Settings
         </a>
       </nav>
-
-      <div class="sb-bottom">
-        <div class="sb-user">
-          <div class="avatar" id="avatar">A</div>
-          <div>
-            <div class="u-name" id="uName">—</div>
-            <div class="u-email" id="uEmail">—</div>
-          </div>
-        </div>
-        <button class="theme-btn" id="themeToggle" type="button">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
-          <span id="themeLabel">Light mode</span>
-        </button>
-        <a class="logout-btn sb-ghost" href="/portal.html">আমার অ্যাকাউন্ট</a>
-        <button class="logout-btn" id="logoutBtn">Logout</button>
-      </div>
     </aside>
     <div class="sb-overlay" id="sbOverlay"></div>
 
@@ -189,15 +172,37 @@
             <p class="crumb">Overview / Inventory</p>
           </div>
         </div>
-        <div class="top-actions">
-          <a class="btn-site" id="siteViewBtn" href="/" target="_blank" rel="noopener" hidden>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg>
-            <span class="btn-label">ওয়েবসাইট দেখুন</span>
-          </a>
-          <button class="btn-add" id="addBtn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
-            Add Product
-          </button>
+        <div class="top-right">
+          <div class="top-actions">
+            <a class="btn-site" id="siteViewBtn" href="/" target="_blank" rel="noopener" hidden>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg>
+              <span class="btn-label">ওয়েবসাইট দেখুন</span>
+            </a>
+            <button class="btn-add" id="addBtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
+              Add Product
+            </button>
+          </div>
+          <div class="user-dock" id="userDock">
+            <button class="ud-btn" id="userDockBtn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Account menu">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/></svg>
+            </button>
+            <div class="ud-panel" id="userDockPanel" hidden>
+              <div class="ud-who">
+                <div class="avatar" id="avatar">A</div>
+                <div class="ud-meta">
+                  <div class="u-name" id="uName">—</div>
+                  <div class="u-email" id="uEmail">—</div>
+                </div>
+              </div>
+              <button class="theme-btn" id="themeToggle" type="button">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+                <span id="themeLabel">Light mode</span>
+              </button>
+              <a class="logout-btn sb-ghost" href="/portal.html">আমার অ্যাকাউন্ট</a>
+              <button class="logout-btn" id="logoutBtn">Logout</button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -228,30 +233,7 @@
         </div>
       </section>
 
-      <section class="panel" id="products">
-        <div class="panel-head">
-          <div>
-            <h3>প্রোডাক্ট তালিকা</h3>
-            <p class="count" id="pCount">0 টি প্রোডাক্ট</p>
-          </div>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>প্রোডাক্ট</th>
-                <th>দাম</th>
-                <th>স্টক</th>
-                <th>তারিখ</th>
-                <th>অ্যাকশন</th>
-              </tr>
-            </thead>
-            <tbody id="pBody">
-              <tr><td colspan="5"><div class="empty">লোড হচ্ছে...</div></td></tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
+      <a class="btn-ghost products-link" href="#" id="viewAllProducts">সব প্রোডাক্ট দেখুন →</a>
       </section><!-- /#view-products -->
 
       <!-- ===================== CATEGORIES VIEW ===================== -->
@@ -2789,7 +2771,7 @@
   <div class="toast" id="toast"></div>
 
   <script src="/js/store-hint.js?v=1"></script>
-  <script src="/js/dashboard.js?v=6"></script>
+  <script src="/js/dashboard.js?v=12"></script>
   <script src="/js/categories.js"></script>
   <script src="/js/brands.js"></script>
   <script src="/js/product-form.js"></script>

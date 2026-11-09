@@ -66,6 +66,69 @@
 
 .s-store b { color: var(--gold); font-weight: 600; }
 
+.s-store a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(127, 199, 154, 0.3);
+  background: rgba(127, 199, 154, 0.08);
+  color: var(--ok);
+  font-weight: 600;
+  font-size: 11.5px;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.s-store a svg { width: 12px; height: 12px; flex-shrink: 0; }
+
+.s-store a:hover {
+  background: rgba(127, 199, 154, 0.16);
+  border-color: var(--ok);
+  text-decoration: none;
+}
+
+html[data-theme="light"] .s-store a {
+  background: rgba(47, 125, 79, 0.07);
+  border-color: rgba(47, 125, 79, 0.3);
+}
+
+html[data-theme="light"] .s-store a:hover {
+  background: rgba(47, 125, 79, 0.13);
+}
+
+/* Logo set → logo + site link centred under it. */
+.sb-brand.has-logo {
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+}
+
+.sb-brand.has-logo > div:last-child { max-width: 100%; }
+
+.sb-brand.has-logo .mark {
+  width: auto;
+  height: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+}
+
+.sb-brand.has-logo .mark img {
+  display: block;
+  width: 140px;
+  height: 50px;
+  object-fit: contain;
+  object-position: center;
+}
+
+.sb-brand.has-logo .name { display: none; }
+.sb-brand.has-logo .s-store { margin-top: 0; }
+
 .sb-nav { margin-top: 24px; display: grid; gap: 6px; }
 
 .sb-nav a {
@@ -232,19 +295,6 @@
 .theme-btn svg { width: 15px; height: 15px; }
 .theme-btn:hover { border-color: var(--gold); color: var(--gold); background: var(--gold-soft); }
 
-/* logo upload hole brand mark circle ta logo image hoy */
-.sb-brand .mark.has-logo {
-  width: auto;
-  height: auto;
-  max-width: 120px;
-  max-height: 40px;
-  border: none;
-  border-radius: 0;
-  background: none;
-  overflow: hidden;
-}
-.sb-brand .mark.has-logo img { display: block; max-width: 100%; max-height: 40px; object-fit: contain; }
-
 /* ---- light theme ---- */
 html[data-theme="light"] {
   --bg: #f7f5f0;
@@ -282,7 +332,8 @@ html[data-theme="light"] textarea::placeholder { color: #9a9384; }
 /* ---- main ---- */
 .main { padding: 32px clamp(20px, 4vw, 48px) 64px; min-width: 0; }
 
-.topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.cat-topbar { flex-wrap: wrap; }
 
 .topbar h2 { font-size: clamp(24px, 3vw, 34px); font-weight: 600; }
 .topbar .crumb { color: var(--muted); font-size: 13px; margin-top: 4px; }
@@ -418,6 +469,81 @@ html[data-theme="light"] textarea::placeholder { color: #9a9384; }
   .top-actions { gap: 8px; }
   .btn-site .btn-label { display: none; }
   .btn-site { padding: 10px 12px; }
+}
+
+/* ---- account dock (top-right human icon + dropdown) ---- */
+.top-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+  flex: 0 1 auto;
+  min-width: 0;
+  margin-left: auto;
+}
+
+.user-dock { position: relative; flex: 0 0 auto; }
+
+.ud-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--line-soft);
+  background: var(--panel);
+  color: var(--muted);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+
+.ud-btn svg { width: 19px; height: 19px; }
+
+.ud-btn:hover,
+.ud-btn[aria-expanded="true"] {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: var(--gold-soft);
+}
+
+.ud-panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 10px);
+  width: 250px;
+  max-width: calc(100vw - 28px);
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.45);
+  z-index: 60;
+}
+
+.ud-panel[hidden] { display: none; }
+
+.ud-who {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 4px 12px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.ud-who .avatar { flex: 0 0 auto; }
+.ud-meta { min-width: 0; }
+.ud-meta .u-name { font-size: 13.5px; font-weight: 600; }
+.ud-meta .u-email { font-size: 11px; color: var(--muted); word-break: break-all; }
+
+/* bar-less view (product view / order detail) — dock ekta row te top-right */
+.view-dock-row { display: flex; justify-content: flex-end; margin-bottom: 10px; }
+
+html[data-theme="light"] .ud-panel { box-shadow: 0 18px 44px rgba(40, 30, 10, 0.14); }
+
+@media (max-width: 620px) {
+  .top-right { gap: 8px; }
+  .ud-btn { width: 38px; height: 38px; }
 }
 
 .table-wrap { overflow-x: auto; }
@@ -562,6 +688,15 @@ tbody tr:last-child td { border-bottom: none; }
 }
 
 .btn-ghost:hover { color: var(--text); border-color: var(--text); }
+
+.products-link {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  margin-top: 16px;
+  padding: 10px 16px;
+  text-decoration: none;
+}
 
 .modal-actions .btn-gold { flex: 2; margin-top: 0; }
 

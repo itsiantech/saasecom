@@ -37,10 +37,12 @@ function switchView(viewName) {
   // Show selected view
   const viewEl = document.getElementById("view-" + viewName);
   if (viewEl) viewEl.hidden = false;
+  placeUserDock();
+  closeUserMenu();
 
-  // Update nav items
+  // Update nav items (group er parent row active hoy na — child active choose kore)
   document.querySelectorAll(".nav-item").forEach((el) => {
-    const active = el.dataset.view === viewName ||
+    const active = (el.dataset.view === viewName && !el.closest(".nav-parent-row")) ||
       (viewName === "order-detail" && el.dataset.view === "orders");
     el.classList.toggle("active", active);
   });
@@ -123,6 +125,54 @@ document.querySelectorAll(".nav-toggle").forEach((btn) => {
   });
 });
 
+/* ---- account menu: top-right dock, active view er topbar e bose ---- */
+function placeUserDock() {
+  const dock = document.getElementById("userDock");
+  const view = document.getElementById("view-" + currentView);
+  if (!dock || !view) return;
+  const bar = view.querySelector(".topbar, .cat-topbar, .pf-topbar");
+  if (bar) {
+    let right = [...bar.children].find((c) => c.classList.contains("top-right"));
+    if (!right) {
+      right = document.createElement("div");
+      right.className = "top-right";
+      [...bar.children].slice(1).forEach((c) => right.appendChild(c));
+      bar.appendChild(right);
+    }
+    right.appendChild(dock);
+    return;
+  }
+  let row = view.querySelector(":scope > .view-dock-row");
+  if (!row) {
+    row = document.createElement("div");
+    row.className = "view-dock-row";
+    view.prepend(row);
+  }
+  row.appendChild(dock);
+}
+
+function closeUserMenu() {
+  const panel = document.getElementById("userDockPanel");
+  const btn = document.getElementById("userDockBtn");
+  if (panel) panel.hidden = true;
+  if (btn) btn.setAttribute("aria-expanded", "false");
+}
+
+placeUserDock();
+document.getElementById("userDockBtn").addEventListener("click", (e) => {
+  e.stopPropagation();
+  const panel = document.getElementById("userDockPanel");
+  const btn = document.getElementById("userDockBtn");
+  panel.hidden = !panel.hidden;
+  btn.setAttribute("aria-expanded", String(!panel.hidden));
+});
+document.addEventListener("click", (e) => {
+  if (!e.target.closest("#userDock")) closeUserMenu();
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") closeUserMenu();
+});
+
 /* ---- session ---- */
 let me = null;
 (async function init() {
@@ -149,15 +199,12 @@ async function loadSiteSettings() {
 
     const mark = document.querySelector(".sb-brand .mark");
     const name = document.querySelector(".sb-brand .name");
+    const brand = document.querySelector(".sb-brand");
     if (name) name.textContent = d.siteTitleResolved;
+    if (brand) brand.classList.toggle("has-logo", !!d.logo);
     if (mark) {
-      if (d.logo) {
-        mark.classList.add("has-logo");
-        mark.innerHTML = `<img src="${esc(d.logo)}" alt="Logo" style="max-width:${Math.min(d.logoWidth, 120)}px;max-height:${Math.min(d.logoHeight, 40)}px" />`;
-      } else {
-        mark.classList.remove("has-logo");
-        mark.textContent = (d.siteTitleResolved || "L")[0].toUpperCase();
-      }
+      if (d.logo) mark.innerHTML = `<img src="${esc(d.logo)}" alt="Logo" />`;
+      else mark.textContent = (d.siteTitleResolved || "L")[0].toUpperCase();
     }
 
     if (d.favicon) {
@@ -225,18 +272,13 @@ async function loadStoreInfo() {
         String(a.getAttribute("href") || "").startsWith("/settings.html")
       );
       if (settingsNav) settingsNav.href = "/settings.html?store=" + encodeURIComponent(store.slug);
-      const plan = store.plan;
-      const planName = plan && typeof plan === "object" ? plan.name : plan;
       // themed Next site (Store Settings → Appearance); folder address is the fallback
       const addr = store.storefrontUrl || "/" + encodeURIComponent(store.slug);
-      let label = addr;
-      try {
-        label = new URL(addr, location.origin).host + (new URL(addr, location.origin).pathname === "/" ? "" : new URL(addr, location.origin).pathname);
-      } catch {}
       el.innerHTML =
-        "<b>" + esc(store.name) + "</b> · " + esc(planName) +
-        ' · <a href="' + esc(addr) + '" target="_blank" rel="noopener" title="আপনার দোকানের আসল সাইট (থিমসহ)">' +
-        esc(label) + "</a>";
+        '<a href="' + esc(addr) + '" target="_blank" rel="noopener" title="আপনার দোকানের আসল সাইট (থিমসহ)">' +
+        '<span>Visit website</span>' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3h7v7"/><path d="M21 3l-9 9"/><path d="M19 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5"/></svg>' +
+        "</a>";
       el.hidden = false;
       if (siteBtn) {
         siteBtn.href = addr;
@@ -261,7 +303,6 @@ async function loadProducts() {
   // server error howle array na ashte pare — crash bondho
   products = Array.isArray(data) ? data : (Array.isArray(data.products) ? data.products : []);
   renderStats();
-  renderTable();
 }
 
 function renderStats() {
@@ -274,47 +315,6 @@ function renderStats() {
   document.getElementById("stUnits").textContent = units.toLocaleString("en-IN");
   document.getElementById("stValue").textContent = money(value);
   document.getElementById("stOut").textContent = out;
-}
-
-function stockBadge(stock) {
-  if (!stock || stock <= 0) return '<span class="badge out">শেষ</span>';
-  if (stock < 5) return `<span class="badge low">${stock} পিস — কম</span>`;
-  return `<span class="badge in">${stock} পিস</span>`;
-}
-
-function renderTable() {
-  const tbody = document.getElementById("pBody");
-  document.getElementById("pCount").textContent = products.length + " টি প্রোডাক্ট";
-
-  if (!products.length) {
-    tbody.innerHTML = '<tr><td colspan="5"><div class="empty">এখনো কোনো প্রোডাক্ট নেই — "Add Product" চাপুন</div></td></tr>';
-    return;
-  }
-
-  tbody.innerHTML = products
-    .map(
-      (p) => `
-      <tr>
-        <td>
-          <div class="p-name">${esc(p.name)}</div>
-          <div class="p-desc">${esc(p.description || "—")}</div>
-        </td>
-        <td class="p-price">${money(p.price)}</td>
-        <td>${stockBadge(p.stock)}</td>
-        <td style="color: var(--muted); font-size: 13px;">${new Date(p.createdAt).toLocaleDateString("bn-BD", { day: "numeric", month: "short", year: "numeric" })}</td>
-        <td>
-          <div class="row-actions">
-            <button class="icon-btn edit" title="Edit" onclick="openEdit('${p._id}')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-            </button>
-            <button class="icon-btn del" title="Delete" onclick="removeProduct('${p._id}')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
-            </button>
-          </div>
-        </td>
-      </tr>`
-    )
-    .join("");
 }
 
 function esc(s) {
@@ -357,6 +357,10 @@ function closeModal() {
 
 // "Add Product" dashboard-er vitorei view switch kore (alada page na)
 document.getElementById("addBtn").addEventListener("click", () => { switchView("add-product"); });
+document.getElementById("viewAllProducts").addEventListener("click", (e) => {
+  e.preventDefault();
+  switchView("product-list");
+});
 document.getElementById("cancelBtn").addEventListener("click", closeModal);
 overlay.addEventListener("click", (e) => {
   if (e.target === overlay) closeModal();
