@@ -367,7 +367,8 @@ function renderFoot() {
 
 /* ===================== OVERLAY ===================== */
 
-function openPop(extraClass) {
+function openPop(extraClass, options) {
+  const opts = options || {};
   const pop = document.createElement("div");
   pop.className = "pc-pop cust-pop";
   const box = document.createElement("div");
@@ -376,7 +377,7 @@ function openPop(extraClass) {
   document.body.appendChild(pop);
 
   const onKey = (e) => {
-    if (e.key === "Escape") close();
+    if (e.key === "Escape" && !opts.locked) close();
   };
   const close = () => {
     document.removeEventListener("keydown", onKey);
@@ -384,7 +385,7 @@ function openPop(extraClass) {
   };
   document.addEventListener("keydown", onKey);
   pop.addEventListener("click", (e) => {
-    if (e.target === pop) close();
+    if (e.target === pop && !opts.locked) close();
   });
   pop._close = close;
   pop._box = box;
@@ -506,6 +507,13 @@ function renderDetail(pop, data, opts = {}) {
 
   const noteBtn = box.querySelector("#custNoteSave");
   const noteInput = box.querySelector("#custNoteText");
+  const noteGuard =
+    window.FormGuard &&
+    window.FormGuard.attach({
+      root: box.querySelector(".cust-note-form"),
+      type: "customer-note",
+      recordId: c.id,
+    });
   noteBtn.addEventListener("click", async () => {
     const text = noteInput.value.trim();
     if (!text) {
@@ -523,6 +531,7 @@ function renderDetail(pop, data, opts = {}) {
       if (!res) return;
       const result = await res.json();
       if (!res.ok) throw new Error(result.message || "Note save hoyni");
+      if (noteGuard) noteGuard.markClean();
       toast("Note add hoyeche", "ok");
       pop._close();
       await loadList();
@@ -541,7 +550,7 @@ function renderDetail(pop, data, opts = {}) {
 
 function openEdit(id) {
   const row = state.rows.find((r) => String(r.id) === String(id));
-  const pop = openPop("cust-edit-modal");
+  const pop = openPop("cust-edit-modal", { locked: true });
   const box = pop._box;
   box.innerHTML = '<div class="pc-empty">Loading customer...</div>';
 
@@ -582,10 +591,29 @@ function openEdit(id) {
         </form>
       `;
 
-      box.querySelector("#custEditX").addEventListener("click", () => pop._close());
-      box.querySelector("#custEditCancel").addEventListener("click", () => pop._close());
+      const editForm = box.querySelector("#custEditForm");
+      const editError = box.querySelector("#custEditError");
+      const guard =
+        window.FormGuard &&
+        window.FormGuard.attach({
+          form: editForm,
+          type: "customer",
+          recordId: id,
+          container: box,
+          errorEl: editError,
+          publishButton: box.querySelector("#custEditSave"),
+          validate: (values) => (String(values.ceName || "").trim() ? "" : "Customer name lagbe"),
+          onClose: () => pop._close(),
+        });
+      const closeForm = () => {
+        if (guard) guard.close();
+        else pop._close();
+      };
 
-      box.querySelector("#custEditForm").addEventListener("submit", async (e) => {
+      box.querySelector("#custEditX").addEventListener("click", closeForm);
+      box.querySelector("#custEditCancel").addEventListener("click", closeForm);
+
+      editForm.addEventListener("submit", async (e) => {
         e.preventDefault();
         const errorEl = box.querySelector("#custEditError");
         errorEl.textContent = "";
@@ -611,6 +639,7 @@ function openEdit(id) {
           if (!res) return;
           const result = await res.json();
           if (!res.ok) throw new Error(result.message || "Customer update hoyni");
+          if (guard) guard.markClean();
           toast("Customer updated", "ok");
           pop._close();
           await loadList();
@@ -629,7 +658,7 @@ function openEdit(id) {
 /* ===================== PASSWORD RESET ===================== */
 
 function openPassword(customer) {
-  const pop = openPop("cust-small-modal");
+  const pop = openPop("cust-small-modal", { locked: true });
   const box = pop._box;
   box.innerHTML = `
     <div class="cust-modal-head">

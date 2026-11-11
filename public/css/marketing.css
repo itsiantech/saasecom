@@ -52,6 +52,37 @@
   min-width: 0;
 }
 
+.promo-card.is-draft {
+  border-style: dashed;
+}
+
+.promo-filter {
+  display: inline-flex;
+  gap: 4px;
+  margin-top: 16px;
+  padding: 4px;
+  border: 1px solid var(--line-soft);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.promo-filter button {
+  padding: 7px 16px;
+  border: none;
+  border-radius: 7px;
+  background: none;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 0.2s, color 0.2s;
+}
+
+.promo-filter button.active {
+  background: var(--gold-soft);
+  color: var(--gold);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
 .promo-card-head {
   display: flex;
   align-items: flex-start;

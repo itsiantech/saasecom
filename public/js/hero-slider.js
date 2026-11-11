@@ -22,20 +22,7 @@
   };
 
   async function api(path, options = {}) {
-    const headers = {
-      Authorization: "Bearer " + (localStorage.getItem(TOKEN_KEY) || ""),
-      ...(options.headers || {}),
-    };
-    if (options.body && !(options.body instanceof FormData)) {
-      headers["Content-Type"] = "application/json";
-    }
-    const res = await fetch(path, { ...options, headers });
-    if (res.status === 401 || res.status === 403) {
-      localStorage.removeItem(TOKEN_KEY);
-      location.href = "/login.html";
-      return null;
-    }
-    return res;
+    return window.ApiSession.request(path, options);
   }
 
   async function json(path, options = {}) {
@@ -402,11 +389,40 @@
     showFormError("");
     setPreview(state.image);
 
+    if (formGuard) formGuard.detach();
+    formGuard = window.FormGuard
+      ? window.FormGuard.attach({
+          form: $("hsForm"),
+          type: "hero-slide",
+          recordId: item ? item.id : null,
+          container: $("hsOverlay").querySelector(".modal"),
+          errorEl: $("hsFormError"),
+          publishButton: $("hsSave"),
+          extra: () => ({ hsImagePath: state.image }),
+          extraApply: (values) => {
+            state.image = values.hsImagePath || "";
+            setPreview(state.image);
+          },
+          validate: (values) => {
+            if (!state.image) return "Prothome slide image upload korun";
+            const link = String(values.hsLink || "").trim();
+            if (link && !/^(https?:\/\/|\/)/i.test(link)) return "Link / diye shuru korun ba full URL din";
+            return "";
+          },
+          onClose: closeModal,
+        })
+      : null;
+
     $("hsOverlay").classList.add("open");
     $("hsTitle").focus();
   }
 
   function closeModal() {
+    if (formGuard) {
+      const guard = formGuard;
+      formGuard = null;
+      guard.detach();
+    }
     $("hsOverlay").classList.remove("open");
     state.editing = null;
     state.image = "";
@@ -414,14 +430,12 @@
     $("hsPreviewEmpty").textContent = "No image";
   }
 
+  let formGuard = null;
+
   $("hsCreateBtn").addEventListener("click", () => openModal(null));
   $("hsRefresh").addEventListener("click", () => load());
-  $("hsClose").addEventListener("click", closeModal);
-  $("hsCancel").addEventListener("click", closeModal);
-  $("hsOverlay").addEventListener("click", (event) => {
-    if (event.target === $("hsOverlay")) closeModal();
-  });
-
+  $("hsClose").addEventListener("click", () => (formGuard ? formGuard.close() : closeModal()));
+  $("hsCancel").addEventListener("click", () => (formGuard ? formGuard.close() : closeModal()));
   $("hsPickBtn").addEventListener("click", () => $("hsFile").click());
 
   $("hsFile").addEventListener("change", async (event) => {
@@ -453,6 +467,7 @@
       state.image = data.path;
       empty.textContent = "No image";
       setPreview(state.image);
+      $("hsForm").dispatchEvent(new Event("input", { bubbles: true }));
       toast("Image upload hoyeche", "ok");
     } catch (err) {
       empty.textContent = "No image";
@@ -498,6 +513,7 @@
         body: JSON.stringify(payload),
       });
       toast(state.editing ? "Slide update hoyeche" : "Slide create hoyeche", "ok");
+      if (formGuard) formGuard.markClean();
       closeModal();
       await load();
     } catch (err) {
@@ -507,10 +523,6 @@
       save.disabled = false;
       save.textContent = "Save slide";
     }
-  });
-
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && $("hsOverlay").classList.contains("open")) closeModal();
   });
 
   /* ------------------------------------------------------------------ init */

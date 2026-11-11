@@ -102,6 +102,7 @@
 .sup-badge.is-void { color: var(--danger); border-color: rgba(224, 112, 92, 0.45); background: rgba(224, 112, 92, 0.1); }
 .sup-badge.is-active { color: var(--ok); border-color: rgba(127, 199, 154, 0.45); background: rgba(127, 199, 154, 0.1); }
 .sup-badge.is-trash { color: var(--muted); border-style: dashed; }
+.sup-badge.is-draft { color: #d9a253; border-color: rgba(217, 162, 83, 0.45); background: rgba(217, 162, 83, 0.1); border-style: dashed; }
 .sup-badge.is-none { color: var(--muted); }
 
 .sup-mode {

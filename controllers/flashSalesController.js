@@ -5,6 +5,7 @@ const Category = require("../models/Category");
 const { getStoreId } = require("../lib/tenantContext");
 const { getDescendantIds } = require("../lib/categoryHelpers");
 const { windowStatus, clampPercent } = require("../services/promotions");
+const promotionDrafts = require("../services/promotionDrafts");
 
 function storeIdOf(req) {
   if (req.store && req.store._id) return req.store._id;
@@ -126,6 +127,7 @@ async function create(req, res, next) {
     if (!storeId) return res.status(400).json({ message: "Store pawa jayni" });
     const payload = await validatePayload(storeId, req.body || {});
     const sale = await FlashSale.create({ store: storeId, ...payload });
+    await promotionDrafts.deleteDraftByKey(storeId, "flash-sale", (req.body || {}).draftKey);
     res.status(201).json({ ok: true, item: adminView(sale.toObject()) });
   } catch (err) {
     if (err instanceof Error && !err.status) return res.status(400).json({ message: err.message });
@@ -146,6 +148,7 @@ async function update(req, res, next) {
     const payload = await validatePayload(storeId, req.body || {});
     Object.assign(sale, payload);
     await sale.save();
+    await promotionDrafts.deleteDraftByKey(storeId, "flash-sale", (req.body || {}).draftKey);
     res.json({ ok: true, item: adminView(sale.toObject()) });
   } catch (err) {
     if (err instanceof Error && !err.status) return res.status(400).json({ message: err.message });
@@ -165,4 +168,41 @@ async function remove(req, res, next) {
   }
 }
 
-module.exports = { list, create, update, remove };
+function draftFail(res, err) {
+  if (err && err.status) return res.status(err.status).json({ message: err.message });
+  return res.status(400).json({ message: (err && err.message) || "Draft save hoyni" });
+}
+
+async function saveDraft(req, res) {
+  try {
+    const storeId = storeIdOf(req);
+    if (!storeId) return res.status(400).json({ message: "Store pawa jayni" });
+    const draft = await promotionDrafts.saveDraft(storeId, req.user && req.user.id, "flash-sale", req.body || {});
+    res.json({ ok: true, ...draft });
+  } catch (err) {
+    draftFail(res, err);
+  }
+}
+
+async function listDrafts(req, res) {
+  try {
+    const storeId = storeIdOf(req);
+    if (!storeId) return res.status(400).json({ message: "Store pawa jayni" });
+    res.json({ items: await promotionDrafts.listDrafts(storeId, "flash-sale") });
+  } catch (err) {
+    draftFail(res, err);
+  }
+}
+
+async function removeDraft(req, res) {
+  try {
+    const storeId = storeIdOf(req);
+    if (!storeId) return res.status(400).json({ message: "Store pawa jayni" });
+    await promotionDrafts.deleteDraftById(storeId, "flash-sale", req.params.id);
+    res.json({ ok: true, id: req.params.id });
+  } catch (err) {
+    draftFail(res, err);
+  }
+}
+
+module.exports = { list, create, update, remove, saveDraft, listDrafts, removeDraft };

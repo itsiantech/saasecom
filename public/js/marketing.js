@@ -13,12 +13,19 @@
     optionsPromise: null,
     flashSales: [],
     coupons: [],
+    flashDrafts: [],
+    couponDrafts: [],
+    fsFilter: "all",
+    cpFilter: "all",
     editingFlash: null,
     editingCoupon: null,
     fsTarget: "product",
     fsSelected: { products: new Set(), categories: new Set() },
     cpSelected: { products: new Set(), categories: new Set() },
   };
+
+  let fsGuard = null;
+  let cpGuard = null;
 
   const STATUS_LABEL = { live: "Live", upcoming: "Upcoming", ended: "Ended", draft: "Draft" };
 
@@ -223,6 +230,144 @@
   }
 
   /* ------------------------------------------------------------------ *
+   * Draft support (FormGuard + PromotionDraft server rows)
+   * ------------------------------------------------------------------ */
+  function applyFieldValues(values) {
+    Object.keys(values || {}).forEach((key) => {
+      const el = $(key);
+      if (!el || el.type === "search") return;
+      if (el.type === "checkbox") el.checked = values[key] === true;
+      else if (el.type !== "file") el.value = values[key] == null ? "" : values[key];
+    });
+  }
+
+  function idSet(value) {
+    return new Set(Array.isArray(value) ? value.map(String) : []);
+  }
+
+  function fsExtra() {
+    return {
+      targetType: state.fsTarget,
+      products: [...state.fsSelected.products],
+      categories: [...state.fsSelected.categories],
+    };
+  }
+
+  function applyFsExtra(values) {
+    state.fsSelected.products = idSet(values.products);
+    state.fsSelected.categories = idSet(values.categories);
+    setFsTarget(values.targetType === "category" ? "category" : "product");
+    loadOptions().then((options) => {
+      if (!options) return;
+      fillFlashPickers();
+      setFsTarget(state.fsTarget);
+    });
+  }
+
+  function cpExtra() {
+    return {
+      products: [...state.cpSelected.products],
+      categories: [...state.cpSelected.categories],
+    };
+  }
+
+  function applyCpExtra(values) {
+    state.cpSelected.products = idSet(values.products);
+    state.cpSelected.categories = idSet(values.categories);
+    loadOptions().then((options) => {
+      if (options) fillCouponPickers();
+    });
+  }
+
+  function attachFlashGuard(draft) {
+    if (!window.FormGuard) return;
+    if (fsGuard) {
+      fsGuard.detach();
+      fsGuard = null;
+    }
+    const modal = $("fsOverlay").querySelector(".promo-modal");
+    fsGuard = window.FormGuard.attach({
+      form: $("fsForm"),
+      type: "flash-sale",
+      key: () => window.FormGuard.keyFor("flash-sale", state.editingFlash ? state.editingFlash.id : null),
+      draftKey: draft ? draft.draftKey : undefined,
+      serverDraftId: draft ? draft.id : undefined,
+      restore: !draft,
+      container: modal,
+      errorEl: $("fsFormError"),
+      extra: fsExtra,
+      extraApply: applyFsExtra,
+      serverUrl: "/api/flash-sales/draft",
+      serverSave: (payload) =>
+        sendJSON("/api/flash-sales/draft", "POST", {
+          ...payload,
+          targetId: state.editingFlash ? state.editingFlash.id : null,
+        }),
+      serverDiscard: (id) => sendJSON("/api/flash-sales/drafts/" + id, "DELETE"),
+      onClose: () => {
+        $("fsOverlay").classList.remove("open");
+        state.editingFlash = null;
+      },
+    });
+  }
+
+  function attachCouponGuard(draft) {
+    if (!window.FormGuard) return;
+    if (cpGuard) {
+      cpGuard.detach();
+      cpGuard = null;
+    }
+    const modal = $("cpOverlay").querySelector(".promo-modal");
+    cpGuard = window.FormGuard.attach({
+      form: $("cpForm"),
+      type: "coupon",
+      key: () => window.FormGuard.keyFor("coupon", state.editingCoupon ? state.editingCoupon.id : null),
+      draftKey: draft ? draft.draftKey : undefined,
+      serverDraftId: draft ? draft.id : undefined,
+      restore: !draft,
+      container: modal,
+      errorEl: $("cpFormError"),
+      extra: cpExtra,
+      extraApply: applyCpExtra,
+      serverUrl: "/api/coupons/draft",
+      serverSave: (payload) =>
+        sendJSON("/api/coupons/draft", "POST", {
+          ...payload,
+          targetId: state.editingCoupon ? state.editingCoupon.id : null,
+        }),
+      serverDiscard: (id) => sendJSON("/api/coupons/drafts/" + id, "DELETE"),
+      onClose: () => {
+        $("cpOverlay").classList.remove("open");
+        state.editingCoupon = null;
+      },
+    });
+  }
+
+  function requestCloseFlash() {
+    if (!fsGuard) {
+      closeFlashModal();
+      return;
+    }
+    fsGuard.close().then((closed) => {
+      if (!closed) return;
+      fsGuard = null;
+      loadFlashSales();
+    });
+  }
+
+  function requestCloseCoupon() {
+    if (!cpGuard) {
+      closeCouponModal();
+      return;
+    }
+    cpGuard.close().then((closed) => {
+      if (!closed) return;
+      cpGuard = null;
+      loadCoupons();
+    });
+  }
+
+  /* ------------------------------------------------------------------ *
    * Flash sale modal
    * ------------------------------------------------------------------ */
   function setFsTarget(target) {
@@ -256,7 +401,7 @@
     });
   }
 
-  function openFlashModal(item) {
+  function openFlashModal(item, draft) {
     state.editingFlash = item || null;
     state.fsSelected.products = new Set((item && item.products || []).map(String));
     state.fsSelected.categories = new Set((item && item.categories || []).map(String));
@@ -283,13 +428,23 @@
       setFsTarget(state.fsTarget);
     });
 
+    if (draft) {
+      applyFieldValues(draft.payload || {});
+      applyFsExtra(draft.payload || {});
+    }
+
     $("fsSave").disabled = false;
     $("fsSave").textContent = item ? "Update campaign" : "Save campaign";
     $("fsOverlay").classList.add("open");
+    attachFlashGuard(draft || null);
     $("fsTitle").focus();
   }
 
   function closeFlashModal() {
+    if (fsGuard) {
+      fsGuard.detach();
+      fsGuard = null;
+    }
     $("fsOverlay").classList.remove("open");
     state.editingFlash = null;
   }
@@ -328,6 +483,7 @@
       products: state.fsTarget === "product" ? [...state.fsSelected.products] : [],
       categories: state.fsTarget === "category" ? [...state.fsSelected.categories] : [],
     };
+    if (fsGuard) payload.draftKey = fsGuard.draftKey();
 
     const btn = $("fsSave");
     btn.disabled = true;
@@ -339,6 +495,7 @@
         editing ? "PUT" : "POST",
         payload
       );
+      if (fsGuard) fsGuard.markClean();
       closeFlashModal();
       window.toast(editing ? "Campaign update hoyeche" : "Campaign create hoyeche", "ok");
       await loadFlashSales();
@@ -386,18 +543,92 @@
     </article>`;
   }
 
+  function flashDraftCard(draft) {
+    const p = draft.payload || {};
+    const title = String(p.fsTitle || "").trim() || "Untitled campaign";
+    const percent = Number(p.fsPercent) || 0;
+    return `<article class="promo-card is-draft" data-draft-id="${esc(draft.id)}">
+      <div class="promo-card-head">
+        <div class="promo-card-title">
+          <h4>${esc(title)}</h4>
+          <p>${esc(p.fsDesc || "Draft — ekhono publish hoyni")}</p>
+        </div>
+        <span class="promo-pill draft">Draft</span>
+      </div>
+      <div class="promo-meta">
+        <span>Last saved<strong>${esc(fmtDateTime(draft.updatedAt))}</strong></span>
+        <span>Discount<strong>${percent ? esc(percent + "%") : "—"}</strong></span>
+      </div>
+      <div class="promo-card-actions">
+        <button type="button" class="promo-btn" data-draft-edit="${esc(draft.id)}">${svgEdit()}Continue</button>
+        <button type="button" class="promo-btn danger" data-draft-delete="${esc(draft.id)}">${svgDelete()}Discard</button>
+      </div>
+    </article>`;
+  }
+
+  function renderFlashList() {
+    const root = $("fsListRoot");
+    if (!root) return;
+    const cards = [];
+    if (state.fsFilter !== "active") cards.push(...state.flashDrafts.map(flashDraftCard));
+    if (state.fsFilter !== "draft") cards.push(...state.flashSales.map(flashCard));
+    if (cards.length) {
+      root.innerHTML = cards.join("");
+    } else if (state.fsFilter === "draft") {
+      root.innerHTML = '<div class="promo-empty">Kono draft nei.</div>';
+    } else {
+      root.innerHTML =
+        '<div class="promo-empty">Kono campaign nei. “Create campaign” diye prothom flash sale banan.</div>';
+    }
+  }
+
+  function setFsFilter(filter) {
+    state.fsFilter = filter === "draft" || filter === "active" ? filter : "all";
+    document.querySelectorAll("#fsFilter button").forEach((btn) => {
+      btn.classList.toggle("active", btn.dataset.filter === state.fsFilter);
+    });
+    renderFlashList();
+  }
+
+  function openFlashDraft(draft) {
+    const source = draft.targetId
+      ? state.flashSales.find((x) => String(x.id) === String(draft.targetId))
+      : null;
+    openFlashModal(source || null, draft);
+  }
+
+  async function deleteFlashDraft(id) {
+    const ok = await window.confirmDialog({
+      title: "Discard draft?",
+      text: "Ei draft ta muche felbe. Eta live campaign na, tai site e kono effect porbe na.",
+      okLabel: "Discard",
+    });
+    if (!ok) return;
+    try {
+      await sendJSON("/api/flash-sales/drafts/" + id, "DELETE");
+      window.toast("Draft discard hoyeche", "ok");
+      await loadFlashSales();
+    } catch (err) {
+      window.toast(err.message, "err");
+    }
+  }
+
   async function loadFlashSales() {
     const root = $("fsListRoot");
     if (root) root.innerHTML = '<div class="promo-empty">Loading…</div>';
     try {
-      const data = await getJSON("/api/flash-sales");
+      const [data, drafts] = await Promise.all([
+        getJSON("/api/flash-sales"),
+        getJSON("/api/flash-sales/drafts").catch(() => ({ items: [] })),
+      ]);
       if (!data) return;
       state.flashSales = data.items || [];
-      renderStats("fsStats", state.flashSales);
-      if (!root) return;
-      root.innerHTML = state.flashSales.length
-        ? state.flashSales.map(flashCard).join("")
-        : '<div class="promo-empty">Kono campaign nei. “Create campaign” diye prothom flash sale banan.</div>';
+      state.flashDrafts = (drafts && drafts.items) || [];
+      renderStats("fsStats", [
+        ...state.flashSales,
+        ...state.flashDrafts.map(() => ({ status: "draft" })),
+      ]);
+      renderFlashList();
     } catch (err) {
       if (root) root.innerHTML = `<div class="promo-empty">${esc(err.message)}</div>`;
       window.toast(err.message, "err");
@@ -446,7 +677,7 @@
     });
   }
 
-  function openCouponModal(item) {
+  function openCouponModal(item, draft) {
     state.editingCoupon = item || null;
     state.cpSelected.products = new Set((item && item.products || []).map(String));
     state.cpSelected.categories = new Set((item && item.categories || []).map(String));
@@ -471,13 +702,23 @@
       fillCouponPickers();
     });
 
+    if (draft) {
+      applyFieldValues(draft.payload || {});
+      applyCpExtra(draft.payload || {});
+    }
+
     $("cpSave").disabled = false;
     $("cpSave").textContent = item ? "Update coupon" : "Save coupon";
     $("cpOverlay").classList.add("open");
+    attachCouponGuard(draft || null);
     $("cpCode").focus();
   }
 
   function closeCouponModal() {
+    if (cpGuard) {
+      cpGuard.detach();
+      cpGuard = null;
+    }
     $("cpOverlay").classList.remove("open");
     state.editingCoupon = null;
   }
@@ -521,6 +762,7 @@
       products: [...state.cpSelected.products],
       categories: [...state.cpSelected.categories],
     };
+    if (cpGuard) payload.draftKey = cpGuard.draftKey();
 
     const btn = $("cpSave");
     btn.disabled = true;
@@ -532,6 +774,7 @@
         editing ? "PUT" : "POST",
         payload
       );
+      if (cpGuard) cpGuard.markClean();
       closeCouponModal();
       window.toast(editing ? "Coupon update hoyeche" : "Coupon create hoyeche", "ok");
       await loadCoupons();
@@ -578,18 +821,95 @@
     </article>`;
   }
 
+  function couponDraftCard(draft) {
+    const p = draft.payload || {};
+    const code = String(p.cpCode || "").trim() || "Untitled coupon";
+    const parts = [];
+    if (p.cpType === "fixed") parts.push(`৳${Number(p.cpValue) || 0} off`);
+    else if (Number(p.cpValue) > 0) parts.push(`${Number(p.cpValue)}% off`);
+    if (p.cpFreeDelivery === true) parts.push("free delivery");
+    return `<article class="promo-card is-draft" data-draft-id="${esc(draft.id)}">
+      <div class="promo-card-head">
+        <div class="promo-card-title">
+          <span class="promo-code">${esc(code)}</span>
+          <p style="margin-top:8px;">${esc(parts.join(" + ") || "Draft — ekhono publish hoyni")}</p>
+        </div>
+        <span class="promo-pill draft">Draft</span>
+      </div>
+      <div class="promo-meta">
+        <span>Last saved<strong>${esc(fmtDateTime(draft.updatedAt))}</strong></span>
+        <span>Starts<strong>${esc(fmtDate(p.cpStart))}</strong></span>
+      </div>
+      <div class="promo-card-actions">
+        <button type="button" class="promo-btn" data-draft-edit="${esc(draft.id)}">${svgEdit()}Continue</button>
+        <button type="button" class="promo-btn danger" data-draft-delete="${esc(draft.id)}">${svgDelete()}Discard</button>
+      </div>
+    </article>`;
+  }
+
+  function renderCouponList() {
+    const root = $("cpListRoot");
+    if (!root) return;
+    const cards = [];
+    if (state.cpFilter !== "active") cards.push(...state.couponDrafts.map(couponDraftCard));
+    if (state.cpFilter !== "draft") cards.push(...state.coupons.map(couponCard));
+    if (cards.length) {
+      root.innerHTML = cards.join("");
+    } else if (state.cpFilter === "draft") {
+      root.innerHTML = '<div class="promo-empty">Kono draft nei.</div>';
+    } else {
+      root.innerHTML =
+        '<div class="promo-empty">Kono coupon nei. “Add coupon” diye prothom code banan.</div>';
+    }
+  }
+
+  function setCpFilter(filter) {
+    state.cpFilter = filter === "draft" || filter === "active" ? filter : "all";
+    document.querySelectorAll("#cpFilter button").forEach((btn) => {
+      btn.classList.toggle("active", btn.dataset.filter === state.cpFilter);
+    });
+    renderCouponList();
+  }
+
+  function openCouponDraft(draft) {
+    const source = draft.targetId
+      ? state.coupons.find((x) => String(x.id) === String(draft.targetId))
+      : null;
+    openCouponModal(source || null, draft);
+  }
+
+  async function deleteCouponDraft(id) {
+    const ok = await window.confirmDialog({
+      title: "Discard draft?",
+      text: "Ei coupon draft muche felbe. Eta live coupon na, tai customer kichu pabe na.",
+      okLabel: "Discard",
+    });
+    if (!ok) return;
+    try {
+      await sendJSON("/api/coupons/drafts/" + id, "DELETE");
+      window.toast("Draft discard hoyeche", "ok");
+      await loadCoupons();
+    } catch (err) {
+      window.toast(err.message, "err");
+    }
+  }
+
   async function loadCoupons() {
     const root = $("cpListRoot");
     if (root) root.innerHTML = '<div class="promo-empty">Loading…</div>';
     try {
-      const data = await getJSON("/api/coupons");
+      const [data, drafts] = await Promise.all([
+        getJSON("/api/coupons"),
+        getJSON("/api/coupons/drafts").catch(() => ({ items: [] })),
+      ]);
       if (!data) return;
       state.coupons = data.items || [];
-      renderStats("cpStats", state.coupons);
-      if (!root) return;
-      root.innerHTML = state.coupons.length
-        ? state.coupons.map(couponCard).join("")
-        : '<div class="promo-empty">Kono coupon nei. “Add coupon” diye prothom code banan.</div>';
+      state.couponDrafts = (drafts && drafts.items) || [];
+      renderStats("cpStats", [
+        ...state.coupons,
+        ...state.couponDrafts.map(() => ({ status: "draft" })),
+      ]);
+      renderCouponList();
     } catch (err) {
       if (root) root.innerHTML = `<div class="promo-empty">${esc(err.message)}</div>`;
       window.toast(err.message, "err");
@@ -622,20 +942,31 @@
       state.options = null;
       loadFlashSales();
     });
-    $("fsClose").addEventListener("click", closeFlashModal);
-    $("fsCancel").addEventListener("click", closeFlashModal);
-    $("fsOverlay").addEventListener("click", (e) => {
-      if (e.target === $("fsOverlay")) closeFlashModal();
-    });
+    $("fsClose").addEventListener("click", requestCloseFlash);
+    $("fsCancel").addEventListener("click", requestCloseFlash);
     $("fsForm").addEventListener("submit", saveFlashSale);
     $("fsTargetSeg").addEventListener("click", (e) => {
       const btn = e.target.closest("button[data-target]");
-      if (btn) setFsTarget(btn.dataset.target);
+      if (btn) {
+        setFsTarget(btn.dataset.target);
+        $("fsForm").dispatchEvent(new Event("input", { bubbles: true }));
+      }
+    });
+    $("fsFilter").addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-filter]");
+      if (btn) setFsFilter(btn.dataset.filter);
     });
     $("fsListRoot").addEventListener("click", (e) => {
       const edit = e.target.closest("[data-edit]");
       const del = e.target.closest("[data-delete]");
-      if (edit) {
+      const draftEdit = e.target.closest("[data-draft-edit]");
+      const draftDel = e.target.closest("[data-draft-delete]");
+      if (draftEdit) {
+        const draft = state.flashDrafts.find((x) => String(x.id) === String(draftEdit.dataset.draftEdit));
+        if (draft) openFlashDraft(draft);
+      } else if (draftDel) {
+        deleteFlashDraft(draftDel.dataset.draftDelete);
+      } else if (edit) {
         const item = state.flashSales.find((x) => String(x.id) === String(edit.dataset.edit));
         if (item) openFlashModal(item);
       } else if (del) {
@@ -648,30 +979,32 @@
       state.options = null;
       loadCoupons();
     });
-    $("cpClose").addEventListener("click", closeCouponModal);
-    $("cpCancel").addEventListener("click", closeCouponModal);
-    $("cpOverlay").addEventListener("click", (e) => {
-      if (e.target === $("cpOverlay")) closeCouponModal();
-    });
+    $("cpClose").addEventListener("click", requestCloseCoupon);
+    $("cpCancel").addEventListener("click", requestCloseCoupon);
     $("cpForm").addEventListener("submit", saveCoupon);
     $("cpCode").addEventListener("input", (e) => {
       e.target.value = e.target.value.toUpperCase().replace(/\s+/g, "");
     });
+    $("cpFilter").addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-filter]");
+      if (btn) setCpFilter(btn.dataset.filter);
+    });
     $("cpListRoot").addEventListener("click", (e) => {
       const edit = e.target.closest("[data-edit]");
       const del = e.target.closest("[data-delete]");
-      if (edit) {
+      const draftEdit = e.target.closest("[data-draft-edit]");
+      const draftDel = e.target.closest("[data-draft-delete]");
+      if (draftEdit) {
+        const draft = state.couponDrafts.find((x) => String(x.id) === String(draftEdit.dataset.draftEdit));
+        if (draft) openCouponDraft(draft);
+      } else if (draftDel) {
+        deleteCouponDraft(draftDel.dataset.draftDelete);
+      } else if (edit) {
         const item = state.coupons.find((x) => String(x.id) === String(edit.dataset.edit));
         if (item) openCouponModal(item);
       } else if (del) {
         deleteCoupon(del.dataset.delete);
       }
-    });
-
-    document.addEventListener("keydown", (e) => {
-      if (e.key !== "Escape") return;
-      if ($("fsOverlay").classList.contains("open")) closeFlashModal();
-      if ($("cpOverlay").classList.contains("open")) closeCouponModal();
     });
 
     const fsManage = $("flashSalesManageBtn");

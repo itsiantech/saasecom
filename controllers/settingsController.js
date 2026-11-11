@@ -27,6 +27,7 @@ const { CHECKOUT_FIELDS, FIELD_KEYS } = require("../lib/checkoutFields");
 const { encrypt, decrypt, maskSecret, isMasked } = require("../lib/secretBox");
 const { DEFAULT_TEMPLATES, TEMPLATE_LABELS } = require("../lib/emailTemplates");
 const { parseSections, normalizeSections } = require("../lib/homeSections");
+const { buildMenu, normalizeMenu } = require("../lib/storeMenu");
 const { sendMail } = require("../lib/mailer");
 const { sendSms } = require("../lib/sms");
 const {
@@ -88,6 +89,8 @@ const SETTING_KEYS = [
   "home_category_sections",
   "home_hot_deals_enabled",
   "home_new_products_enabled",
+  // storefront navigation
+  "storefront_menu",
 ];
 
 const BOOL_KEYS = [
@@ -149,6 +152,7 @@ const DEFAULTS = {
   home_category_sections: "[]",
   home_hot_deals_enabled: "true",
   home_new_products_enabled: "true",
+  storefront_menu: "[]",
 };
 
 // je branding key gulo prottek dokan alada rakhbe — SiteSetting er field er sathe mapping
@@ -423,6 +427,10 @@ async function buildAdminPayload() {
   return {
     settings,
     homeSections: parseSections(settings.home_category_sections),
+    menu: buildMenu(settings.storefront_menu, {
+      categories: cats.filter((row) => row.status !== "trashed" && !row.deletedAt),
+      language: "en",
+    }),
     social,
     shipping: { manual, areas, classes, intl, wd },
     categories: buildTree(cats),
@@ -508,11 +516,20 @@ async function adminSave(req, res) {
     const owned = await Category.find({ store: storeId, deletedAt: null }).select("_id").lean();
     allowedHomeCategories = owned.map((row) => String(row._id));
   }
+  let allowedMenuCategories = null;
+  if (settings.storefront_menu !== undefined) {
+    const owned = await Category.find({ store: storeId, deletedAt: null, status: { $ne: "trashed" } })
+      .select("_id")
+      .lean();
+    allowedMenuCategories = owned.map((row) => String(row._id));
+  }
   SETTING_KEYS.forEach((key) => {
     if (settings[key] === undefined) return;
     let value = settings[key];
     if (key === "home_category_sections") {
       value = JSON.stringify(normalizeSections(value, allowedHomeCategories));
+    } else if (key === "storefront_menu") {
+      value = JSON.stringify(normalizeMenu(value, { allowedCategoryIds: allowedMenuCategories }));
     } else if (BOOL_KEYS.includes(key)) value = value === true || value === "true" ? "true" : "false";
     else value = String(value == null ? "" : value);
     if (["logo_width", "logo_height"].includes(key)) {

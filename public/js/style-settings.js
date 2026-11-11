@@ -617,10 +617,10 @@
     const token = localStorage.getItem(TOKEN_KEY);
     if (!token) return;
     try {
-      const res = await fetch(apiUrl(), {
-        headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" },
+      const res = await window.ApiSession.request(apiUrl(), {
+        headers: { "Content-Type": "application/json" },
       });
-      if (res.status === 401) return;
+      if (!res) return;
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         setStatus(data.message || "স্টাইল লোড হয়নি — আরেকবার চেষ্টা করুন।", "err");
@@ -658,11 +658,15 @@
     setStatus("সেভ হচ্ছে…", "");
     try {
       const style = { ...EMPTY, ...state.style };
-      const res = await fetch(apiUrl(), {
+      const res = await window.ApiSession.request(apiUrl(), {
         method: "PUT",
-        headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ style }),
       });
+      if (!res) {
+        setStatus("সেশন শেষ — আবার লগইন করুন।", "err");
+        return;
+      }
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         setStatus(data.message || "সেভ হয়নি — আরেকবার চেষ্টা করুন।", "err");

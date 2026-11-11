@@ -8,22 +8,9 @@
 
 const TOKEN_KEY = "luxe_token";
 
-// dashboard.js er `const api` window e jay na — tai nijer api helper (others der moto)
+// dashboard.js er `const api` window e jay na — tai ApiSession use kori (refresh + re-login)
 async function api(path, opts = {}) {
-  const res = await fetch(path, {
-    ...opts,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + localStorage.getItem(TOKEN_KEY),
-      ...(opts.headers || {}),
-    },
-  });
-  if (res.status === 401 || res.status === 403) {
-    localStorage.removeItem(TOKEN_KEY);
-    location.href = "/login.html";
-    return null;
-  }
-  return res;
+  return (await window.ApiSession.request(path, opts)) || window.ApiSession.cancelled();
 }
 
 const toast = (text, type) => {
@@ -706,9 +693,30 @@ function openTierPopover() {
   addRow(1, "", "");
   el("pcTierAdd").addEventListener("click", () => addRow());
 
-  el("pcTierCancel").addEventListener("click", () => pop.remove());
-  pop.addEventListener("click", (e) => {
-    if (e.target === pop) pop.remove();
+  const readRows = () =>
+    [...rows.querySelectorAll(".pc-tier-row")].map((r) => {
+      const [minEl, maxEl, priceEl] = r.querySelectorAll("input");
+      return { min: minEl.value, max: maxEl.value, price: priceEl.value };
+    });
+
+  const box = pop.querySelector(".pc-pop-box");
+  const guard =
+    window.FormGuard &&
+    window.FormGuard.attach({
+      root: box,
+      container: box,
+      type: "pc-tiers",
+      extra: () => ({ rows: readRows() }),
+      extraApply: (values) => {
+        rows.innerHTML = "";
+        const list = Array.isArray(values.rows) && values.rows.length ? values.rows : [{ min: 1, max: "", price: "" }];
+        list.forEach((r) => addRow(r.min || "", r.max || "", r.price || ""));
+      },
+    });
+
+  el("pcTierCancel").addEventListener("click", () => {
+    if (guard) guard.discard();
+    pop.remove();
   });
   el("pcTierSave").addEventListener("click", () => {
     const tier = [...rows.querySelectorAll(".pc-tier-row")].map((r) => {
@@ -723,6 +731,7 @@ function openTierPopover() {
       toast("Kampona thik thak fill korun", "err");
       return;
     }
+    if (guard) guard.markClean();
     pop.remove();
     runBulk("set_tiers", { tier });
   });
@@ -743,9 +752,17 @@ function openCountryPopover() {
     </div>
   `;
   document.body.appendChild(pop);
-  el("pcCtryCancel").addEventListener("click", () => pop.remove());
-  pop.addEventListener("click", (e) => {
-    if (e.target === pop) pop.remove();
+  const ctryBox = pop.querySelector(".pc-pop-box");
+  const ctryGuard =
+    window.FormGuard &&
+    window.FormGuard.attach({
+      root: ctryBox,
+      container: ctryBox,
+      type: "pc-countries",
+    });
+  el("pcCtryCancel").addEventListener("click", () => {
+    if (ctryGuard) ctryGuard.discard();
+    pop.remove();
   });
   el("pcCtrySave").addEventListener("click", () => {
     const codes = el("pcCtryInput").value.split(",").map((s) => s.trim().toUpperCase()).filter(Boolean);
@@ -753,6 +770,7 @@ function openCountryPopover() {
       toast("Kampona country code din", "err");
       return;
     }
+    if (ctryGuard) ctryGuard.markClean();
     pop.remove();
     runBulk("allow_international", { countryCodes: codes });
   });

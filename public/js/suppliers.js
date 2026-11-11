@@ -15,6 +15,7 @@ const HISTORY_ROOT = "supHistoryRoot";
 const PAGE_SIZES = [10, 20, 50];
 const FILTERS = [
   { key: "all", label: "All" },
+  { key: "draft", label: "Draft" },
   { key: "paid", label: "Paid" },
   { key: "due", label: "Due" },
   { key: "hold", label: "Hold" },
@@ -47,7 +48,7 @@ const BADGE_LABEL = {
   void: "Void",
   none: "No invoices",
 };
-const STATE_LABEL = { active: "Active", void: "Void", trashed: "In trash" };
+const STATE_LABEL = { active: "Active", void: "Void", draft: "Draft", trashed: "In trash" };
 const MODE_LABEL = { auto: "Auto", manual: "Manual", reversal: "Reversal" };
 const ORDER_STATUS_LABEL = { ordered: "Ordered", received: "Received", cancelled: "Cancelled" };
 
@@ -170,6 +171,7 @@ function invoiceDueView(invoice) {
 function stateBadge(value) {
   if (!value || value === "active") return '<span class="sup-badge is-active">Active</span>';
   if (value === "void") return '<span class="sup-badge is-void">Void</span>';
+  if (value === "draft") return '<span class="sup-badge is-draft">Draft</span>';
   if (value === "trashed") return '<span class="sup-badge is-trash">In trash</span>';
   return "";
 }
@@ -215,7 +217,8 @@ function pageSizeFromStorage() {
 
 /* ============================== MODALS ============================== */
 
-function openModal(extraClass) {
+function openModal(extraClass, options) {
+  const opts = options || {};
   const pop = document.createElement("div");
   pop.className = "sup-pop";
   const box = document.createElement("div");
@@ -231,12 +234,13 @@ function openModal(extraClass) {
     if (index >= 0) modalStack.splice(index, 1);
     pop.dispatchEvent(new CustomEvent("sup:close"));
   };
+  // locked = data-entry form; X / Cancel are the only ways out (no Esc/backdrop).
   const onKey = (e) => {
-    if (e.key === "Escape" && modalStack[modalStack.length - 1] === pop) close();
+    if (!opts.locked && e.key === "Escape" && modalStack[modalStack.length - 1] === pop) close();
   };
   document.addEventListener("keydown", onKey);
   pop.addEventListener("click", (e) => {
-    if (e.target === pop) close();
+    if (!opts.locked && e.target === pop) close();
   });
 
   modalStack.push(pop);
@@ -444,6 +448,8 @@ function renderTable() {
     let hint = "Search ba filter change kore dekhen.";
     if (state.filter === "trash") {
       hint = "Trash e kono supplier nei. Trash kora supplier shudhu superadmin permanently delete korte parbe — automatic purge nei.";
+    } else if (state.filter === "draft") {
+      hint = "Kono draft nei. Supplier form e type korlei draft ekhane auto-save hobe.";
     } else if (state.filter === "all") {
       hint = "New supplier diye purchase order, invoice ar payment track kora shuru korun.";
     }
@@ -469,6 +475,9 @@ function renderTable() {
       if (row.state === "active" || row.state === "void") {
         actions.push(iconAction("trash", row.id, "Trash supplier", ICONS.trash));
       }
+      if (row.state === "draft") {
+        actions.push(iconAction("discard", row.id, "Discard draft", ICONS.trash));
+      }
       if (row.state === "trashed") {
         actions.push(iconAction("restore", row.id, "Restore supplier", ICONS.restore));
         if (access.canPurge) {
@@ -476,13 +485,17 @@ function renderTable() {
         }
       }
       const pay = payBadge(row.paymentStatus);
-      const statusNote = row.state !== "active" ? `<div class="sup-substate">${esc(stateLabel(row.state))}</div>` : "";
+      const statusNote =
+        row.state !== "active" && row.state !== "draft"
+          ? `<div class="sup-substate">${esc(stateLabel(row.state))}</div>`
+          : "";
       return `<tr data-row="${id}">
         <td data-col="name" data-label="Name">
           <div class="sup-name">
             <span class="sup-avatar">${esc(initials(row.name))}</span>
             <div>
               <b>${esc(row.name || "Supplier")}</b>
+              ${row.state === "draft" ? '<span class="sup-badge is-draft">Draft</span>' : ""}
               <small>${esc(stateLabel(row.state))} · ${row.orderCount || 0} order${Number(row.orderCount) === 1 ? "" : "s"}</small>
             </div>
           </div>
@@ -552,6 +565,13 @@ function bindTable() {
       e.stopPropagation();
       const row = state.rows.find((r) => String(r.id) === btn.dataset.purge);
       if (row) await purgeSupplier(row);
+    });
+  });
+  wrap.querySelectorAll("[data-discard]").forEach((btn) => {
+    btn.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const row = state.rows.find((r) => String(r.id) === btn.dataset.discard);
+      if (row) await discardDraft(row);
     });
   });
 }
@@ -630,73 +650,104 @@ function buildPager(container, page, pages, onPage) {
 
 async function openSupplierForm(supplier) {
   const editing = !!supplier;
-  const pop = openModal("sup-edit-modal");
+  const isDraft = editing && supplier.state === "draft";
+  const pop = openModal("sup-edit-modal", { locked: true });
   const box = pop._box;
+  const saveLabel = isDraft ? "Publish supplier" : editing ? "Save changes" : "Create supplier";
   box.innerHTML = modalHead(
-    editing ? "Edit supplier" : "New supplier",
-    editing ? "Contact ar company details update korun" : "Purchase order shuru korte supplier add korun",
+    isDraft ? "Edit draft supplier" : editing ? "Edit supplier" : "New supplier",
+    isDraft
+      ? "Publish korle ei draft active supplier hobe"
+      : editing
+      ? "Contact ar company details update korun"
+      : "Type korlei autosave hobe — form bondho korleo draft thakbe",
     "Close"
   ) + `
+    ${isDraft ? '<div class="sup-notice is-warn">Draft — ekhono active na. Publish korle order, payment ar stock chalu hobe.</div>' : ""}
     <form class="sup-form" novalidate>
       <div class="sup-form-grid">
-        <label class="full"><span>Supplier name *</span><input id="supFormName" type="text" maxlength="120" value="${esc(editing ? supplier.name || "" : "")}" required /></label>
-        <label><span>Company name</span><input id="supFormCompany" type="text" maxlength="160" value="${esc(editing ? supplier.companyName || "" : "")}" /></label>
-        <label><span>Phone *</span><input id="supFormPhone" type="text" maxlength="20" value="${esc(editing ? supplier.phone || "" : "")}" placeholder="01XXXXXXXXX" required /></label>
-        <label><span>Email</span><input id="supFormEmail" type="email" maxlength="160" value="${esc(editing ? supplier.email || "" : "")}" /></label>
-        <label class="full"><span>Address</span><input id="supFormAddress" type="text" maxlength="300" value="${esc(editing ? supplier.address || "" : "")}" /></label>
-        <label class="full"><span>Note</span><textarea id="supFormNote" rows="3" maxlength="500">${esc(editing ? supplier.note || "" : "")}</textarea></label>
+        <label class="full"><span>Supplier name *</span><input id="supFormName" name="name" type="text" maxlength="120" value="${esc(editing ? supplier.name || "" : "")}" required /></label>
+        <label><span>Company name</span><input id="supFormCompany" name="companyName" type="text" maxlength="160" value="${esc(editing ? supplier.companyName || "" : "")}" /></label>
+        <label><span>Phone *</span><input id="supFormPhone" name="phone" type="text" maxlength="20" value="${esc(editing ? supplier.phone || "" : "")}" placeholder="01XXXXXXXXX" required /></label>
+        <label><span>Email</span><input id="supFormEmail" name="email" type="email" maxlength="160" value="${esc(editing ? supplier.email || "" : "")}" /></label>
+        <label class="full"><span>Address</span><input id="supFormAddress" name="address" type="text" maxlength="300" value="${esc(editing ? supplier.address || "" : "")}" /></label>
+        <label class="full"><span>Note</span><textarea id="supFormNote" name="note" rows="3" maxlength="500">${esc(editing ? supplier.note || "" : "")}</textarea></label>
       </div>
-      <p class="sup-form-error" id="supFormError"></p>
+      <p class="sup-form-error" id="supFormError" role="alert"></p>
       <div class="sup-modal-actions">
         <button type="button" class="btn-ghost" data-cancel>Cancel</button>
-        <button type="submit" class="btn-gold" id="supFormSave">${editing ? "Save changes" : "Create supplier"}</button>
+        <button type="button" class="btn-ghost" data-draft>Save as draft</button>
+        <button type="submit" class="btn-gold" id="supFormSave">${saveLabel}</button>
       </div>
     </form>`;
 
+  const form = box.querySelector("form");
   const errorEl = box.querySelector("#supFormError");
-  box.querySelector(".sup-close").addEventListener("click", () => pop._close());
-  box.querySelector("[data-cancel]").addEventListener("click", () => pop._close());
-  box.querySelector("#supFormName").focus();
+  const saveBtn = box.querySelector("#supFormSave");
 
-  box.querySelector("form").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    errorEl.textContent = "";
-    const body = {
-      name: box.querySelector("#supFormName").value.trim(),
-      companyName: box.querySelector("#supFormCompany").value.trim(),
-      phone: box.querySelector("#supFormPhone").value.trim(),
-      email: box.querySelector("#supFormEmail").value.trim(),
-      address: box.querySelector("#supFormAddress").value.trim(),
-      note: box.querySelector("#supFormNote").value.trim(),
-    };
-    if (!body.name) {
-      errorEl.textContent = "Supplier name lagbe";
-      return;
-    }
-    if (!body.phone) {
-      errorEl.textContent = "Phone number lagbe";
-      return;
-    }
-    const save = box.querySelector("#supFormSave");
-    save.disabled = true;
-    save.textContent = "Saving...";
-    try {
+  const guard = window.FormGuard.attach({
+    form,
+    type: "supplier",
+    recordId: editing ? supplier.id : null,
+    draftOf: isDraft ? supplier.draftOf || null : editing ? supplier.id : null,
+    serverDraftId: isDraft ? supplier.id : null,
+    draftKey: isDraft ? supplier.draftKey || null : null,
+    container: box,
+    errorEl,
+    publishButton: saveBtn,
+    serverUrl: "/api/suppliers/draft",
+    serverSave: async (payload) => {
+      const res = await api("/api/suppliers/draft", { method: "POST", body: JSON.stringify(payload) });
+      if (!res) throw new Error("Session shesh — abar login korun");
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || "Draft save hoyni");
+      return data.supplier || {};
+    },
+    serverDiscard: async (id) => {
+      const res = await api("/api/suppliers/" + encodeURIComponent(id) + "/draft", { method: "DELETE" });
+      if (res && !res.ok && res.status !== 404) throw new Error("Draft discard hoyni");
+    },
+    // Required fields only block the final publish — drafts stay open.
+    validate: (values) => {
+      if (!values.name.trim()) return "Supplier name lagbe";
+      const digits = String(values.phone || "").replace(/\D/g, "");
+      if (!digits) return "Phone number lagbe";
+      if (digits.length < 6 || digits.length > 20) return "Phone number valid na";
+      if (values.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email.trim())) return "Email valid na";
+      return "";
+    },
+    publish: async (values) => {
       const res = await api(editing ? "/api/suppliers/" + encodeURIComponent(supplier.id) : "/api/suppliers", {
         method: editing ? "PATCH" : "POST",
-        body: JSON.stringify(body),
+        body: JSON.stringify(values),
       });
-      if (!res) return;
-      const data = await res.json();
+      if (!res) throw new Error("Session shesh — abar login korun");
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.message || "Supplier save hoyni");
-      toast(editing ? "Supplier updated" : "Supplier created", "ok");
-      pop._close();
+      return data.supplier || {};
+    },
+    onPublish: async () => {
+      toast(isDraft ? "Supplier published" : editing ? "Supplier updated" : "Supplier created", "ok");
+      await guard.close({ force: true });
       await loadList();
-    } catch (err) {
-      errorEl.textContent = err.message;
-      save.disabled = false;
-      save.textContent = editing ? "Save changes" : "Create supplier";
-    }
+    },
+    onClose: () => {
+      pop._close();
+      loadList();
+    },
   });
+
+  box.querySelector(".sup-close").addEventListener("click", () => guard.close());
+  box.querySelector("[data-cancel]").addEventListener("click", () => guard.close());
+  box.querySelector("[data-draft]").addEventListener("click", async () => {
+    const ok = await guard.saveAsDraft();
+    toast(ok ? "Draft saved" : "Offline — device e draft save hoyeche");
+  });
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    guard.publish();
+  });
+  box.querySelector("#supFormName").focus();
 }
 
 async function voidSupplier(supplier) {
@@ -776,6 +827,29 @@ async function restoreSupplier(supplier) {
   }
 }
 
+async function discardDraft(supplier) {
+  const ok = await window.confirmDialog({
+    title: "Discard this draft?",
+    text: "Draft e rakha data permanently soriye jabe. Active supplier list e kono poriborton hobe na.",
+    okLabel: "Discard draft",
+  });
+  if (!ok) return false;
+  try {
+    const res = await api("/api/suppliers/" + encodeURIComponent(supplier.id) + "/draft", {
+      method: "DELETE",
+    });
+    if (!res) return false;
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || "Draft discard hoyni");
+    toast("Draft discard kora hoyeche", "ok");
+    await loadList();
+    return true;
+  } catch (err) {
+    toast(err.message, "err");
+    return false;
+  }
+}
+
 async function purgeSupplier(supplier) {
   const ok = await window.confirmDialog({
     title: "Delete supplier permanently?",
@@ -832,24 +906,30 @@ async function openSupplier(id) {
     if (detailState && detailState.id === supplier.id) detailState = null;
   });
 
+  const isDraft = supplier.state === "draft";
   const actions = [];
   if (supplier.state === "active") {
     actions.push('<button type="button" class="btn-gold" data-d-new-order>New order</button>');
   }
-  if (supplier.state !== "trashed") {
+  if (supplier.state !== "trashed" && !isDraft) {
     actions.push('<button type="button" class="btn-ghost" data-d-payment>Record payment</button>');
     actions.push('<button type="button" class="btn-ghost" data-d-stock>Adjust stock</button>');
+  }
+  if (supplier.state !== "trashed") {
     actions.push('<button type="button" class="btn-ghost" data-d-edit>Edit</button>');
   }
   if (supplier.state === "active") actions.push('<button type="button" class="btn-ghost sup-danger" data-d-void>Void</button>');
   if (supplier.state === "active" || supplier.state === "void") {
     actions.push('<button type="button" class="btn-ghost sup-danger" data-d-trash>Trash</button>');
   }
+  if (isDraft) actions.push('<button type="button" class="btn-ghost sup-danger" data-d-discard>Discard draft</button>');
   if (supplier.state === "trashed") actions.push('<button type="button" class="btn-ghost" data-d-restore>Restore</button>');
 
   const banner =
     supplier.state === "void" && supplier.voidReason
       ? `<div class="sup-notice is-warn">Void: ${esc(supplier.voidReason)}</div>`
+      : isDraft
+      ? '<div class="sup-notice is-warn">Ei supplier ekta draft. Publish korar age order, payment ba stock change kora jabe na.</div>'
       : supplier.state === "trashed"
       ? '<div class="sup-notice is-warn">Ei supplier trash e ache. Restore na kora porjonto notun order ba stock change kora jabe na.</div>'
       : "";
@@ -874,13 +954,15 @@ async function openSupplier(id) {
       <div class="sup-field full"><span>Note</span><b>${esc(supplier.note || "—")}</b></div>
     </div>
     <div class="sup-detail-actions">${actions.join("")}</div>
-    <div class="sup-tabs" role="tablist" aria-label="Supplier detail">
+    ${isDraft
+      ? '<div class="sup-notice">Draft — publish korar por invoice, payment ar stock history dekha jabe.</div>'
+      : `<div class="sup-tabs" role="tablist" aria-label="Supplier detail">
       ${TABS.map(
         (tab) =>
           `<button type="button" role="tab" class="sup-tab" data-tab="${tab.key}" aria-selected="${tab.key === "invoices"}" id="supTab-${tab.key}">${tab.label}</button>`
       ).join("")}
     </div>
-    <div id="supTabPanel" class="sup-tab-panel" role="tabpanel"><div class="pc-empty">Loading...</div></div>
+    <div id="supTabPanel" class="sup-tab-panel" role="tabpanel"><div class="pc-empty">Loading...</div></div>`}
   `;
 
   box.querySelector(".sup-close").addEventListener("click", () => pop._close());
@@ -897,7 +979,7 @@ async function openSupplier(id) {
 
   const refresh = async () => {
     await refreshDetailSummary(supplier.id);
-    if (detailState && detailState.id === supplier.id) await loadSupplierTab();
+    if (!isDraft && detailState && detailState.id === supplier.id) await loadSupplierTab();
     loadList();
   };
 
@@ -936,8 +1018,12 @@ async function openSupplier(id) {
       openSupplier(supplier.id);
     }
   });
+  box.querySelector("[data-d-discard]")?.addEventListener("click", async () => {
+    const changed = await discardDraft(supplier);
+    if (changed) await closePop(pop);
+  });
 
-  loadSupplierTab();
+  if (!isDraft) loadSupplierTab();
 }
 
 function field(label, value) {

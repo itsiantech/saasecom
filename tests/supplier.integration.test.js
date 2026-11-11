@@ -192,6 +192,7 @@ before(async () => {
       .catch(next);
   });
   state.app.use("/api/suppliers", require("../routes/suppliers"));
+  state.app.use("/api/auth", require("../routes/auth"));
   state.app.use((err, req, res, next) => {
     res.status(err.status || 500).json({ message: err.message || "Server error" });
   });
@@ -264,6 +265,116 @@ test("active phone is unique, and can be reused after void", async () => {
 
   const shortReason = await post(`/api/suppliers/${reuse.body.supplier._id}/void`, { reason: "x" });
   assert.equal(shortReason.status, 400);
+});
+
+/* --------------------------------- drafts -------------------------------- */
+
+test("draft autosave upserts one row, hides from active list, and publishes", async () => {
+  const draftKey = `draft-${Date.now()}-create`;
+  const first = await post("/api/suppliers/draft", {
+    draftKey,
+    name: "Draft Trader",
+    phone: "017",
+    email: "half-written",
+  });
+  assert.equal(first.status, 200, JSON.stringify(first.body));
+  const draftId = first.body.supplier._id;
+  assert.equal(first.body.supplier.state, "draft");
+
+  const second = await post("/api/suppliers/draft", { draftKey, name: "Draft Trader 2" });
+  assert.equal(second.status, 200);
+  assert.equal(second.body.supplier._id, draftId);
+  assert.equal(second.body.supplier.name, "Draft Trader 2");
+
+  const active = await get("/api/suppliers?limit=50&search=Draft%20Trader");
+  assert.equal(active.body.suppliers.some((row) => row.id === draftId), false);
+
+  const drafts = await get("/api/suppliers?filter=draft&limit=50");
+  assert.equal(drafts.body.suppliers.some((row) => row.id === draftId), true);
+
+  // required fields block publish, not autosave
+  const badPublish = await patch(`/api/suppliers/${draftId}`, { name: "Still a draft" });
+  assert.equal(badPublish.status, 400);
+
+  const phone = nextPhone();
+  const published = await patch(`/api/suppliers/${draftId}`, { name: "Draft Trader Published", phone });
+  assert.equal(published.status, 200, JSON.stringify(published.body));
+  assert.equal(published.body.supplier.state, "active");
+  assert.equal(published.body.supplier.draftKey, "");
+
+  const after = await get("/api/suppliers?filter=draft&limit=50");
+  assert.equal(after.body.suppliers.some((row) => row.id === draftId), false);
+});
+
+test("draft of an existing supplier keeps the live row untouched until publish", async () => {
+  const supplier = await makeSupplier({ name: "Live Row" });
+  const draftKey = `draft-${Date.now()}-edit`;
+  const saved = await post("/api/suppliers/draft", {
+    draftKey,
+    draftOf: supplier._id,
+    name: "Changed Name",
+    phone: supplier.phone,
+  });
+  assert.equal(saved.status, 200, JSON.stringify(saved.body));
+  const draftId = saved.body.supplier._id;
+  assert.equal(saved.body.supplier.draftOf, supplier._id);
+
+  const live = await Supplier.findById(supplier._id).lean();
+  assert.equal(live.name, "Live Row");
+
+  const published = await patch(`/api/suppliers/${draftId}`, {
+    name: "Changed Name",
+    phone: supplier.phone,
+  });
+  assert.equal(published.status, 200, JSON.stringify(published.body));
+  assert.equal(String(published.body.supplier._id), String(supplier._id));
+  assert.equal(published.body.supplier.name, "Changed Name");
+  assert.equal(await Supplier.exists({ _id: draftId }), null);
+
+  const detail = await get(`/api/suppliers/${supplier._id}`);
+  assert.equal(detail.body.supplier.name, "Changed Name");
+});
+
+test("draft discard removes only the draft row", async () => {
+  const draftKey = `draft-${Date.now()}-discard`;
+  const saved = await post("/api/suppliers/draft", { draftKey, name: "Throwaway" });
+  assert.equal(saved.status, 200);
+  const draftId = saved.body.supplier._id;
+
+  const discarded = await del(`/api/suppliers/${draftId}/draft`);
+  assert.equal(discarded.status, 200);
+  assert.equal(await Supplier.exists({ _id: draftId }), null);
+
+  const again = await del(`/api/suppliers/${draftId}/draft`);
+  assert.equal(again.status, 404);
+});
+
+test("auth refresh swaps a recently expired token and rejects older ones", async () => {
+  const expired = jwt.sign({ id: String(state.admin._id), role: "admin" }, process.env.JWT_SECRET, {
+    expiresIn: -3600,
+  });
+  const res = await request(state.app)
+    .post("/api/auth/refresh")
+    .set("Authorization", `Bearer ${expired}`)
+    .send({});
+  assert.equal(res.status, 200, JSON.stringify(res.body));
+  const payload = jwt.verify(res.body.token, process.env.JWT_SECRET);
+  assert.equal(String(payload.id), String(state.admin._id));
+
+  const tooOld = jwt.sign({ id: String(state.admin._id), role: "admin" }, process.env.JWT_SECRET, {
+    expiresIn: -40 * 24 * 3600,
+  });
+  const denied = await request(state.app)
+    .post("/api/auth/refresh")
+    .set("Authorization", `Bearer ${tooOld}`)
+    .send({});
+  assert.equal(denied.status, 401);
+
+  const garbage = await request(state.app)
+    .post("/api/auth/refresh")
+    .set("Authorization", "Bearer nope")
+    .send({});
+  assert.equal(garbage.status, 401);
 });
 
 /* -------------------------------- orders --------------------------------- */

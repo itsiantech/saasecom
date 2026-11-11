@@ -55,17 +55,10 @@ const ICON_LIBRARY = [
 
 /* ---- API helpers ---- */
 async function api(method, url, data = null, isFormData = false) {
-  const token = localStorage.getItem("luxe_token");
-  const headers = {};
-  if (token) headers["Authorization"] = `Bearer ${token}`;
-  if (!isFormData) headers["Content-Type"] = "application/json";
-
-  const options = { method, headers };
-  if (data) {
-    options.body = isFormData ? data : JSON.stringify(data);
-  }
-
-  const res = await fetch(url, options);
+  const options = { method };
+  if (data) options.body = isFormData ? data : JSON.stringify(data);
+  const res = await window.ApiSession.request(url, options);
+  if (!res) throw new Error("Session shesh — abar login korun");
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error(err.message || "API error");
@@ -724,8 +717,10 @@ form.addEventListener("submit", async (e) => {
     const method = isEdit ? "PUT" : "POST";
     const result = await api(method, url, formData, true);
     console.log("API response:", result);
+    if (catGuard) catGuard.markClean();
     toast(isEdit ? "Category updated" : "Category created", "success");
     resetForm();
+    if (catGuard) catGuard.rebase(false);
     loadCategories();
   } catch (err) {
     console.error("Submit error:", err);
@@ -750,7 +745,26 @@ function resetForm() {
   document.getElementById("catFormTitle").textContent = "Add Category";
 }
 
-document.getElementById("catResetBtn").addEventListener("click", resetForm);
+document.getElementById("catResetBtn").addEventListener("click", () => {
+  if (catGuard) catGuard.discard();
+  resetForm();
+  if (catGuard) catGuard.rebase(false);
+});
+
+/* ---- Keep typed values when the session drops or the page reloads ---- */
+const catGuard =
+  window.FormGuard &&
+  window.FormGuard.attach({
+    form,
+    type: "category",
+    key: () => window.FormGuard.keyFor("category", catIdInput.value || null),
+    extra: () => ({ iconType: selectedIcon.type, iconValue: selectedIcon.value }),
+    extraApply: (values) => {
+      selectedIcon = { type: values.iconType || "none", value: values.iconValue || "" };
+      updateIconPreview();
+      renderIconGrid(iconSearch.value || "");
+    },
+  });
 
 /* ---- Load category for edit ---- */
 async function loadCategoryForEdit(id) {
@@ -781,6 +795,7 @@ async function loadCategoryForEdit(id) {
     form.querySelector(`input[name="catStatus"][value="${status}"]`).checked = true;
 
     document.getElementById("catFormTitle").textContent = "Edit Category";
+    if (catGuard) catGuard.rebase(true);
   } catch (err) {
     toast(err.message, "error");
   }

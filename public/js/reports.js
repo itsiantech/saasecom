@@ -163,11 +163,15 @@ function authHeaders() {
 }
 
 async function apiGet(path, signal) {
-  const res = await fetch(API + path, {
-    headers: authHeaders(),
+  const res = await window.ApiSession.request(API + path, {
     cache: "no-store",
     signal,
   });
+  if (!res) {
+    const error = new Error("Session shesh — abar login korun");
+    error.status = 401;
+    throw error;
+  }
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     const error = new Error(data.message || "Report load korte parlam na");
@@ -226,9 +230,9 @@ function resetPages() {
 
 function ensureAccess() {
   if (!state.accessPromise) {
-    state.accessPromise = fetch(`${API}/access`, { headers: authHeaders(), cache: "no-store" })
+    state.accessPromise = window.ApiSession.request(`${API}/access`, { cache: "no-store" })
       .then(async (res) => {
-        if (!res.ok) throw new Error("access");
+        if (!res || !res.ok) throw new Error("access");
         const data = await res.json();
         state.access = {
           status: "ok",
@@ -553,10 +557,10 @@ async function handleExport(kind, format, root) {
   const button = root.querySelector(`[data-export='${format}']`);
   if (button) button.disabled = true;
   try {
-    const res = await fetch(exportUrl(kind, format), {
-      headers: authHeaders(),
+    const res = await window.ApiSession.request(exportUrl(kind, format), {
       cache: "no-store",
     });
+    if (!res) throw new Error("Session shesh — abar login korun");
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       throw new Error(data.message || "Export fail hoyeche");

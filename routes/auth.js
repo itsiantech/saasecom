@@ -13,6 +13,8 @@ const { passwordIssue } = require("../lib/passwordPolicy");
 
 const MAX_FAILED_LOGINS = 5;
 const LOCK_MS = 15 * 60 * 1000;
+// Expired tokens can still be swapped for a fresh 7-day one for this long
+const REFRESH_GRACE_MS = 30 * 24 * 60 * 60 * 1000;
 
 const identifierOf = (req) => {
   const body = req.body || {};
@@ -257,6 +259,43 @@ router.post("/google", ipBurstLimit, async (req, res) => {
     res.json({ token: signToken(user), user: publicUser(user) });
   } catch (err) {
     res.status(401).json({ message: "Google verification fail: " + err.message });
+  }
+});
+
+// silent refresh — panel token expire hoye gele redirect na kore notun token dey
+router.post("/refresh", ipBurstLimit, async (req, res) => {
+  try {
+    const header = String(req.get("authorization") || "");
+    const raw = header.toLowerCase().startsWith("bearer ")
+      ? header.slice(7).trim()
+      : String((req.body || {}).token || "").trim();
+    if (!raw) return res.status(401).json({ message: "Session shesh — abar login korun" });
+
+    let payload;
+    try {
+      payload = jwt.verify(raw, process.env.JWT_SECRET, { ignoreExpiration: true });
+    } catch {
+      return res.status(401).json({ message: "Session shesh — abar login korun" });
+    }
+    const expiresAt = Number(payload.exp || 0) * 1000;
+    if (!payload.id || !expiresAt || Date.now() - expiresAt > REFRESH_GRACE_MS) {
+      return res.status(401).json({ message: "Session shesh — abar login korun" });
+    }
+
+    const user = await User.findById(payload.id);
+    if (!user) return res.status(401).json({ message: "Session shesh — abar login korun" });
+
+    const kind = await hostKind(req);
+    if (kind === "store" && user.role === "superadmin") {
+      return res.status(403).json({ message: "সুপার অ্যাডমিন লগইন প্ল্যাটফর্মের ঠিকানা (api) থেকে করুন" });
+    }
+    if (kind === "panel" && user.role !== "superadmin") {
+      return res.status(403).json({ message: "এই ঠিকানায় শুধু প্ল্যাটফর্ম অ্যাডমিন লগইন করে" });
+    }
+
+    res.json({ token: signToken(user), user: publicUser(user) });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 });
 

@@ -16,6 +16,20 @@
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#39;");
 
+  // Server er lib/storeMenu.js er sathe same list — page ref path e map hoy.
+  const MENU_PAGES = [
+    { ref: "home", label: "Home", path: "/" },
+    { ref: "shop", label: "Shop", path: "/shop" },
+    { ref: "cart", label: "Cart", path: "/cart" },
+    { ref: "checkout", label: "Checkout", path: "/checkout" },
+    { ref: "account", label: "Account", path: "/account" },
+    { ref: "track-order", label: "Track order", path: "/track-order" },
+    { ref: "wishlist", label: "Wishlist", path: "/wishlist" },
+    { ref: "contact", label: "Contact", path: "/contact" },
+  ];
+  const MENU_PAGE_BY_REF = new Map(MENU_PAGES.map((page) => [page.ref, page]));
+  const MENU_MAX_DEPTH = 3;
+
   const INTERNATIONAL_DEFAULTS = {
     enabled: false,
     advancePercent: 30,
@@ -63,6 +77,10 @@
     invoice: { enabled: true, paperSize: "a4", copies: "both", accentColor: "#c9a961" },
     homeSections: [],
     homeSectionsLoaded: false,
+    menu: [],
+    menuTab: "pages",
+    menuLoaded: false,
+    menuDirty: false,
     invoicePreviewMode: "retail",
     international: JSON.parse(JSON.stringify(INTERNATIONAL_DEFAULTS)),
     internationalLoaded: false,
@@ -172,39 +190,18 @@
   }
 
   async function api(url, options = {}) {
-    const res = await fetch(url, {
-      ...options,
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer " + token,
-        ...(options.headers || {}),
-      },
-    });
-    if (res.status === 401) {
-      localStorage.removeItem(TOKEN_KEY);
-      localStorage.removeItem("luxe_store_slug");
-      location.href = "/login.html";
-      return null;
-    }
-    return res;
+    return window.ApiSession.request(url, options);
   }
 
   async function uploadImage(file) {
     const fd = new FormData();
     fd.append("image", file);
-    const res = await fetch("/api/settings/upload", {
+    const res = await window.ApiSession.request("/api/settings/upload", {
       method: "POST",
-      headers: { Authorization: "Bearer " + token },
       body: fd,
     });
-    if (res.status === 401) {
-      localStorage.removeItem(TOKEN_KEY);
-      localStorage.removeItem("luxe_store_slug");
-      location.href = "/login.html";
-      return "";
-    }
+    if (!res || !res.ok) return "";
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.message || "Upload fail hoyeche");
     return data.path || "";
   }
 
@@ -647,6 +644,467 @@
       select.value = "";
       markDirty();
       renderHomeSections();
+    });
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Storefront menu builder (pages + categories, 3 levels, drag & drop)
+   * ------------------------------------------------------------------ */
+  const menuDraftInput = $("storefrontMenuDraft");
+  let menuDragId = null;
+  let menuDrop = null;
+  let menuPointer = null;
+  let menuGhost = null;
+
+  function menuCategoryLookup() {
+    const map = new Map();
+    const walk = (nodes, depth) => {
+      (nodes || []).forEach((node) => {
+        if (node.status === "trashed") return;
+        map.set(String(node._id), { ...node, depth });
+        if (node.children && node.children.length) walk(node.children, depth + 1);
+      });
+    };
+    walk(state.categories, 0);
+    return map;
+  }
+
+  function menuNodeLabel(node, lookup) {
+    if (node.type === "page") {
+      const page = MENU_PAGE_BY_REF.get(String(node.ref));
+      return page ? page.label : node.label || "Page removed";
+    }
+    const category = lookup.get(String(node.ref));
+    return category ? category.name || "Untitled" : node.label || "Category removed";
+  }
+
+  function menuWalk(nodes, fn, depth = 0) {
+    (nodes || []).forEach((node) => {
+      fn(node, depth);
+      menuWalk(node.children, fn, depth + 1);
+    });
+  }
+
+  function menuCount(nodes) {
+    let count = 0;
+    menuWalk(nodes, () => { count += 1; });
+    return count;
+  }
+
+  function menuHasRef(type, ref, nodes) {
+    let found = false;
+    menuWalk(nodes, (node) => {
+      if (node.type === type && String(node.ref) === String(ref)) found = true;
+    });
+    return found;
+  }
+
+  function menuFind(id, nodes = state.menu, depth = 0, parent = null) {
+    for (let i = 0; i < nodes.length; i += 1) {
+      const node = nodes[i];
+      if (String(node.id) === String(id)) return { node, list: nodes, index: i, depth, parent };
+      const hit = menuFind(id, node.children || [], depth + 1, node);
+      if (hit) return hit;
+    }
+    return null;
+  }
+
+  function menuContains(node, id) {
+    return !!menuFind(id, [node], 0, null);
+  }
+
+  function menuHeight(node) {
+    const children = node.children || [];
+    return 1 + (children.length ? Math.max(...children.map(menuHeight)) : 0);
+  }
+
+  function menuCanPlace(node, depth) {
+    return depth + menuHeight(node) <= MENU_MAX_DEPTH;
+  }
+
+  function menuNewId() {
+    let id = "m" + Date.now().toString(36);
+    while (menuFind(id)) id += "x";
+    return id;
+  }
+
+  function menuForSave(nodes) {
+    return (nodes || []).map((node) => ({
+      id: String(node.id || ""),
+      type: node.type,
+      ref: String(node.ref || ""),
+      children: menuForSave(node.children),
+    }));
+  }
+
+  // Local draft theke asa JSON tolerant bhabe parse kore nested shape banai.
+  function menuFromDraft(raw, depth = 0, seen = new Set()) {
+    if (!Array.isArray(raw) || depth >= MENU_MAX_DEPTH) return [];
+    const out = [];
+    raw.forEach((row) => {
+      if (!row || typeof row !== "object") return;
+      const type = row.type === "page" || row.type === "category" ? row.type : null;
+      const ref = String(row.ref || "").trim();
+      if (!type || !ref) return;
+      if (type === "page" && !MENU_PAGE_BY_REF.has(ref)) return;
+      const key = type + ":" + ref;
+      if (seen.has(key)) return;
+      seen.add(key);
+      out.push({
+        id: String(row.id || "") || "m" + Math.random().toString(36).slice(2, 9),
+        type,
+        ref,
+        children: menuFromDraft(row.children, depth + 1, seen),
+      });
+    });
+    return out;
+  }
+
+  function setMenuBadge() {
+    const badge = $("menuSaveBadge");
+    if (!badge) return;
+    badge.textContent = state.menuDirty ? "UNSAVED CHANGES" : "AUTO-SAVED";
+    badge.classList.toggle("is-dirty", state.menuDirty);
+  }
+
+  function mirrorMenu(notify) {
+    if (!menuDraftInput) return;
+    const json = JSON.stringify(menuForSave(state.menu));
+    if (menuDraftInput.value === json) return;
+    menuDraftInput.value = json;
+    if (notify) menuDraftInput.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+
+  function markMenuDirty() {
+    state.menuDirty = true;
+    markDirty();
+    setMenuBadge();
+    mirrorMenu(true);
+  }
+
+  function menuSourceRows() {
+    if (state.menuTab === "categories") {
+      const rows = [];
+      const walk = (nodes, depth) => {
+        (nodes || []).forEach((node) => {
+          if (node.status === "trashed") return;
+          rows.push({
+            type: "category",
+            ref: String(node._id),
+            label: node.name || "Untitled",
+            meta: "Category",
+            depth,
+          });
+          walk(node.children, depth + 1);
+        });
+      };
+      walk(state.categories, 0);
+      return rows;
+    }
+    return MENU_PAGES.map((page) => ({
+      type: "page",
+      ref: page.ref,
+      label: page.label,
+      meta: page.path,
+      depth: 0,
+    }));
+  }
+
+  function renderMenuSource() {
+    const el = $("menuSourceList");
+    if (!el) return;
+    const rows = menuSourceRows();
+    el.innerHTML = rows
+      .map((row) => {
+        const used = menuHasRef(row.type, row.ref, state.menu);
+        const guides = Array.from({ length: row.depth }).map(() => "<i></i>").join("");
+        return `
+          <div class="mn-source-row" style="--mn-depth:${row.depth}">
+            <span class="mn-source-indent" aria-hidden="true">${guides}</span>
+            <span class="mn-source-name">
+              <strong>${esc(row.label)}</strong>
+              <span>${esc(row.meta)}</span>
+            </span>
+            <button type="button" class="mn-add-btn" data-menu-add="${row.type}" data-ref="${esc(row.ref)}" ${used ? "disabled" : ""}>
+              ${used ? "Added" : "Add to Menu"}
+            </button>
+          </div>`;
+      })
+      .join("");
+    const empty = $("menuSourceEmpty");
+    if (empty) {
+      empty.hidden = rows.length > 0;
+      empty.textContent = state.menuTab === "categories"
+        ? "Kono category nei — age Categories page theke category banan."
+        : "Kono page nei.";
+    }
+  }
+
+  function menuRowHtml(node, depth, lookup) {
+    const label = menuNodeLabel(node, lookup);
+    const hasChildren = !!(node.children && node.children.length);
+    const guides = Array.from({ length: depth }).map(() => "<i></i>").join("");
+    return `
+      <div class="mn-row" data-id="${esc(node.id)}" style="--mn-depth:${depth}">
+        <span class="mn-row-indent" aria-hidden="true">${guides}</span>
+        <span class="mn-handle" title="Drag to reorder or nest" aria-hidden="true">⠿</span>
+        <span class="mn-name">${hasChildren ? '<span class="mn-caret" aria-hidden="true">▾</span>' : ""}${esc(label)}</span>
+        <span class="mn-badge is-${esc(node.type)}">${esc(node.type)}</span>
+        <button type="button" class="mn-del" data-menu-del="${esc(node.id)}" title="Remove from menu" aria-label="Remove ${esc(label)} from menu">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7h16M9 7V5h6v2M7 7l1 13h8l1-13M10 11v6M14 11v6"/></svg>
+        </button>
+      </div>`;
+  }
+
+  function renderMenuTree() {
+    const tree = $("menuTree");
+    if (!tree) return;
+    const lookup = menuCategoryLookup();
+    const rows = [];
+    menuWalk(state.menu, (node, depth) => rows.push(menuRowHtml(node, depth, lookup)));
+    tree.innerHTML = rows.join("");
+    const empty = $("menuTreeEmpty");
+    if (empty) empty.hidden = state.menu.length > 0;
+    const count = $("menuCount");
+    if (count) count.textContent = state.menu.length ? `${menuCount(state.menu)} item` : "";
+    setMenuBadge();
+  }
+
+  function renderMenuBuilder() {
+    renderMenuSource();
+    renderMenuTree();
+  }
+
+  function menuClearDropClasses() {
+    const tree = $("menuTree");
+    if (!tree) return;
+    tree.querySelectorAll(".is-drop-before, .is-drop-after, .is-drop-inside").forEach((row) => {
+      row.classList.remove("is-drop-before", "is-drop-after", "is-drop-inside");
+    });
+    const end = $("menuDropEnd");
+    if (end) end.classList.remove("is-over");
+  }
+
+  function menuZoneFor(event, row) {
+    const box = row.getBoundingClientRect();
+    const ratio = (event.clientY - box.top) / Math.max(1, box.height);
+    if (ratio < 0.25) return "before";
+    if (ratio > 0.75) return "after";
+    return "inside";
+  }
+
+  function applyMenuDrop(dragId, drop) {
+    const source = menuFind(dragId);
+    if (!source) return false;
+    const node = source.node;
+
+    if (drop.zone === "end") {
+      if (!menuCanPlace(node, 0)) return false;
+      source.list.splice(source.index, 1);
+      state.menu.push(node);
+      return true;
+    }
+
+    const target = menuFind(drop.id);
+    if (!target || target.node === node || menuContains(node, target.node.id)) return false;
+
+    if (drop.zone === "inside") {
+      if (!menuCanPlace(node, target.depth + 1)) return false;
+      source.list.splice(source.index, 1);
+      const nextTarget = menuFind(drop.id);
+      if (!nextTarget) return false;
+      if (!nextTarget.node.children) nextTarget.node.children = [];
+      nextTarget.node.children.push(node);
+      return true;
+    }
+
+    if (!menuCanPlace(node, target.depth)) return false;
+    source.list.splice(source.index, 1);
+    const nextTarget = menuFind(drop.id);
+    if (!nextTarget) return false;
+    const at = nextTarget.index + (drop.zone === "after" ? 1 : 0);
+    nextTarget.list.splice(at, 0, node);
+    return true;
+  }
+
+  function menuGhostClear() {
+    if (menuGhost) {
+      menuGhost.remove();
+      menuGhost = null;
+    }
+  }
+
+  function menuGhostShow(label, x, y) {
+    menuGhostClear();
+    menuGhost = document.createElement("div");
+    menuGhost.className = "mn-ghost";
+    menuGhost.textContent = "⠿ " + label;
+    (document.getElementById("view-settings") || document.body).appendChild(menuGhost);
+    menuGhostMove(x, y);
+  }
+
+  function menuGhostMove(x, y) {
+    if (!menuGhost) return;
+    menuGhost.style.left = x + 12 + "px";
+    menuGhost.style.top = y - 16 + "px";
+  }
+
+  function menuEndDrag() {
+    menuClearDropClasses();
+    menuGhostClear();
+    document.body.classList.remove("mn-dragging");
+    const tree = $("menuTree");
+    if (tree) tree.querySelectorAll(".is-dragging").forEach((row) => row.classList.remove("is-dragging"));
+    menuDragId = null;
+    menuDrop = null;
+    menuPointer = null;
+    window.removeEventListener("pointermove", menuPointerMove);
+    window.removeEventListener("pointerup", menuPointerUp);
+    window.removeEventListener("pointercancel", menuEndDrag);
+    window.removeEventListener("blur", menuEndDrag);
+  }
+
+  function menuUpdateDropAt(x, y) {
+    menuClearDropClasses();
+    menuDrop = null;
+    const source = menuDragId ? menuFind(menuDragId) : null;
+    if (!source) return;
+
+    const endEl = $("menuDropEnd");
+    const el = document.elementFromPoint(x, y);
+    if (!el) return;
+
+    if (endEl && endEl.contains(el)) {
+      if (menuCanPlace(source.node, 0)) {
+        endEl.classList.add("is-over");
+        menuDrop = { id: null, zone: "end" };
+      }
+      return;
+    }
+
+    const row = el.closest ? el.closest("#menuTree .mn-row") : null;
+    if (!row) return;
+    const target = menuFind(row.dataset.id);
+    if (!target || target.node === source.node || menuContains(source.node, target.node.id)) return;
+
+    let zone = menuZoneFor({ clientY: y }, row);
+    if (zone === "inside" && !menuCanPlace(source.node, target.depth + 1)) zone = "before";
+    if (zone !== "inside" && !menuCanPlace(source.node, target.depth)) {
+      zone = menuCanPlace(source.node, target.depth + 1) ? "inside" : "";
+    }
+    if (!zone) return;
+
+    row.classList.add("is-drop-" + zone);
+    menuDrop = { id: target.node.id, zone };
+  }
+
+  function menuPointerMove(e) {
+    if (!menuPointer) return;
+    if (!menuPointer.dragging) {
+      const dist = Math.hypot(e.clientX - menuPointer.x, e.clientY - menuPointer.y);
+      if (dist < 5) return;
+      menuPointer.dragging = true;
+      menuDragId = menuPointer.id;
+      document.body.classList.add("mn-dragging");
+      const tree = $("menuTree");
+      const row = tree && tree.querySelector('.mn-row[data-id="' + menuDragId + '"]');
+      if (row) {
+        row.classList.add("is-dragging");
+        const name = row.querySelector(".mn-name");
+        menuGhostShow(name ? name.textContent.replace(/[▾▸]/g, "").trim() : "", e.clientX, e.clientY);
+      }
+    }
+    e.preventDefault();
+    menuGhostMove(e.clientX, e.clientY);
+    menuUpdateDropAt(e.clientX, e.clientY);
+  }
+
+  function menuPointerUp() {
+    const dragging = !!(menuPointer && menuPointer.dragging);
+    const dragId = menuDragId;
+    const drop = menuDrop;
+    menuEndDrag();
+    if (dragging && dragId && drop && applyMenuDrop(dragId, drop)) {
+      renderMenuTree();
+      markMenuDirty();
+    }
+  }
+
+  const menuTreeEl = $("menuTree");
+  if (menuTreeEl) {
+    menuTreeEl.addEventListener("pointerdown", (e) => {
+      if (e.button !== 0) return;
+      if (e.target.closest("[data-menu-del]")) return;
+      const row = e.target.closest(".mn-row");
+      if (!row) return;
+      if (e.pointerType !== "mouse" && !e.target.closest(".mn-handle")) return;
+      if (e.pointerType === "mouse") e.preventDefault();
+      menuEndDrag();
+      menuPointer = { id: row.dataset.id, x: e.clientX, y: e.clientY, dragging: false };
+      window.addEventListener("pointermove", menuPointerMove);
+      window.addEventListener("pointerup", menuPointerUp);
+      window.addEventListener("pointercancel", menuEndDrag);
+      window.addEventListener("blur", menuEndDrag);
+    });
+
+    menuTreeEl.addEventListener("click", (e) => {
+      const del = e.target.closest("[data-menu-del]");
+      if (!del) return;
+      const found = menuFind(del.dataset.menuDel);
+      if (!found) return;
+      found.list.splice(found.index, 1);
+      renderMenuBuilder();
+      markMenuDirty();
+    });
+  }
+
+  const menuSourceEl = $("menuSourceList");
+  if (menuSourceEl) {
+    menuSourceEl.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-menu-add]");
+      if (!btn || btn.disabled) return;
+      const type = btn.dataset.menuAdd;
+      const ref = btn.dataset.ref;
+      if (!type || !ref || menuHasRef(type, ref, state.menu)) return;
+      const lookup = menuCategoryLookup();
+      if (type === "page") {
+        const page = MENU_PAGE_BY_REF.get(ref);
+        if (!page) return;
+        state.menu.push({ id: menuNewId(), type: "page", ref, children: [] });
+      } else {
+        const category = lookup.get(String(ref));
+        if (!category) return;
+        state.menu.push({ id: menuNewId(), type: "category", ref, children: [] });
+      }
+      renderMenuBuilder();
+      markMenuDirty();
+    });
+  }
+
+  document.querySelectorAll("[data-menu-tab]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      state.menuTab = btn.dataset.menuTab === "categories" ? "categories" : "pages";
+      document.querySelectorAll("[data-menu-tab]").forEach((tab) => {
+        const active = tab === btn;
+        tab.classList.toggle("active", active);
+        tab.setAttribute("aria-selected", active ? "true" : "false");
+      });
+      renderMenuSource();
+    });
+  });
+
+  if (menuDraftInput) {
+    menuDraftInput.addEventListener("input", () => {
+      let parsed = [];
+      try {
+        parsed = menuFromDraft(JSON.parse(menuDraftInput.value || "[]"));
+      } catch {
+        return;
+      }
+      if (JSON.stringify(menuForSave(parsed)) === JSON.stringify(menuForSave(state.menu))) return;
+      state.menu = parsed;
+      state.menuDirty = true;
+      renderMenuBuilder();
     });
   }
 
@@ -3309,6 +3767,7 @@
       if (el) el.checked = String(state.settings[key]) !== "false";
     });
     renderHomeSections();
+    renderMenuBuilder();
 
     // shipping enable switches + dim state (render er por, karon notun row
     // render hole tar input gulo abar disable korte hoy)
@@ -3373,6 +3832,10 @@
       enabled: row.enabled !== false,
     }));
     state.homeSectionsLoaded = Array.isArray(data.homeSections);
+    state.menu = menuFromDraft(Array.isArray(data.menu) ? data.menu : []);
+    state.menuLoaded = Array.isArray(data.menu);
+    state.menuDirty = false;
+    if (menuDraftInput) menuDraftInput.value = JSON.stringify(menuForSave(state.menu));
     state.shipping = {
       manual: (data.shipping && data.shipping.manual) || [],
       areas: (data.shipping && data.shipping.areas) || [],
@@ -3499,6 +3962,7 @@
     renderAll();
     state.dirty = false;
     state.ready = true;
+    attachSettingsGuard();
   }
 
   /* ------------------------------------------------------------------ *
@@ -3536,6 +4000,9 @@
       const settingsPayload = { ...state.settings };
       if (state.homeSectionsLoaded) {
         settingsPayload.home_category_sections = JSON.stringify(state.homeSections);
+      }
+      if (state.menuLoaded) {
+        settingsPayload.storefront_menu = JSON.stringify(menuForSave(state.menu));
       }
       const payload = {
         settings: settingsPayload,
@@ -3597,6 +4064,9 @@
       if (wholesaleData && wholesaleData.settings) applyWholesaleSettings(wholesaleData.settings);
       renderAll();
       state.dirty = false;
+      state.menuDirty = false;
+      setMenuBadge();
+      if (settingsGuard) settingsGuard.markClean();
       toast(
         state.internationalLoaded
           ? "Settings saved"
@@ -3617,6 +4087,32 @@
   /* ------------------------------------------------------------------ *
    * Unsaved changes warning
    * ------------------------------------------------------------------ */
+  // FormGuard keeps a local draft of non-secret fields so a crashed tab or a
+  // stray reload never loses half-typed settings. Secrets are excluded.
+  let settingsGuard = null;
+
+  function syncRestoredState(values) {
+    Object.keys(values || {}).forEach((key) => {
+      const el = $(key);
+      if (!el || el.type === "file") return;
+      // the bound listeners own state; replay so DOM and state agree again
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+      el.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+  }
+
+  function attachSettingsGuard() {
+    if (settingsGuard || !window.FormGuard) return;
+    const view = $("view-settings");
+    if (!view) return;
+    settingsGuard = window.FormGuard.attach({
+      root: view,
+      type: "settings",
+      exclude: ["smtpPassword", "smsApiKey"],
+      onRestore: syncRestoredState,
+    });
+  }
+
   window.addEventListener("beforeunload", (e) => {
     if (!state.dirty) return;
     e.preventDefault();

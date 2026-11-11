@@ -6,10 +6,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (!storeSlug) {
     // link e slug na thakle owner er nijer dokan theke select kori — onner dokan kakhono na
     try {
-      const res = await fetch("/api/stores/mine", {
-        headers: { Authorization: "Bearer " + (localStorage.getItem("luxe_token") || "") },
-      });
-      if (res.ok) {
+      const res = await window.ApiSession.request("/api/stores/mine");
+      if (res && res.ok) {
         const list = await res.json();
         if (Array.isArray(list) && list.length) storeSlug = list[0].slug;
       }
@@ -87,7 +85,15 @@ function authHeaders(extra = {}) {
 }
 
 async function apiFetch(path, options = {}) {
-  const response = await fetch(path, { ...options, headers: authHeaders(options.headers) });
+  const response = await window.ApiSession.request(path, {
+    ...options,
+    headers: authHeaders(options.headers),
+  });
+  if (!response) {
+    const err = new Error("Session shesh — abar login korun");
+    err.status = 401;
+    throw err;
+  }
   if (!response.ok) {
     let message = "";
     try {
@@ -105,10 +111,8 @@ async function apiFetch(path, options = {}) {
 // ei page store owner er nijer dokaner — super admin panel er kono link ekhane nei
 async function loadIdentity() {
   try {
-    const res = await fetch("/api/auth/me", {
-      headers: { Authorization: "Bearer " + (localStorage.getItem("luxe_token") || "") },
-    });
-    if (!res.ok) return;
+    const res = await window.ApiSession.request("/api/auth/me");
+    if (!res || !res.ok) return;
     const me = await res.json();
     const role = document.getElementById("sbRole");
     if (role) role.textContent = me.role === "superadmin" ? "Super Admin" : "দোকান মালিক";

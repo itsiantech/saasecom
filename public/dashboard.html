@@ -8,19 +8,19 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/css/style.css" />
-  <link rel="stylesheet" href="/css/dashboard.css?v=15" />
+  <link rel="stylesheet" href="/css/dashboard.css?v=16" />
   <link rel="stylesheet" href="/css/sidebar-scroll.css?v=1" />
   <link rel="stylesheet" href="/css/style-settings.css?v=1" />
   <link rel="stylesheet" href="/css/categories.css" />
   <link rel="stylesheet" href="/css/product-form.css" />
-  <link rel="stylesheet" href="/css/settings-dashboard.css?v=3" />
+  <link rel="stylesheet" href="/css/settings-dashboard.css?v=5" />
   <link rel="stylesheet" href="/css/installments.css?v=1" />
   <link rel="stylesheet" href="/css/product-catalog.css?v=1" />
   <link rel="stylesheet" href="/css/order-catalog.css?v=2" />
-  <link rel="stylesheet" href="/css/marketing.css?v=1" />
+  <link rel="stylesheet" href="/css/marketing.css?v=2" />
   <link rel="stylesheet" href="/css/hero-slider.css?v=3" />
   <link rel="stylesheet" href="/css/customers.css?v=1" />
-  <link rel="stylesheet" href="/css/suppliers.css?v=1" />
+  <link rel="stylesheet" href="/css/suppliers.css?v=2" />
   <link rel="stylesheet" href="/css/reports.css?v=2" />
   <!-- Font Awesome Free (icon library) -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
@@ -755,6 +755,7 @@
             <button class="btn-add" id="settingsSaveBtn" type="button">Save changes</button>
           </div>
         </div>
+        <input type="hidden" id="storefrontMenuDraft" name="storefront_menu_draft" value="[]" />
 
         <div class="settings-layout">
           <!-- left sub-menu -->
@@ -766,6 +767,7 @@
             <div class="settings-menu-group">Home page</div>
             <button class="settings-menu-item" data-pane="home" type="button">Product card</button>
             <button class="settings-menu-item" data-pane="home-sections" type="button">Category sections</button>
+            <button class="settings-menu-item" data-pane="menu" type="button">Menu settings</button>
             <button class="settings-menu-item" data-pane="international" type="button">International import mode <span class="off-badge" data-international-off hidden>Off</span></button>
             <div class="settings-menu-group">Wholesale</div>
             <button class="settings-menu-item" data-pane="wholesale" type="button">Wholesale mode <span class="off-badge" data-wholesale-off hidden>Off</span></button>
@@ -960,6 +962,46 @@
                 <p class="hs-preview-label">Storefront order — preview</p>
                 <div class="hs-chips" id="homeSectionsOrder"></div>
                 <p class="pf-note">Layout: <b>Slider</b> = arrow + dot navigation, <b>Drag</b> = graber pore bosh hoiye move, <b>Grid</b> = fixed grid. Column 4/5/6 desktop e — mobile e always 2 column. Product count 4–24.</p>
+              </div>
+            </section>
+
+            <!-- ===== STOREFRONT MENU ===== -->
+            <section class="settings-pane" data-pane="menu">
+              <div class="pf-card">
+                <div class="pf-card-head">
+                  <div>
+                    <h3>Menu settings</h3>
+                    <span class="hint">Storefront navigation</span>
+                  </div>
+                  <span class="mn-save-badge" id="menuSaveBadge">AUTO-SAVED</span>
+                </div>
+                <p class="pf-note">
+                  Bam dike page ba category ke <b>Add to Menu</b> korun, dan dike drag kore order bodlan.
+                  Ekta item arek tar upor drag korle seta tar sub-menu hobe — menu → sub-menu → sub-sub-menu
+                  (max 3 level). <b>Save changes</b> chaple home page e menu ta show korbe.
+                </p>
+                <div class="mn-builder">
+                  <div class="mn-panel">
+                    <div class="mn-panel-head">
+                      <h4>Add to Menu</h4>
+                      <div class="mn-tabs" role="tablist" aria-label="Menu source">
+                        <button type="button" class="mn-tab active" data-menu-tab="pages" role="tab" aria-selected="true">Pages</button>
+                        <button type="button" class="mn-tab" data-menu-tab="categories" role="tab" aria-selected="false">Categories</button>
+                      </div>
+                    </div>
+                    <div class="mn-source" id="menuSourceList"></div>
+                    <p class="mn-empty" id="menuSourceEmpty" hidden></p>
+                  </div>
+                  <div class="mn-panel mn-panel-target">
+                    <div class="mn-panel-head">
+                      <h4>Menu</h4>
+                      <span class="hint" id="menuCount"></span>
+                    </div>
+                    <div class="mn-tree" id="menuTree"></div>
+                    <div class="mn-drop-end" id="menuDropEnd">Drop here — top level</div>
+                    <p class="mn-empty" id="menuTreeEmpty">Ekhono menu khali — bam dike theke Add korun.</p>
+                  </div>
+                </div>
               </div>
             </section>
 
@@ -2150,6 +2192,11 @@
           </div>
         </div>
         <div class="promo-stats" id="fsStats"></div>
+        <div class="promo-filter" id="fsFilter" role="group" aria-label="Filter campaigns">
+          <button type="button" data-filter="all" class="active">All</button>
+          <button type="button" data-filter="active">Active</button>
+          <button type="button" data-filter="draft">Drafts</button>
+        </div>
         <div id="fsListRoot" class="promo-list"></div>
       </section><!-- /#view-flash-sales -->
 
@@ -2174,6 +2221,11 @@
           </div>
         </div>
         <div class="promo-stats" id="cpStats"></div>
+        <div class="promo-filter" id="cpFilter" role="group" aria-label="Filter coupons">
+          <button type="button" data-filter="all" class="active">All</button>
+          <button type="button" data-filter="active">Active</button>
+          <button type="button" data-filter="draft">Drafts</button>
+        </div>
         <div id="cpListRoot" class="promo-list"></div>
       </section><!-- /#view-coupons -->
 
@@ -2776,18 +2828,20 @@
   <div class="toast" id="toast"></div>
 
   <script src="/js/store-hint.js?v=1"></script>
-  <script src="/js/dashboard.js?v=13"></script>
+  <script src="/js/api-session.js?v=1"></script>
+  <script src="/js/dashboard.js?v=14"></script>
+  <script src="/js/form-guard.js?v=2"></script>
   <script src="/js/categories.js"></script>
   <script src="/js/brands.js"></script>
   <script src="/js/product-form.js"></script>
-  <script src="/js/settings-dashboard.js?v=8"></script>
+  <script src="/js/settings-dashboard.js?v=13"></script>
   <script src="/js/installments-admin.js?v=1"></script>
   <script src="/js/orders.js?v=3"></script>
   <script src="/js/product-catalog.js?v=1"></script>
-  <script src="/js/marketing.js?v=2"></script>
+  <script src="/js/marketing.js?v=3"></script>
   <script src="/js/hero-slider.js?v=3"></script>
   <script src="/js/customers.js?v=1"></script>
-  <script src="/js/suppliers.js?v=2"></script>
+  <script src="/js/suppliers.js?v=4"></script>
   <script src="/js/reports.js?v=2"></script>
   <script src="/js/sidebar-scroll.js?v=1"></script>
 </body>

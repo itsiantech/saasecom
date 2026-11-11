@@ -25,20 +25,7 @@
   let loading = false;
 
   async function api(path, opts = {}) {
-    const res = await fetch(path, {
-      ...opts,
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer " + localStorage.getItem(TOKEN_KEY),
-        ...(opts.headers || {}),
-      },
-    });
-    if (res.status === 401 || res.status === 403) {
-      localStorage.removeItem(TOKEN_KEY);
-      location.href = "/login.html";
-      return null;
-    }
-    return res;
+    return window.ApiSession.request(path, opts);
   }
 
   function badge(status) {

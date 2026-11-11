@@ -12,6 +12,7 @@ router.patch("/settings", requireSuperAdmin, ctrl.updateSettings);
 router.get("/reports", ctrl.report);
 router.get("/reports/export", ctrl.exportReport);
 router.get("/product-options", ctrl.productOptions);
+router.post("/draft", ctrl.saveDraft);
 router.get("/invoices/:id", ctrl.invoiceDetail);
 router.get("/invoices/:id/print", ctrl.printInvoice);
 router.patch("/invoices/:id/hold", ctrl.holdInvoice);
@@ -26,6 +27,7 @@ router.post("/", ctrl.create);
 
 router.get("/:id", ctrl.detail);
 router.patch("/:id", ctrl.update);
+router.delete("/:id/draft", ctrl.discardDraft);
 router.post("/:id/void", ctrl.voidSupplier);
 router.post("/:id/trash", ctrl.trash);
 router.post("/:id/restore", ctrl.restore);

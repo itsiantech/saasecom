@@ -23,6 +23,7 @@ const { loadLiveFlashSales, bestFlashSale, publicFlashSale } = require("../servi
 const { toPaisa, fromPaisa } = require("../lib/money");
 const { parseSections } = require("../lib/homeSections");
 const { sanitizeRichText } = require("../lib/richText");
+const { buildMenu } = require("../lib/storeMenu");
 
 /* ------------------------------------------------------------------ *
  * Public catalog reads. Every query here is store-scoped BY HAND:
@@ -695,7 +696,7 @@ async function listHome(req, res, next) {
 async function getStoreInfo(req, res, next) {
   try {
     const store = req.publicStore;
-    const [site, faviconDoc, settingsDoc, international, wholesale, social, map] = await Promise.all([
+    const [site, faviconDoc, settingsDoc, international, wholesale, social, map, menuCategories] = await Promise.all([
       SiteSetting.findOne({ store: store._id }).lean(),
       ShopFavicon.findOne({ store: store._id }).lean(),
       StoreSettings.findOne({ storeId: store._id }).select("seo").lean(),
@@ -703,6 +704,9 @@ async function getStoreInfo(req, res, next) {
       getWholesaleSettings(store._id),
       SocialLink.find({ store: store._id }).sort({ sortOrder: 1, name: 1 }).lean(),
       getSettingsMap(),
+      Category.find({ store: store._id, deletedAt: null, status: { $ne: "trashed" } })
+        .select("_id name slug")
+        .lean(),
     ]);
     const seo = (settingsDoc && settingsDoc.seo) || {};
     res.json({
@@ -728,6 +732,7 @@ async function getStoreInfo(req, res, next) {
         checkoutPopup: String(map.card_checkout_popup_enabled) !== "false",
       },
       social: social.map((row) => ({ name: row.name, icon: row.icon || "", url: row.url })),
+      menu: buildMenu(map.storefront_menu, { categories: menuCategories, language: store.language }),
     });
   } catch (err) {
     next(err);

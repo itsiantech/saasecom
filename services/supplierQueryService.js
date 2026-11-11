@@ -14,7 +14,7 @@ const {
 } = require("../lib/supplierDomain");
 
 const PAGE_SIZES = [10, 20, 50];
-const FILTERS = ["all", "paid", "due", "hold", "void", "trash"];
+const FILTERS = ["all", "paid", "due", "hold", "void", "draft", "trash"];
 
 function pageArgs(query) {
   const page = Math.max(1, parseInt(query.page, 10) || 1);
@@ -26,6 +26,7 @@ function pageArgs(query) {
 function supplierMatch(store, filter) {
   const m = { store: store._id ? store._id : store };
   if (filter === "void") return { ...m, state: "void" };
+  if (filter === "draft") return { ...m, state: "draft" };
   if (filter === "trash") return { ...m, state: "trashed" };
   return { ...m, state: "active" };
 }
@@ -190,6 +191,8 @@ function listRow(row) {
     email: row.email || "",
     note: row.note || "",
     state: row.state,
+    draftKey: row.draftKey || "",
+    draftOf: row.draftOf ? String(row.draftOf) : null,
     orderQty: row.orderQty || 0,
     orderCount: row.orderCount || 0,
     invoiceCount: row.invoiceCount || 0,
@@ -284,6 +287,8 @@ async function getSupplierDetail(store, supplierId) {
       email: supplier.email || "",
       note: supplier.note || "",
       state: supplier.state,
+      draftKey: supplier.draftKey || "",
+      draftOf: supplier.draftOf ? String(supplier.draftOf) : null,
       voidReason: supplier.voidReason || "",
       createdAt: supplier.createdAt,
       updatedAt: supplier.updatedAt,

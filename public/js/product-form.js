@@ -45,13 +45,11 @@
   }
 
   async function api(method, url, body, isForm) {
-    const headers = { Authorization: "Bearer " + token };
-    if (!isForm) headers["Content-Type"] = "application/json";
-    const res = await fetch(url, {
+    const res = await window.ApiSession.request(url, {
       method,
-      headers,
       body: body ? (isForm ? body : JSON.stringify(body)) : undefined,
     });
+    if (!res) throw new Error("Session shesh — abar login korun");
     const text = await res.text();
     let data = null;
     try { data = text ? JSON.parse(text) : null; } catch { data = text; }
@@ -626,11 +624,11 @@
     }
     errEl.classList.remove("show");
     try {
-      const res = await fetch("/api/categories", {
+      const res = await window.ApiSession.request("/api/categories", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
         body: JSON.stringify({ name, parent: $("newCatParent").value || null, status: "published" }),
       });
+      if (!res) throw new Error("Session shesh — abar login korun");
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Category toiri hoyni");
       const meta = await api("GET", "/api/product-form/meta");
@@ -738,8 +736,10 @@
       await api(method, url, collectPayload(status));
       state.dirty = false;
       state.ready = false; // porer bar meta (tags/attributes) freshly load hobe
+      if (productGuard) productGuard.markClean();
       notify(status === "published" ? "Product published!" : "Draft saved!", "ok");
       resetForm();
+      if (productGuard) productGuard.rebase(false);
       // dashboard er Products list-e fire jao
       if (typeof window.switchView === "function") window.switchView("products");
     } catch (err) {
@@ -895,9 +895,56 @@
     try {
       if (!state.ready) await init();
       if (id) await loadProduct(id);
+      if (!productGuard) attachGuard();
+      else productGuard.rebase(!id);
     } catch (err) {
       notify(err.message, "err");
     }
+  }
+
+  /* ---------------- typed data guard ---------------- */
+  let productGuard = null;
+
+  function attachGuard() {
+    const view = $("view-add-product");
+    if (!view || !window.FormGuard) return;
+    productGuard = window.FormGuard.attach({
+      root: view,
+      type: "product",
+      key: () => window.FormGuard.keyFor("product", state.editId || null),
+      extra: () => ({
+        __desc: $("pfDesc").innerHTML,
+        __gallery: state.gallery,
+        __categories: [...state.selectedCategories],
+        __tags: state.tags,
+        __attribute: state.attribute,
+        __variation: state.variationData,
+        __swatches: state.swatches,
+        __tiers: state.tiers,
+        __tierTarget: state.tierTarget,
+        __editId: state.editId || "",
+      }),
+      extraApply: (values) => {
+        state.editId = values.__editId || null;
+        state.gallery = Array.isArray(values.__gallery) ? values.__gallery : [];
+        state.selectedCategories = new Set(values.__categories || []);
+        state.tags = Array.isArray(values.__tags) ? values.__tags : [];
+        state.attribute = values.__attribute || { name: "", terms: [] };
+        state.variationData = values.__variation || {};
+        state.swatches = Array.isArray(values.__swatches) ? values.__swatches : [];
+        state.tiers = values.__tiers || { __product__: [] };
+        state.tierTarget = values.__tierTarget || "__product__";
+        $("pfDesc").innerHTML = values.__desc || "";
+        renderCategoryTree();
+        renderTags();
+        renderTermChips();
+        renderVariationTable();
+        renderSwatches();
+        renderGallery();
+        renderTiers();
+        renderVideoPreview();
+      },
+    });
   }
 
   /* ---------------- event wiring (once) ---------------- */
@@ -969,13 +1016,6 @@
   });
   $("saveDraftBtn").addEventListener("click", () => save("draft"));
   $("publishBtn").addEventListener("click", () => save("published"));
-
-  // unsaved changes warning (page close / reload)
-  window.addEventListener("beforeunload", (e) => {
-    if (!state.dirty) return;
-    e.preventDefault();
-    e.returnValue = "";
-  });
 
   window.productForm = { open, reset: resetForm, save };
 })();

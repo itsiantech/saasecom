@@ -91,6 +91,7 @@ router.get("/current", auth, async (req, res) => {
   const store = req.store;
   if (!store) return res.status(404).json({ message: "Store pawa jayni" });
   res.json({
+    id: String(store._id),
     slug: store.slug,
     name: store.name,
     storefrontUrl: await storefrontUrl(store),

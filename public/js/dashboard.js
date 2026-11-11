@@ -3,25 +3,9 @@ const token = localStorage.getItem(TOKEN_KEY);
 
 if (!token) location.href = "/login.html";
 
-const api = async (url, options = {}) => {
-  const res = await fetch(url, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + token,
-      ...(options.headers || {}),
-    },
-  });
-  if (res.status === 401) {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem("luxe_store_slug");
-    location.href = "/login.html";
-    return;
-  }
-  // 403 = onno dokaner data er onumoti nei — session rakhi, logout kori na
-  if (res.status === 403) toast("এই দোকানের ডেটা দেখার অনুমতি নেই", "err");
-  return res;
-};
+// ApiSession: silent refresh + re-login modal. It never navigates away, so an
+// open form survives an expired session (see api-session.js).
+const api = (url, options) => window.ApiSession.request(url, options);
 
 const money = (n) => "৳ " + Number(n || 0).toLocaleString("en-IN");
 
@@ -176,9 +160,15 @@ document.addEventListener("keydown", (e) => {
 /* ---- session ---- */
 let me = null;
 (async function init() {
+  await window.ApiSession.ensureFresh();
   const res = await api("/api/auth/me");
   if (!res) return;
   me = await res.json();
+  try {
+    localStorage.setItem("luxe_user_id", String(me.id));
+  } catch {
+    /* private mode */
+  }
   document.getElementById("uName").textContent = me.name;
   document.getElementById("uEmail").textContent = me.email;
   document.getElementById("avatar").textContent = (me.name || "A")[0].toUpperCase();
@@ -264,6 +254,7 @@ async function loadStoreInfo() {
     const siteBtn = document.getElementById("siteViewBtn");
     if (store && store.slug) {
       localStorage.setItem("luxe_store_slug", store.slug);
+      if (store.id) localStorage.setItem("luxe_store_id", String(store.id));
       const settingsNav = [...document.querySelectorAll(".nav-item")].find((a) =>
         String(a.getAttribute("href") || "").startsWith("/settings.html")
       );
@@ -497,8 +488,12 @@ window.addEventListener("settings:saved", (e) => {
 });
 
 document.getElementById("logoutBtn").addEventListener("click", () => {
+  if (window.FormGuard) window.FormGuard.clearAllLocal();
+  if (window.ApiSession) window.ApiSession.clear();
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem("luxe_store_slug");
+  localStorage.removeItem("luxe_store_id");
+  localStorage.removeItem("luxe_user_id");
   location.href = "/login.html";
 });
 

@@ -61,6 +61,16 @@ const update = wrap(async (req, res) => {
   res.json({ supplier });
 });
 
+const saveDraft = wrap(async (req, res) => {
+  const supplier = await supplierService.saveSupplierDraft(ctx(req), req.body);
+  res.json({ supplier });
+});
+
+const discardDraft = wrap(async (req, res) => {
+  const result = await supplierService.discardSupplierDraft(ctx(req), req.params.id);
+  res.json({ ok: true, id: result.id });
+});
+
 const voidSupplier = wrap(async (req, res) => {
   const result = await supplierService.voidSupplier(ctx(req), req.params.id, req.body.reason);
   res.json({ ok: true, alreadyVoid: result.alreadyVoid, supplier: result.supplier });
@@ -263,6 +273,8 @@ module.exports = {
   detail,
   create,
   update,
+  saveDraft,
+  discardDraft,
   voidSupplier,
   trash,
   restore,

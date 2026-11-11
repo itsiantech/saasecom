@@ -14,6 +14,7 @@ const {
 } = require("../lib/supplierDomain");
 const {
   normalizeSupplierInput,
+  normalizeDraftKey,
   normalizeOrderInput,
   normalizePaymentInput,
   normalizeReason,
@@ -121,8 +122,126 @@ async function createSupplier(ctx, body) {
   return supplier;
 }
 
+/* Drafts: one row per open form session, invisible to the active list. */
+
+async function saveSupplierDraft(ctx, body) {
+  const source = body && typeof body === "object" ? body : {};
+  const store = storeOf(ctx);
+  const draftKey = normalizeDraftKey(source.draftKey);
+  const input = normalizeSupplierInput(source, { draft: true });
+
+  let draft = null;
+  if (source.id !== undefined && source.id !== null && source.id !== "") {
+    if (!mongoose.isValidObjectId(source.id)) throw new SupplierError("Draft pawa jayni", 404);
+    draft = await Supplier.findOne({ _id: source.id, store, state: "draft" });
+    if (!draft) throw new SupplierError("Draft pawa jayni", 404);
+  }
+  if (!draft) draft = await Supplier.findOne({ store, state: "draft", draftKey });
+
+  let draftOf = draft ? draft.draftOf : null;
+  if (Object.prototype.hasOwnProperty.call(source, "draftOf")) {
+    draftOf = source.draftOf ? String(source.draftOf) : null;
+    if (draftOf) {
+      if (!mongoose.isValidObjectId(draftOf)) throw new SupplierError("Draft source valid na", 400);
+      const origin = await Supplier.findOne({ _id: draftOf, store }).select("_id state");
+      if (!origin) throw new SupplierError("Je supplier er draft, se pawa jayni", 404);
+      if (origin.state === "draft") throw new SupplierError("Draft er draft toiri hoy na", 409);
+      if (origin.state === "trashed") throw new SupplierError("Trashed supplier er draft toiri hoy na", 409);
+    }
+  }
+
+  if (draft) {
+    Object.assign(draft, input, { draftKey });
+    if (Object.prototype.hasOwnProperty.call(source, "draftOf")) draft.draftOf = draftOf;
+    await draft.save();
+    return draft;
+  }
+
+  try {
+    return await Supplier.create({
+      ...input,
+      store,
+      state: "draft",
+      draftKey,
+      draftOf: draftOf || null,
+      createdBy: userOf(ctx),
+    });
+  } catch (err) {
+    if (!isDuplicateKey(err)) throw err;
+    // parallel autosave already created this session's draft — update it
+    draft = await Supplier.findOne({ store, state: "draft", draftKey });
+    if (!draft) throw err;
+    Object.assign(draft, input);
+    await draft.save();
+    return draft;
+  }
+}
+
+async function discardSupplierDraft(ctx, id) {
+  if (!mongoose.isValidObjectId(id)) throw new SupplierError("Draft pawa jayni", 404);
+  const store = storeOf(ctx);
+  const draft = await Supplier.findOne({ _id: id, store, state: "draft" });
+  if (!draft) throw new SupplierError("Draft pawa jayni", 404);
+  await Supplier.deleteOne({ _id: draft._id, store });
+  return { id: String(draft._id) };
+}
+
+async function publishSupplierDraft(ctx, draft, body) {
+  const store = storeOf(ctx);
+  const input = normalizeSupplierInput(body);
+
+  let target = draft;
+  if (draft.draftOf) {
+    target = await Supplier.findOne({ _id: draft.draftOf, store });
+    if (!target) throw new SupplierError("Draft source pawa jayni", 404);
+    if (target.state === "trashed") throw new SupplierError("Draft source trash e ache — restore korun", 409);
+    if (target.state === "draft") throw new SupplierError("Draft source valid na", 409);
+  }
+  const isNew = !draft.draftOf;
+  const old = {
+    name: target.name,
+    companyName: target.companyName,
+    address: target.address,
+    note: target.note,
+    state: target.state,
+  };
+
+  Object.assign(target, input);
+  target.draftOf = null;
+  if (isNew) {
+    target.state = "active";
+    target.draftKey = "";
+  }
+  try {
+    await target.save();
+  } catch (err) {
+    if (isDuplicateKey(err)) {
+      throw new SupplierError("Ei phone number diye active supplier age theke ache", 409);
+    }
+    throw err;
+  }
+  if (draft !== target) await Supplier.deleteOne({ _id: draft._id, store });
+  await auditSupplier(ctx.req, {
+    store,
+    user: userOf(ctx),
+    action: isNew ? "supplier.create" : "supplier.update",
+    entity: "supplier",
+    entityId: target._id,
+    oldValue: isNew ? undefined : old,
+    newValue: {
+      name: target.name,
+      companyName: target.companyName,
+      address: target.address,
+      note: target.note,
+      state: target.state,
+    },
+  });
+  return target;
+}
+
 async function updateSupplier(ctx, id, body) {
   const supplier = await findSupplier(storeOf(ctx), id);
+  if (supplier.state === "draft") return publishSupplierDraft(ctx, supplier, body);
   if (supplier.state === "trashed") {
     throw new SupplierError("Trashed supplier age restore korun", 409);
   }
@@ -151,6 +270,7 @@ async function updateSupplier(ctx, id, body) {
 
 async function voidSupplier(ctx, id, reason) {
   const supplier = await findSupplier(storeOf(ctx), id);
+  if (supplier.state === "draft") throw new SupplierError("Draft supplier void kora jabe na — age publish korun", 409);
   if (supplier.state === "void") return { supplier, alreadyVoid: true };
   if (supplier.state !== "active") throw new SupplierError("Ei supplier void kora jabe na", 409);
   const why = normalizeReason(reason, { field: "Void reason" });
@@ -173,6 +293,7 @@ async function voidSupplier(ctx, id, reason) {
 
 async function trashSupplier(ctx, id, reason) {
   const supplier = await findSupplier(storeOf(ctx), id);
+  if (supplier.state === "draft") throw new SupplierError("Draft supplier trash kora jabe na — discard korun", 409);
   if (supplier.state === "trashed") return { supplier, alreadyTrashed: true };
 
   const openOrder = await SupplierOrder.exists({ store: storeOf(ctx), supplier: supplier._id, status: "ordered" });
@@ -208,6 +329,7 @@ async function trashSupplier(ctx, id, reason) {
 
 async function restoreSupplier(ctx, id) {
   const supplier = await findSupplier(storeOf(ctx), id);
+  if (supplier.state === "draft") throw new SupplierError("Draft supplier restore kora jabe na — publish korun", 409);
   if (supplier.state === "active") return { supplier, alreadyActive: true };
   const oldState = supplier.state;
   supplier.state = "active";
@@ -933,6 +1055,8 @@ async function adjustStock(ctx, supplierId, body) {
 
 module.exports = {
   createSupplier,
+  saveSupplierDraft,
+  discardSupplierDraft,
   updateSupplier,
   voidSupplier,
   trashSupplier,
