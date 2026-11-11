@@ -392,6 +392,7 @@
     el.addEventListener("change", () => {
       state.settings[key] = el.checked ? "true" : "false";
       markDirty();
+      renderHomeSectionChips(categoryLookup());
     });
   });
 
@@ -452,14 +453,22 @@
       </div>`;
   }
 
+  // storefront e jei order e dekhabe — fixed হট ডিল/নতুন পণ্য age, tarpor categories
   function renderHomeSectionChips(lookup) {
     const el = $("homeSectionsOrder");
     if (!el) return;
-    el.innerHTML = state.homeSections
-      .map((section, index) => {
-        const cat = lookup.get(String(section.category));
-        return `<span class="hs-chip${section.enabled ? "" : " is-off"}"><b>${index + 1}</b> ${esc(cat ? cat.name : "—")}</span>`;
-      })
+    const rows = [];
+    if (String(state.settings.home_hot_deals_enabled) !== "false") rows.push({ label: "হট ডিল", fixed: true });
+    if (String(state.settings.home_new_products_enabled) !== "false") rows.push({ label: "নতুন পণ্য", fixed: true });
+    state.homeSections.forEach((section) => {
+      const cat = lookup.get(String(section.category));
+      rows.push({ label: cat ? cat.name : "—", off: !section.enabled });
+    });
+    el.innerHTML = rows
+      .map(
+        (row, index) =>
+          `<span class="hs-chip${row.off ? " is-off" : ""}${row.fixed ? " is-fixed" : ""}"><b>${index + 1}</b> ${esc(row.label)}</span>`
+      )
       .join("");
   }
 
