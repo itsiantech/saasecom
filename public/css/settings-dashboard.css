@@ -831,3 +831,32 @@ html[data-theme="light"] #view-settings .mn-row { background: #fbf9f4; }
   font-size: 12px;
 }
 #view-settings .sst-guide .settings-subhead { margin-top: 16px; }
+
+/* ---- package feature access ---- */
+#view-settings .settings-menu-item[hidden],
+#view-settings .settings-pane[hidden],
+#view-settings .settings-menu-group[hidden] { display: none !important; }
+#view-settings .settings-access {
+  margin: 0 0 14px;
+  padding: 13px 16px;
+  border: 1px solid var(--line-soft);
+  border-radius: 14px;
+  background: rgba(77, 141, 255, 0.05);
+}
+#view-settings .settings-access-head {
+  display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: baseline; justify-content: space-between;
+  margin-bottom: 10px;
+}
+#view-settings .settings-access-head b { font-size: 13px; }
+#view-settings .settings-access-head span {
+  font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 700;
+}
+#view-settings .settings-access-chips { display: flex; flex-wrap: wrap; gap: 7px; }
+#view-settings .settings-access-chip {
+  font-size: 11px; font-weight: 600; border-radius: 999px; padding: 4px 9px;
+  border: 1px solid var(--line-soft); color: var(--muted); background: rgba(255,255,255,.02);
+}
+#view-settings .settings-access-chip.on { color: #7fc79a; border-color: rgba(127,199,154,.3); background: rgba(127,199,154,.1); }
+#view-settings .settings-access-chip.grant { color: #f5b544; border-color: rgba(245,181,68,.3); background: rgba(245,181,68,.1); }
+#view-settings .settings-access-chip.block { color: #e0705c; border-color: rgba(224,112,92,.3); background: rgba(224,112,92,.08); }
+#view-settings .settings-access-note { margin-top: 9px; font-size: 11.5px; color: var(--muted); }

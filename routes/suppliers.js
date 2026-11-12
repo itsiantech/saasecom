@@ -3,8 +3,9 @@ const router = express.Router();
 const ctrl = require("../controllers/supplierController");
 const { auth, requireAdmin, requireSuperAdmin } = require("../middleware/auth");
 const { correlation, writeLimit } = require("../middleware/supplierRequest");
+const { requireFeature } = require("../lib/features");
 
-router.use(auth, requireAdmin, correlation, writeLimit);
+router.use(auth, requireAdmin, correlation, writeLimit, requireFeature("supplierPortal"));
 
 // fixed paths before /:id
 router.get("/settings", ctrl.getSettings);

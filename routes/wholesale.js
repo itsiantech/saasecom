@@ -2,11 +2,12 @@ const express = require("express");
 const router = express.Router();
 const ctrl = require("../controllers/wholesaleController");
 const { auth, requireAdmin } = require("../middleware/auth");
+const { requireFeature } = require("../lib/features");
 
 // Public checkout/storefront config (tenant middleware already resolved the store).
 router.get("/public", ctrl.publicConfig);
 
-router.use(auth, requireAdmin);
+router.use(auth, requireAdmin, requireFeature("wholesale"));
 
 router.get("/settings", ctrl.getSettings);
 router.put("/settings", ctrl.updateSettings);
@@ -29,12 +30,13 @@ router.post("/speeds", ctrl.createSpeed);
 router.put("/speeds/:id", ctrl.updateSpeed);
 router.delete("/speeds/:id", ctrl.deleteSpeed);
 
-router.get("/plans", ctrl.listPlans);
-router.post("/plans", ctrl.createPlan);
-router.put("/plans/:id", ctrl.updatePlan);
-router.delete("/plans/:id", ctrl.deletePlan);
+const partialGuard = requireFeature("partialPayment");
+router.get("/plans", partialGuard, ctrl.listPlans);
+router.post("/plans", partialGuard, ctrl.createPlan);
+router.put("/plans/:id", partialGuard, ctrl.updatePlan);
+router.delete("/plans/:id", partialGuard, ctrl.deletePlan);
+router.patch("/buyers/:id/approval", partialGuard, ctrl.setBuyerApproval);
 
 router.get("/buyers", ctrl.listBuyers);
-router.patch("/buyers/:id/approval", ctrl.setBuyerApproval);
 
 module.exports = router;

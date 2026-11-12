@@ -16,6 +16,7 @@ const {
   nextSlugChangeAt,
 } = require("../lib/shopAddress");
 const { writeAudit } = require("../lib/audit");
+const { featuresForStore } = require("../lib/features");
 const { createStoreWithSubscription } = require("../lib/storeProvisioning");
 const { applyStarterPack } = require("../services/starterPack");
 
@@ -93,7 +94,11 @@ router.get("/mine", auth, async (req, res) => {
   });
   // panel er "ওয়েবসাইট দেখুন" link — themed Next site, legacy page na
   const urls = await Promise.all(stores.map((s) => storefrontUrl(s)));
-  rows.forEach((row, i) => (row.storefrontUrl = urls[i]));
+  const access = await Promise.all(stores.map((s) => featuresForStore(s, s.plan)));
+  rows.forEach((row, i) => {
+    row.storefrontUrl = urls[i];
+    row.access = access[i];
+  });
   res.json(rows);
 });
 
@@ -106,6 +111,7 @@ router.get("/current", auth, async (req, res) => {
     slug: store.slug,
     name: store.name,
     storefrontUrl: await storefrontUrl(store),
+    access: await featuresForStore(store),
   });
 });
 

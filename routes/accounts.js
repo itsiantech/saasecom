@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const router = express.Router();
 const User = require("../models/User");
 const { auth, requireAdmin } = require("../middleware/auth");
+const { requireFeature, featuresForStore } = require("../lib/features");
 const { correlation, rateLimit } = require("../middleware/reportRequest");
 const { resolvePeriod } = require("../lib/reportPeriods");
 const { accountsError, KINDS, VOID_TYPES } = require("../lib/accounts");
@@ -59,12 +60,14 @@ router.get(
     const role = user && user.role;
     const owner =
       req.store && req.store.owner && String(req.store.owner.toString()) === String(req.user.id);
-    const canView = role === "admin" || role === "superadmin" || Boolean(owner);
+    const access = await featuresForStore(req.store);
+    const isAdmin = role === "admin" || role === "superadmin" || Boolean(owner);
+    const canView = role === "superadmin" || (isAdmin && access.features.accounts);
     res.json({ canView, canExport: canView, canEdit: canView });
   })
 );
 
-router.use(auth, requireAdmin);
+router.use(auth, requireAdmin, requireFeature("accounts"));
 
 router.get(
   "/dashboard",

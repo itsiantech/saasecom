@@ -8,6 +8,13 @@ const storeSchema = new mongoose.Schema(
     slugChangedAt: { type: Date, default: null },
     owner: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     plan: { type: mongoose.Schema.Types.ObjectId, ref: "Plan", required: true },
+    // per-store package overrides: granted = extra access, revoked = force off
+    featureOverrides: {
+      granted: { type: [String], default: [] },
+      revoked: { type: [String], default: [] },
+      updatedAt: { type: Date, default: null },
+      updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+    },
     // domain gulo optional — default deya hoy na, na-hole sparse unique index null niye dhake
     subdomain: { type: String, unique: true, sparse: true, lowercase: true, trim: true },
     customDomain: { type: String, unique: true, sparse: true, lowercase: true, trim: true },

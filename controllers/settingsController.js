@@ -45,6 +45,7 @@ const {
   testConnection: trackingTestConnection,
   sendTestEvent: trackingSendTestEvent,
 } = require("../services/serverTracking");
+const { featuresForStore } = require("../lib/features");
 const { sendMail } = require("../lib/mailer");
 const { sendSms } = require("../lib/sms");
 const {
@@ -501,6 +502,7 @@ async function adminGet(req, res) {
 
   res.json({
     ...payload,
+    access: await featuresForStore(req.store),
     stores,
     favicons: stores.map((s) => ({
       storeId: s._id,
@@ -521,6 +523,12 @@ async function adminSave(req, res) {
   const settings = body.settings || {};
   const shipping = body.shipping || {};
   const payments = body.payments || {};
+
+  const access = await featuresForStore(req.store);
+  // tracking settings are read-only while the package does not include them
+  if (!access.features.serverSideTracking) {
+    TRACKING_KEYS.forEach((key) => delete settings[key]);
+  }
 
   const current = await getSettingsMap();
   const seoError = googleSeoError(settings);
@@ -897,6 +905,7 @@ async function adminSave(req, res) {
   res.json({
     ok: true,
     ...payload,
+    access,
     stores,
     favicons: stores.map((s) => ({
       storeId: s._id,

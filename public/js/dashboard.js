@@ -13,6 +13,10 @@ const money = (n) => "৳ " + Number(n || 0).toLocaleString("en-IN");
 let currentView = "products";
 
 function switchView(viewName) {
+  if (!viewAllowed(viewName)) {
+    toast("এই মডিউল আপনার প্যাকেজে নেই — প্যাকেজ আপগ্রেড করুন", "err");
+    return;
+  }
   currentView = viewName;
 
   // Hide all views
@@ -121,6 +125,86 @@ function switchView(viewName) {
   } else if (viewName === "accounts-export") {
     if (window.accountsPage) window.accountsPage.open("export");
   }
+}
+
+/* ---- package modules: sidebar hide + view guard ---- */
+// "products" view-e dashboard overview — sheta always available thake,
+// karon module bondho thakleo stats read-only dekha jay.
+const VIEW_MODULES = {
+  "product-list": "products",
+  "add-product": "products",
+  categories: "categories",
+  brands: "brands",
+  orders: "orders",
+  "order-detail": "orders",
+  customers: "customers",
+  suppliers: "supplierPortal",
+  "supplier-history": "supplierPortal",
+  "report-sales": "reports",
+  "report-products": "reports",
+  "report-categories": "reports",
+  "report-coupons": "reports",
+  "report-customers": "reports",
+  "inventory-overview": "inventory",
+  "inventory-category": "inventory",
+  "inventory-variant": "inventory",
+  "inventory-supplier": "inventory",
+  "inventory-movements": "inventory",
+  "inventory-damage": "inventory",
+  "inventory-adjustment": "inventory",
+  "inventory-transfer": "inventory",
+  "accounts-dashboard": "accounts",
+  "accounts-sales": "accounts",
+  "accounts-suppliers": "accounts",
+  "accounts-office": "accounts",
+  "accounts-tech": "accounts",
+  "accounts-marketing": "accounts",
+  "accounts-salary": "accounts",
+  "accounts-voids": "accounts",
+  "accounts-export": "accounts",
+  settings: "settings",
+  "installment-orders": "partialPayment",
+  "flash-sales": "flashSales",
+  coupons: "coupons",
+};
+
+let storeAccess = null;
+
+function moduleOn(key) {
+  if (!storeAccess || !storeAccess.features) return true;
+  // purono backend module key na dile kichu hide hobe na (fail open)
+  return storeAccess.features[key] !== false;
+}
+
+function viewAllowed(viewName) {
+  const key = VIEW_MODULES[viewName];
+  return !key || moduleOn(key);
+}
+
+function applyStoreAccess(access) {
+  storeAccess = access && access.features ? access : null;
+  if (!storeAccess) return;
+
+  document.querySelectorAll(".nav-item[data-view]").forEach((item) => {
+    if (!viewAllowed(item.dataset.view)) item.hidden = true;
+  });
+  const productGroup = document.getElementById("navGroupProducts");
+  if (productGroup) productGroup.hidden = !moduleOn("products");
+  const supplierGroup = document.getElementById("navGroupSuppliers");
+  if (supplierGroup) supplierGroup.hidden = !moduleOn("supplierPortal");
+  const funnelGroups = { navGroupReports: "reports", navGroupInventory: "inventory", navGroupAccounts: "accounts" };
+  Object.entries(funnelGroups).forEach(([id, key]) => {
+    if (moduleOn(key)) return;
+    const group = document.getElementById(id);
+    if (group) group.hidden = true;
+  });
+  document.querySelectorAll('.nav-item[href^="/settings.html"]').forEach((link) => {
+    link.hidden = !moduleOn("settings");
+  });
+  const addBtn = document.getElementById("addBtn");
+  if (addBtn) addBtn.hidden = !moduleOn("products");
+  const viewAll = document.getElementById("viewAllProducts");
+  if (viewAll) viewAll.hidden = !moduleOn("products");
 }
 
 // Navigation click handlers
@@ -307,6 +391,7 @@ async function loadStoreInfo() {
         siteBtn.hidden = false;
       }
       if (banner) banner.hidden = true;
+      applyStoreAccess(store.access);
     } else if (banner) {
       banner.hidden = false;
     }
@@ -483,7 +568,8 @@ window.switchView = switchView;
 
 /* ---- flash sales global on/off (sidebar menu visibility) ---- */
 function applyFlashSalesStatus(enabled) {
-  const on = enabled !== false;
+  // package e flash sales na thakle toggle ON holeo menu fire ashbe na
+  const on = enabled !== false && viewAllowed("flash-sales");
   const nav = document.getElementById("navFlashSales");
   if (nav) nav.hidden = !on;
   document.querySelectorAll("[data-flash-off]").forEach((badge) => {

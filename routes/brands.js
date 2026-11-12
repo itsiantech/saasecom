@@ -4,11 +4,12 @@ const ctrl = require("../controllers/brandController");
 const { makeImageUpload, singleImage, finalizeImage } = require("../middleware/upload");
 const { auth, requireAdmin } = require("../middleware/auth");
 const requireTenant = require("../middleware/requireTenant");
+const { requireFeature } = require("../lib/features");
 
 const imageUpload = makeImageUpload({ maxBytes: 2 * 1024 * 1024 });
 
 // public storefront er brand /api/public/brands theke ase — eta admin panel er
-router.use(requireTenant, auth, requireAdmin);
+router.use(requireTenant, auth, requireAdmin, requireFeature("brands"));
 
 // NOTE: /reorder and /bulk are declared before "/:id" so they are not shadowed.
 router.get("/", ctrl.list);

@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="/css/style-settings.css?v=1" />
   <link rel="stylesheet" href="/css/categories.css" />
   <link rel="stylesheet" href="/css/product-form.css" />
-  <link rel="stylesheet" href="/css/settings-dashboard.css?v=6" />
+  <link rel="stylesheet" href="/css/settings-dashboard.css?v=7" />
   <link rel="stylesheet" href="/css/installments.css?v=1" />
   <link rel="stylesheet" href="/css/product-catalog.css?v=1" />
   <link rel="stylesheet" href="/css/order-catalog.css?v=2" />
@@ -853,6 +853,8 @@
         </div>
         <input type="hidden" id="storefrontMenuDraft" name="storefront_menu_draft" value="[]" />
 
+        <div class="settings-access" id="settingsAccess" hidden></div>
+
         <div class="settings-layout">
           <!-- left sub-menu -->
           <aside class="settings-menu" id="settingsMenu">
@@ -865,7 +867,7 @@
             <button class="settings-menu-item" data-pane="home-sections" type="button">Category sections</button>
             <button class="settings-menu-item" data-pane="menu" type="button">Menu settings</button>
             <button class="settings-menu-item" data-pane="international" type="button">International import mode <span class="off-badge" data-international-off hidden>Off</span></button>
-            <div class="settings-menu-group">Wholesale</div>
+            <div class="settings-menu-group" data-group="wholesale">Wholesale</div>
             <button class="settings-menu-item" data-pane="wholesale" type="button">Wholesale mode <span class="off-badge" data-wholesale-off hidden>Off</span></button>
             <button class="settings-menu-item" data-pane="partial" type="button">Partial payment <span class="off-badge" data-partial-off hidden>Off</span></button>
             <div class="settings-menu-group">Shop</div>
@@ -884,7 +886,7 @@
             <button class="settings-menu-item" data-pane="marketing" type="button">Flash sales <span class="off-badge" data-flash-off hidden>Off</span></button>
             <div class="settings-menu-group">SEO</div>
             <button class="settings-menu-item" data-pane="google-seo" type="button">Google SEO <span class="off-badge" data-seo-off hidden>Off</span></button>
-            <div class="settings-menu-group">Tracking</div>
+            <div class="settings-menu-group" data-group="tracking">Tracking</div>
             <button class="settings-menu-item" data-pane="server-tracking" type="button">Server side tracking <span class="off-badge" data-tracking-off hidden>Off</span></button>
             <div class="settings-menu-group">Notifications</div>
             <button class="settings-menu-item" data-pane="email" type="button">Email settings</button>
@@ -3506,12 +3508,12 @@
 
   <script src="/js/store-hint.js?v=1"></script>
   <script src="/js/api-session.js?v=1"></script>
-  <script src="/js/dashboard.js?v=14"></script>
+  <script src="/js/dashboard.js?v=15"></script>
   <script src="/js/form-guard.js?v=2"></script>
   <script src="/js/categories.js"></script>
   <script src="/js/brands.js"></script>
   <script src="/js/product-form.js"></script>
-  <script src="/js/settings-dashboard.js?v=15"></script>
+  <script src="/js/settings-dashboard.js?v=17"></script>
   <script src="/js/installments-admin.js?v=1"></script>
   <script src="/js/orders.js?v=3"></script>
   <script src="/js/product-catalog.js?v=1"></script>

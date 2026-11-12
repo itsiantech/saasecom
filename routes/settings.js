@@ -4,6 +4,7 @@ const router = express.Router();
 const ctrl = require("../controllers/settingsController");
 const { auth, optionalAuth, requireAdmin } = require("../middleware/auth");
 const { makeImageUpload, singleImage, finalizeImage } = require("../middleware/upload");
+const { requireFeature } = require("../lib/features");
 
 const genericImage = makeImageUpload({ maxBytes: 2 * 1024 * 1024 });
 const settingsImage = makeImageUpload({ maxBytes: 5 * 1024 * 1024, allowSvg: true });
@@ -69,14 +70,16 @@ router.put("/dashboard-style", auth, requireAdmin, async (req, res) => {
 // notification test + invoice preview (admin)
 router.post("/email/test", auth, requireAdmin, ctrl.emailTest);
 router.post("/sms/test", auth, requireAdmin, ctrl.smsTest);
-router.post("/tracking/test-connection", auth, requireAdmin, ctrl.trackingConnectionTest);
-router.post("/tracking/test-event", auth, requireAdmin, ctrl.trackingEventTest);
+const trackingGuard = requireFeature("serverSideTracking");
+const settingsGuard = requireFeature("settings");
+router.post("/tracking/test-connection", auth, requireAdmin, trackingGuard, ctrl.trackingConnectionTest);
+router.post("/tracking/test-event", auth, requireAdmin, trackingGuard, ctrl.trackingEventTest);
 router.get("/invoice/preview", auth, requireAdmin, ctrl.invoicePreview);
 router.post("/invoice/preview", auth, requireAdmin, ctrl.invoicePreview);
 
 // admin settings page
-router.get("/", auth, requireAdmin, ctrl.adminGet);
-router.put("/", auth, requireAdmin, ctrl.adminSave);
+router.get("/", auth, requireAdmin, settingsGuard, ctrl.adminGet);
+router.put("/", auth, requireAdmin, settingsGuard, ctrl.adminSave);
 
 /* ------------------------------------------------------------------ *
  * Per-store settings page (public/settings.html).
@@ -88,7 +91,7 @@ const StoreSettings = require("../models/StoreSettings");
 const storeSettings = require("../services/storeSettings");
 const { CURRENCIES } = require("../lib/currencies");
 
-router.get("/store", auth, requireAdmin, async (req, res) => {
+router.get("/store", auth, requireAdmin, settingsGuard, async (req, res) => {
   try {
     if (!req.store) return res.status(400).json({ message: "Store pawa jayni" });
     const settings = await StoreSettings.findOne({ storeId: req.store._id });
@@ -98,7 +101,7 @@ router.get("/store", auth, requireAdmin, async (req, res) => {
   }
 });
 
-router.get("/admin", auth, requireAdmin, async (req, res) => {
+router.get("/admin", auth, requireAdmin, settingsGuard, async (req, res) => {
   try {
     const storeId = req.store?._id || null;
     if (!storeId) {
@@ -112,7 +115,7 @@ router.get("/admin", auth, requireAdmin, async (req, res) => {
   }
 });
 
-router.put("/admin", auth, requireAdmin, async (req, res) => {
+router.put("/admin", auth, requireAdmin, settingsGuard, async (req, res) => {
   try {
     const storeId = req.store?._id || null;
     if (!storeId) {
@@ -136,6 +139,7 @@ for (const field of ["logo", "favicon"]) {
     `/admin/${field}`,
     auth,
     requireAdmin,
+    settingsGuard,
     singleImage(settingsImage, field),
     finalizeImage({ dir: SETTINGS_DIR, allowSvg: true }),
     async (req, res) => {
@@ -152,7 +156,7 @@ for (const field of ["logo", "favicon"]) {
     }
   );
 
-  router.delete(`/admin/${field}`, auth, requireAdmin, async (req, res) => {
+  router.delete(`/admin/${field}`, auth, requireAdmin, settingsGuard, async (req, res) => {
     try {
       const storeId = req.store?._id || null;
       await storeSettings.setImage(storeId, field, "");

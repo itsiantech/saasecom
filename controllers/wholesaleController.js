@@ -15,6 +15,7 @@ const { defaultSettings, normalizeSettings } = require("../lib/wholesaleDefaults
 const { getWholesaleSettings, clearWholesaleCache } = require("../lib/wholesaleSettings");
 const { normalizeTiers, clearTierCache } = require("../services/tierPricing");
 const { writeAudit } = require("../lib/audit");
+const { featuresForStore } = require("../lib/features");
 const cache = require("../lib/cache");
 
 function readBool(value, fallback) {
@@ -161,6 +162,9 @@ async function updateSettings(req, res, next) {
     const current = doc ? normalizeSettings(doc.toObject()) : defaultSettings();
     const parsed = parseSettings(req.body, current);
     if (parsed.error) return res.status(400).json({ message: parsed.error });
+
+    const access = await featuresForStore(req.store);
+    if (!access.features.partialPayment) parsed.value.partialPaymentEnabled = false;
 
     if (parsed.value.enabled) {
       const intl = await InternationalSettings.findOne({ store: storeId })
@@ -910,11 +914,12 @@ async function setBuyerApproval(req, res, next) {
 async function publicConfig(req, res, next) {
   try {
     const storeId = req.store._id;
-    const settings = await getWholesaleSettings(storeId);
-    if (!settings.enabled) return res.json({ enabled: false });
+    const [settings, access] = await Promise.all([getWholesaleSettings(storeId), featuresForStore(req.store)]);
+    if (!access.features.wholesale || !settings.enabled) return res.json({ enabled: false });
+    const partialPayment = access.features.partialPayment && settings.partialPaymentEnabled;
 
     const [plans, speeds] = await Promise.all([
-      settings.partialPaymentEnabled
+      partialPayment
         ? InstallmentPlan.find({ store: storeId, isActive: true })
             .sort({ sortOrder: 1, createdAt: 1 })
             .lean()
@@ -932,7 +937,7 @@ async function publicConfig(req, res, next) {
       showRetailPrice: settings.showRetailPrice,
       vehicleOverflowRule: settings.vehicleOverflowRule,
       partialPayment: {
-        enabled: settings.partialPaymentEnabled,
+        enabled: partialPayment,
         installmentBuyers: settings.installmentBuyers,
         goodsReleaseRule: settings.goodsReleaseRule,
         shippingInFirstInstallment: settings.shippingInFirstInstallment,

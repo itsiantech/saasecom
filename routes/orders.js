@@ -14,9 +14,10 @@ const requireTenant = require("../middleware/requireTenant");
 const ctrl = require("../controllers/orderCatalogController");
 const { changeOrderStatus, OrderStatusError } = require("../services/orderStatusChange");
 const { restoreOrderStock } = require("../services/orderStock");
+const { requireFeature } = require("../lib/features");
 
 // tenant context chara Query gulo filter-hinno hoye sob dokan er order fenle
-const guard = [requireTenant, auth, requireAdmin];
+const guard = [requireTenant, auth, requireAdmin, requireFeature("orders")];
 
 // Client ei field gulo set korte parbe. Payment/total/store client er kontrol e nei.
 const ORDER_CREATE_FIELDS = [

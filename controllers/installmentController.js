@@ -20,6 +20,7 @@ const {
   rejectPendingPayment,
 } = require("../services/installmentPayments");
 const { runInstallmentScheduler } = require("../services/installmentScheduler");
+const { featuresForStore } = require("../lib/features");
 
 const PHONE_RE = /^01[3-9]\d{8}$/;
 const PAYMENT_METHODS = /^(mobile|bank):/;
@@ -27,6 +28,15 @@ const PAYMENT_METHODS = /^(mobile|bank):/;
 function storeOf(req) {
   if (req.store && req.store._id) return req.store._id;
   return getStoreId();
+}
+
+// Existing installment orders stay manageable, but no new plan can be used
+// once the package no longer includes partial payment.
+async function partialPaymentAllowed(storeId) {
+  const store = await Store.findById(storeId).populate("plan").lean();
+  if (!store) return false;
+  const access = await featuresForStore(store, store.plan);
+  return access.features.wholesale === true && access.features.partialPayment === true;
 }
 
 function normalizePhone(value) {
@@ -174,7 +184,7 @@ async function getConfig(req, res, next) {
   try {
     const storeId = storeOf(req);
     const settings = await getWholesaleSettings(storeId);
-    if (!settings.enabled || !settings.partialPaymentEnabled) {
+    if (!settings.enabled || !settings.partialPaymentEnabled || !(await partialPaymentAllowed(storeId))) {
       return res.json({ enabled: false });
     }
 
@@ -244,6 +254,9 @@ async function preview(req, res, next) {
     const storeId = storeOf(req);
     const planId = req.body && req.body.planId;
     if (!planId) return res.status(400).json({ message: "Installment plan select korun" });
+    if (!(await partialPaymentAllowed(storeId))) {
+      return res.status(403).json({ code: "feature_locked", feature: "partialPayment", message: "এই সুবিধাটি আপনার প্যাকেজে নেই" });
+    }
 
     const { cart, settings } = await loadCartPricing(req, storeId);
     if (!cart.items.length) return res.status(400).json({ message: "Cart faka" });

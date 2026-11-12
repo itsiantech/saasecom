@@ -1,16 +1,19 @@
 const express = require("express");
 const router = express.Router();
 const { auth, requireAdmin } = require("../middleware/auth");
+const { requireFeature } = require("../lib/features");
 const ctrl = require("../controllers/couponsController");
 
-// fixed paths before /:id
-router.post("/draft", auth, requireAdmin, ctrl.saveDraft);
-router.get("/drafts", auth, requireAdmin, ctrl.listDrafts);
-router.delete("/drafts/:id", auth, requireAdmin, ctrl.removeDraft);
+const featureGuard = requireFeature("coupons");
 
-router.get("/", auth, requireAdmin, ctrl.list);
-router.post("/", auth, requireAdmin, ctrl.create);
-router.put("/:id", auth, requireAdmin, ctrl.update);
-router.delete("/:id", auth, requireAdmin, ctrl.remove);
+// fixed paths before /:id
+router.post("/draft", auth, requireAdmin, featureGuard, ctrl.saveDraft);
+router.get("/drafts", auth, requireAdmin, featureGuard, ctrl.listDrafts);
+router.delete("/drafts/:id", auth, requireAdmin, featureGuard, ctrl.removeDraft);
+
+router.get("/", auth, requireAdmin, featureGuard, ctrl.list);
+router.post("/", auth, requireAdmin, featureGuard, ctrl.create);
+router.put("/:id", auth, requireAdmin, featureGuard, ctrl.update);
+router.delete("/:id", auth, requireAdmin, featureGuard, ctrl.remove);
 
 module.exports = router;

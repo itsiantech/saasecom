@@ -4,9 +4,12 @@ const Product = require("../models/Product");
 const { auth, requireAdmin } = require("../middleware/auth");
 const requireTenant = require("../middleware/requireTenant");
 const { sanitizeRichText } = require("../lib/richText");
+const { requireFeature } = require("../lib/features");
 
 // ei panel api gulo shudhu oei dokan er malik er (public catalog /api/public + /api/storefront e chole)
 const guard = [requireTenant, auth, requireAdmin];
+// dashboard stats GET use kore, tai read khula; product management write-only gate
+const writeGuard = [...guard, requireFeature("products")];
 
 // Client shudhu ei field gulo likhte parbe — store/_id/isDemo/soldCount baad.
 const PRODUCT_FIELDS = [
@@ -54,7 +57,7 @@ router.get("/:id", guard, async (req, res) => {
 });
 
 // notun product add kora (admin)
-router.post("/", guard, async (req, res) => {
+router.post("/", writeGuard, async (req, res) => {
   try {
     const product = await Product.create({ ...productPayload(req.body), store: req.storeId });
     res.status(201).json(product);
@@ -64,7 +67,7 @@ router.post("/", guard, async (req, res) => {
 });
 
 // product update kora (admin only)
-router.put("/:id", guard, async (req, res) => {
+router.put("/:id", writeGuard, async (req, res) => {
   try {
     const product = await Product.findOneAndUpdate(
       { _id: req.params.id, store: req.storeId },
@@ -79,7 +82,7 @@ router.put("/:id", guard, async (req, res) => {
 });
 
 // product delete kora (admin only)
-router.delete("/:id", guard, async (req, res) => {
+router.delete("/:id", writeGuard, async (req, res) => {
   try {
     const product = await Product.findByIdAndDelete(req.params.id);
     if (!product) return res.status(404).json({ message: "Product pawa jayni" });

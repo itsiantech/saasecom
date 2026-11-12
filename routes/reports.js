@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const User = require("../models/User");
 const { auth, requireAdmin, requireSuperAdmin } = require("../middleware/auth");
+const { requireFeature, featuresForStore } = require("../lib/features");
 const { correlation, rateLimit } = require("../middleware/reportRequest");
 const {
   resolvePeriod,
@@ -79,15 +80,17 @@ router.get(
       req.store.owner &&
       String(req.store.owner.toString()) === String(req.user.id);
     const isAdmin = role === "admin" || role === "superadmin" || owner;
+    const access = await featuresForStore(req.store);
+    const allowed = role === "superadmin" || (Boolean(isAdmin) && access.features.reports);
     res.json({
-      canView: Boolean(isAdmin),
-      canExport: Boolean(isAdmin),
+      canView: allowed,
+      canExport: allowed,
       canRebuild: role === "superadmin",
     });
   })
 );
 
-router.use(auth, requireAdmin);
+router.use(auth, requireAdmin, requireFeature("reports"));
 
 router.get(
   "/sales/summary",

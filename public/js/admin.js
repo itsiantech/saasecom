@@ -75,8 +75,129 @@ const fmtLimit = (n) => (n === 0 ? "∞" : Number(n || 0).toLocaleString("en-IN"
     return;
   }
 
-  await Promise.all([loadStats(), loadPlans(), loadStores(), loadSaas(), loadTheme(), loadLanding(), loadPayments(), loadBillingSettings()]);
+  await Promise.all([loadStats(), loadPlans(), loadFeatures(), loadStores(), loadSaas(), loadTheme(), loadLanding(), loadPayments(), loadBillingSettings()]);
 })();
+
+/* ---------- feature registry (same list the backend enforces) ---------- */
+let features = [];
+let featureByKey = {};
+const FEATURE_GROUP_ORDER = ["core", "sales", "marketing", "operations", "advanced"];
+
+async function loadFeatures() {
+  try {
+    features = await api("/api/admin/features");
+    featureByKey = {};
+    features.forEach((f) => (featureByKey[f.key] = f));
+    ["planFeatures", "storeFeatures", "approveFeatures"].forEach((id) => {
+      const el = $(id);
+      if (el && !el._pickerReady) initPicker(el, planDefaultKeys(null));
+    });
+  } catch (e) {
+    toast(e.message, "err");
+  }
+}
+
+function pickerGroups() {
+  return FEATURE_GROUP_ORDER.map((key) => ({
+    key,
+    name: (features.find((f) => f.group === key) || {}).groupBn || key,
+    items: features.filter((f) => f.group === key),
+  })).filter((g) => g.items.length);
+}
+
+function planDefaultKeys(plan) {
+  return features
+    .filter((f) => {
+      const raw = plan && plan.features ? plan.features[f.key] : undefined;
+      return raw === undefined || raw === null ? f.legacy === true : raw === true;
+    })
+    .map((f) => f.key);
+}
+
+function pickerHTML(selected) {
+  const set = selected instanceof Set ? selected : new Set(selected || []);
+  return pickerGroups()
+    .map((g) => {
+      const on = g.items.filter((f) => set.has(f.key)).length;
+      return (
+        '<div class="fp-group" data-group="' + esc(g.key) + '">' +
+        '<div class="fp-head"><span class="n">' + esc(g.name) + '</span>' +
+        '<span class="c" data-group-count>' + on + " / " + g.items.length + "</span></div>" +
+        '<div class="fp-grid">' +
+        g.items
+          .map((f) => {
+            const parent = f.requires && featureByKey[f.requires] ? featureByKey[f.requires].bn : "";
+            return (
+              '<label class="fp-item" data-fp-item="' + esc(f.key) + '">' +
+              '<input type="checkbox" data-feature="' + esc(f.key) + '"' + (set.has(f.key) ? " checked" : "") + " />" +
+              "<span>" + esc(f.bn) + "<small>" + esc(f.en) + "</small></span>" +
+              (parent ? '<em title="আগে চালু করতে হবে">' + esc(parent) + " লাগবে</em>" : "") +
+              "</label>"
+            );
+          })
+          .join("") +
+        "</div></div>"
+      );
+    })
+    .join("");
+}
+
+function initPicker(el, selected) {
+  el._pickerReady = true;
+  el.innerHTML = pickerHTML(selected);
+  const totalEl = $(el.id + "Total");
+
+  const sync = () => {
+    el.querySelectorAll(".fp-item").forEach((item) => {
+      const def = featureByKey[item.dataset.fpItem];
+      const cb = item.querySelector("input[data-feature]");
+      let locked = false;
+      if (def && def.requires) {
+        const parent = el.querySelector('input[data-feature="' + def.requires + '"]');
+        if (parent && !parent.checked) {
+          if (cb.checked) cb.checked = false;
+          locked = true;
+        }
+      }
+      item.classList.toggle("off", locked);
+      cb.disabled = locked;
+    });
+    el.querySelectorAll("[data-group]").forEach((g) => {
+      const boxes = g.querySelectorAll("input[data-feature]");
+      const on = Array.from(boxes).filter((c) => c.checked).length;
+      const count = g.querySelector("[data-group-count]");
+      if (count) count.textContent = on + " / " + boxes.length;
+    });
+    if (totalEl) {
+      const on = el.querySelectorAll("input[data-feature]:checked").length;
+      totalEl.textContent = on + " / " + features.length + " মডিউল চালু";
+    }
+  };
+
+  el.addEventListener("change", sync);
+  el.getSelected = () =>
+    Array.from(el.querySelectorAll("input[data-feature]:checked")).map((c) => c.dataset.feature);
+  el.setSelected = (keys) => {
+    const set = new Set(keys || []);
+    el.querySelectorAll("input[data-feature]").forEach((c) => {
+      c.checked = set.has(c.dataset.feature);
+    });
+    sync();
+  };
+  sync();
+  return el;
+}
+
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-picker][data-pick]");
+  if (!btn) return;
+  const el = $(btn.dataset.picker);
+  if (!el || !el.setSelected) return;
+  const mode = btn.dataset.pick;
+  if (mode === "all") el.setSelected(features.map((f) => f.key));
+  else if (mode === "core") el.setSelected(features.filter((f) => f.group === "core").map((f) => f.key));
+  else el.setSelected([]);
+});
 
 /* ---------- stats ---------- */
 async function loadStats() {
@@ -153,6 +274,8 @@ function openPlanAdd() {
   $("fPlanId").value = "";
   $("fActive").checked = true;
   $("planMsg").textContent = "";
+  const picker = $("planFeatures");
+  if (picker && picker.setSelected) picker.setSelected(planDefaultKeys(null));
   overlay.classList.add("open");
   $("fPlanName").focus();
 }
@@ -172,10 +295,9 @@ function openPlanEdit(id) {
   $("fOrders").value = p.limits?.orders ?? "";
   $("fStorage").value = p.limits?.storageMB ?? "";
   $("fStaff").value = p.limits?.staffMembers ?? "";
-  $("fCustomDomain").checked = !!p.features?.customDomain;
-  $("fAnalytics").checked = !!p.features?.analytics;
-  $("fApi").checked = !!p.features?.apiAccess;
-  $("fPriority").checked = !!p.features?.prioritySupport;
+  // legacy plans predate the module keys and keep them on until saved explicitly
+  const picker = $("planFeatures");
+  if (picker && picker.setSelected) picker.setSelected(planDefaultKeys(p));
   $("fActive").checked = p.active !== false;
   $("planMsg").textContent = "";
   overlay.classList.add("open");
@@ -207,15 +329,13 @@ $("planForm").addEventListener("submit", async (e) => {
       storageMB: Number($("fStorage").value) || 0,
       staffMembers: Number($("fStaff").value) || 0,
     },
-    features: {
-      customDomain: $("fCustomDomain").checked,
-      analytics: $("fAnalytics").checked,
-      apiAccess: $("fApi").checked,
-      prioritySupport: $("fPriority").checked,
-    },
+    features: Object.fromEntries(
+      features.map((f) => [f.key, $("planFeatures").getSelected().includes(f.key)])
+    ),
     active: $("fActive").checked,
   };
   if (!body.name) { msg.textContent = "প্ল্যানের নাম লিখুন"; msg.className = "msg err"; return; }
+  if (!features.length) { msg.textContent = "ফিচার লিস্ট লোড হয়নি — পেজ রিফ্রেশ করুন"; msg.className = "msg err"; return; }
 
   btn.disabled = true;
   btn.textContent = "সেভ হচ্ছে...";
@@ -277,16 +397,23 @@ function renderStores() {
         .map((p) => `<option value="${esc(p.slug)}" ${p.slug === current ? "selected" : ""}>${esc(p.name)}</option>`)
         .join("");
       const owner = s.owner ? s.owner.name + " · " + s.owner.email : "—";
+      const mods = s.access && s.access.features
+        ? Object.values(s.access.features).filter(Boolean).length
+        : 0;
       return `
       <tr>
         <td><div class="p-name">${esc(s.name)}</div><div class="muted" style="font-size:12px;">/${esc(s.slug)}</div></td>
         <td class="muted" style="font-size:12px;">${esc(owner)}</td>
-        <td>${planLabel ? '<span class="badge on">' + esc(planLabel) + "</span>" : '<span class="badge off">—</span>'}</td>
+        <td>${planLabel ? '<span class="badge on">' + esc(planLabel) + "</span>" : '<span class="badge off">—</span>'}
+          <div class="muted" style="font-size:11px;margin-top:4px;">${mods} মডিউল</div></td>
         <td>
           <div class="row-actions">
             <select class="plan-select" data-store="${s._id}">${opts}</select>
             <button class="icon-btn edit" title="বদলান" onclick="changeStorePlan('${s._id}')">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </button>
+            <button class="icon-btn" title="ফিচার অ্যাক্সেস" onclick="openStoreAccess('${s._id}')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="15" r="4"/><path d="M10.8 12.2L20 3"/><path d="M16 7l3 3"/><path d="M18.5 4.5l2 2"/></svg>
             </button>
             <a class="icon-btn" title="এই দোকানের Store Settings" href="/settings.html?store=${encodeURIComponent(s.slug)}">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1.11-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 8.89a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 8.96 4.5a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1z"/></svg>
@@ -312,6 +439,274 @@ async function changeStorePlan(storeId) {
     toast(e.message, "err");
   }
 }
+
+/* ---------- new store (superadmin) ---------- */
+const storeOverlay = $("storeOverlay");
+
+function planBySlug(slug) {
+  return plans.find((p) => p.slug === String(slug || "").toLowerCase()) || null;
+}
+
+function openStoreModal() {
+  $("storeMsg").textContent = "";
+  $("sOwnerEmail").value = "";
+  $("sStoreName").value = "";
+  $("sStoreSlug").value = "";
+  const sel = $("sStorePlan");
+  sel.innerHTML = plans
+    .map((p) => '<option value="' + esc(p.slug) + '">' + esc(p.name) + (p.active === false ? " (নিষ্ক্রিয়)" : "") + "</option>")
+    .join("");
+  const picker = $("storeFeatures");
+  if (picker && picker.setSelected) picker.setSelected(planDefaultKeys(planBySlug(sel.value)));
+  storeOverlay.classList.add("open");
+  $("sOwnerEmail").focus();
+}
+
+function closeStoreModal() {
+  storeOverlay.classList.remove("open");
+}
+
+$("addStoreBtn").addEventListener("click", openStoreModal);
+$("storeCancelBtn").addEventListener("click", closeStoreModal);
+storeOverlay.addEventListener("click", (e) => {
+  if (e.target === storeOverlay) closeStoreModal();
+});
+
+$("sStorePlan").addEventListener("change", () => {
+  const picker = $("storeFeatures");
+  if (picker && picker.setSelected) picker.setSelected(planDefaultKeys(planBySlug($("sStorePlan").value)));
+});
+
+$("storeForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const btn = $("storeSaveBtn");
+  const msg = $("storeMsg");
+  const body = {
+    email: $("sOwnerEmail").value.trim(),
+    name: $("sStoreName").value.trim(),
+    slug: $("sStoreSlug").value.trim(),
+    planSlug: $("sStorePlan").value,
+    features: $("storeFeatures").getSelected(),
+  };
+  if (!body.email) { msg.textContent = "মালিকের ইমেইল দিন"; msg.className = "msg err"; return; }
+  if (!body.name) { msg.textContent = "দোকানের নাম দিন"; msg.className = "msg err"; return; }
+
+  btn.disabled = true;
+  btn.textContent = "তৈরি হচ্ছে...";
+  try {
+    await api("/api/admin/stores", { method: "POST", body: JSON.stringify(body) });
+    toast("স্টোর তৈরি হয়েছে", "ok");
+    closeStoreModal();
+    await Promise.all([loadStores(), loadStats()]);
+  } catch (err) {
+    msg.textContent = err.message;
+    msg.className = "msg err";
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "স্টোর তৈরি";
+  }
+});
+
+/* ---------- payment approve (with access picker) ---------- */
+const approveOverlay = $("approveOverlay");
+let approveRow = null;
+
+function openApprove(row) {
+  approveRow = row;
+  $("approveMsg").textContent = "";
+  $("approveSub").textContent =
+    row.invoiceNo + " · " + (row.storeName || "") + " · " + (row.planName || row.planSlug || "");
+  const picker = $("approveFeatures");
+  if (picker && picker.setSelected) picker.setSelected(planDefaultKeys(planBySlug(row.planSlug)));
+  approveOverlay.classList.add("open");
+}
+
+function closeApprove() {
+  approveOverlay.classList.remove("open");
+  approveRow = null;
+}
+
+$("approveCancelBtn").addEventListener("click", closeApprove);
+approveOverlay.addEventListener("click", (e) => {
+  if (e.target === approveOverlay) closeApprove();
+});
+
+$("approveSaveBtn").addEventListener("click", async () => {
+  if (!approveRow) return;
+  const btn = $("approveSaveBtn");
+  const msg = $("approveMsg");
+  btn.disabled = true;
+  btn.textContent = "অনুমোদন হচ্ছে...";
+  try {
+    const out = await api("/api/admin/billing/payments/" + approveRow.id + "/approve", {
+      method: "PUT",
+      body: JSON.stringify({ features: $("approveFeatures").getSelected() }),
+    });
+    toast(
+      out.slugAdjusted
+        ? "অনুমোদিত — ঠিকানাটি নেওয়া ছিল, /" + out.storeSlug + " দেওয়া হয়েছে"
+        : "পেমেন্ট অনুমোদিত হয়েছে",
+      "ok"
+    );
+    closeApprove();
+    await Promise.all([loadPayments(), loadStores(), loadStats()]);
+  } catch (err) {
+    msg.textContent = err.message;
+    msg.className = "msg err";
+    btn.disabled = false;
+    btn.textContent = "অনুমোদন করুন";
+  }
+});
+
+/* ---------- per-store feature access ---------- */
+const accessOverlay = $("accessOverlay");
+let accessStoreId = null;
+let accessPlan = null;
+
+function planFeatureOn(plan, def) {
+  if (!plan || !plan.features) return false;
+  const raw = plan.features[def.key];
+  return raw === undefined || raw === null ? def.legacy === true : raw === true;
+}
+
+const ACCESS_PILL = {
+  plan: { cls: "plan", text: "প্ল্যানে আছে" },
+  granted: { cls: "grant", text: "বাড়তি" },
+  blocked: { cls: "block", text: "বন্ধ" },
+  none: { cls: "none", text: "প্ল্যানে নেই" },
+};
+
+function accessSource(def, modes, seen) {
+  const mode = modes[def.key] || "inherit";
+  if (mode === "block") return "blocked";
+  if (def.requires) {
+    const parent = featureByKey[def.requires];
+    if (parent) {
+      const stack = seen || new Set();
+      if (stack.has(def.key)) return "none";
+      stack.add(def.key);
+      const parentSource = accessSource(parent, modes, stack);
+      if (parentSource !== "plan" && parentSource !== "granted") return "none";
+    }
+  }
+  if (mode === "grant") return "granted";
+  return planFeatureOn(accessPlan, def) ? "plan" : "none";
+}
+
+function refreshAccessState() {
+  const list = $("accessList");
+  const modes = {};
+  list.querySelectorAll("select[data-key]").forEach((sel) => {
+    modes[sel.dataset.key] = sel.value;
+  });
+
+  let granted = 0;
+  let blocked = 0;
+  let effective = 0;
+  list.querySelectorAll("[data-access-row]").forEach((row) => {
+    const def = featureByKey[row.dataset.accessRow];
+    if (!def) return;
+    const source = accessSource(def, modes);
+    if (source === "granted") granted += 1;
+    if (source === "blocked") blocked += 1;
+    if (source === "plan" || source === "granted") effective += 1;
+    const pill = row.querySelector(".access-pill");
+    const meta = ACCESS_PILL[source] || ACCESS_PILL.none;
+    pill.className = "access-pill " + meta.cls;
+    pill.textContent = meta.text;
+  });
+  $("accessTotal").textContent =
+    "কার্যকর " + effective + " / " + features.length + " মডিউল · " + granted + " বাড়তি · " + blocked + " বন্ধ";
+}
+
+function openStoreAccess(storeId) {
+  const s = stores.find((row) => row._id === storeId);
+  if (!s) return;
+  accessStoreId = storeId;
+  accessPlan = s.plan && typeof s.plan === "object" ? s.plan : null;
+  $("accessStoreName").textContent = s.name;
+  $("accessMsg").textContent = "";
+  const granted = new Set((s.access && s.access.overrides && s.access.overrides.granted) || []);
+  const revoked = new Set((s.access && s.access.overrides && s.access.overrides.revoked) || []);
+
+  $("accessList").innerHTML = pickerGroups()
+    .map((g) => {
+      const rows = g.items
+        .map((f) => {
+          const mode = granted.has(f.key) ? "grant" : revoked.has(f.key) ? "block" : "inherit";
+          const dep =
+            f.requires && featureByKey[f.requires]
+              ? " · " + esc(featureByKey[f.requires].bn) + " আগে লাগবে"
+              : "";
+          return (
+            '<div class="access-row" data-access-row="' + esc(f.key) + '">' +
+            '<div class="nm"><b>' + esc(f.bn) + "</b><small>" + esc(f.en) + dep + "</small></div>" +
+            '<span class="access-pill"></span>' +
+            '<select data-key="' + esc(f.key) + '" data-mode="' + mode + '" aria-label="' + esc(f.bn) + '">' +
+            '<option value="inherit">প্ল্যান অনুযায়ী</option>' +
+            '<option value="grant">বাড়তি অ্যাক্সেস</option>' +
+            '<option value="block">বন্ধ</option>' +
+            "</select></div>"
+          );
+        })
+        .join("");
+      return '<div class="access-group"><div class="fp-head"><span class="n">' + esc(g.name) + "</span></div>" + rows + "</div>";
+    })
+    .join("");
+
+  $("accessList").querySelectorAll("select").forEach((sel) => {
+    sel.value = sel.dataset.mode;
+  });
+  refreshAccessState();
+  accessOverlay.classList.add("open");
+}
+
+function closeAccessModal() {
+  accessOverlay.classList.remove("open");
+}
+
+$("accessList").addEventListener("change", refreshAccessState);
+document.querySelectorAll("[data-access-all]").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    $("accessList").querySelectorAll("select").forEach((sel) => {
+      sel.value = btn.dataset.accessAll;
+    });
+    refreshAccessState();
+  });
+});
+
+$("accessCancelBtn").addEventListener("click", closeAccessModal);
+accessOverlay.addEventListener("click", (e) => {
+  if (e.target === accessOverlay) closeAccessModal();
+});
+
+$("accessSaveBtn").addEventListener("click", async () => {
+  if (!accessStoreId) return;
+  const btn = $("accessSaveBtn");
+  const granted = [];
+  const revoked = [];
+  $("accessList").querySelectorAll("select").forEach((sel) => {
+    if (sel.value === "grant") granted.push(sel.dataset.key);
+    else if (sel.value === "block") revoked.push(sel.dataset.key);
+  });
+  btn.disabled = true;
+  btn.textContent = "সেভ হচ্ছে...";
+  try {
+    await api("/api/admin/stores/" + accessStoreId + "/features", {
+      method: "PATCH",
+      body: JSON.stringify({ granted, revoked }),
+    });
+    toast("ফিচার অ্যাক্সেস আপডেট হয়েছে", "ok");
+    closeAccessModal();
+    await loadStores();
+  } catch (e) {
+    $("accessMsg").textContent = e.message;
+    $("accessMsg").className = "msg err";
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "সেভ করুন";
+  }
+});
 
 /* ---------- settings (SaaS toggle) ---------- */
 async function loadSaas() {
@@ -888,23 +1283,8 @@ $("paySearch").addEventListener("input", (e) => {
 $("payBody").addEventListener("click", async (e) => {
   const approveBtn = e.target.closest("[data-approve]");
   if (approveBtn) {
-    if (!confirm("এই পেমেন্ট অনুমোদন করবেন? দোকান/প্ল্যান সাথে সাথে আপডেট হবে।")) return;
-    approveBtn.disabled = true;
-    try {
-      const out = await api("/api/admin/billing/payments/" + approveBtn.dataset.approve + "/approve", {
-        method: "PUT",
-      });
-      toast(
-        out.slugAdjusted
-          ? "অনুমোদিত — ঠিকানাটি নেওয়া ছিল, /" + out.storeSlug + " দেওয়া হয়েছে"
-          : "পেমেন্ট অনুমোদিত হয়েছে",
-        "ok"
-      );
-      await Promise.all([loadPayments(), loadStores(), loadStats()]);
-    } catch (err) {
-      toast(err.message, "err");
-      approveBtn.disabled = false;
-    }
+    const row = payRows.find((r) => r.id === approveBtn.dataset.approve);
+    if (row) openApprove(row);
     return;
   }
 

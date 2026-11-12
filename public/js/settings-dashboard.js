@@ -68,6 +68,7 @@
     social: [],
     favicons: [],
     stores: [],
+    access: null,
     categories: [],
     shipping: { manual: [], areas: [], classes: [], intl: [], wd: [] },
     payments: { mobileManual: [], bankManual: [], gateways: [] },
@@ -3978,6 +3979,76 @@
     applyTrackingEnabled();
   }
 
+  const ACCESS_PANES = [
+    { pane: "wholesale", key: "wholesale" },
+    { pane: "partial", key: "partialPayment" },
+    { pane: "server-tracking", key: "serverSideTracking" },
+  ];
+  const ACCESS_LABELS = {
+    wholesale: "হোলসেল মোড",
+    partialPayment: "আংশিক পেমেন্ট",
+    serverSideTracking: "সার্ভার ট্র্যাকিং",
+    supplierPortal: "সাপ্লায়ার লগইন",
+    customDomain: "কাস্টম ডোমেইন",
+    analytics: "অ্যানালিটিক্স",
+  };
+
+  function featureAllowed(key) {
+    if (!state.access || !state.access.features) return true; // old response → don't hide anything
+    return state.access.features[key] === true;
+  }
+
+  function applyAccessUi() {
+    const box = $("settingsAccess");
+    if (!state.access) {
+      if (box) box.hidden = true;
+      return;
+    }
+    ACCESS_PANES.forEach(({ pane, key }) => {
+      const on = featureAllowed(key);
+      const btn = document.querySelector(`#settingsMenu .settings-menu-item[data-pane="${pane}"]`);
+      const paneEl = document.querySelector(`.settings-panes .settings-pane[data-pane="${pane}"]`);
+      if (btn) btn.hidden = !on;
+      if (paneEl) {
+        paneEl.hidden = !on;
+        if (!on) paneEl.classList.remove("active");
+      }
+    });
+    const wholesaleGroup = document.querySelector('#settingsMenu [data-group="wholesale"]');
+    if (wholesaleGroup) wholesaleGroup.hidden = !featureAllowed("wholesale");
+    const trackingGroup = document.querySelector('#settingsMenu [data-group="tracking"]');
+    if (trackingGroup) trackingGroup.hidden = !featureAllowed("serverSideTracking");
+    const active = document.querySelector("#settingsMenu .settings-menu-item.active");
+    if (active && active.hidden) showPane("header");
+
+    if (!box) return;
+    const access = state.access;
+    const keys = ["wholesale", "partialPayment", "serverSideTracking", "supplierPortal"];
+    const chips = keys
+      .map((key) => {
+        const on = access.features[key] === true;
+        const source = (access.sources || {})[key] || "none";
+        const cls = on ? (source === "granted" ? "grant" : "on") : source === "blocked" ? "block" : "";
+        const text = on
+          ? source === "granted"
+            ? "বাড়তি অ্যাক্সেস"
+            : "প্যাকেজে আছে"
+          : source === "blocked"
+            ? "বন্ধ"
+            : "প্যাকেজে নেই";
+        return `<span class="settings-access-chip ${cls}">${esc(ACCESS_LABELS[key] || key)} · ${text}</span>`;
+      })
+      .join("");
+    const locked = keys.some((key) => access.features[key] !== true);
+    box.innerHTML =
+      '<div class="settings-access-head"><b>প্যাকেজ: ' + esc(access.plan ? access.plan.name : "—") + "</b><span>Feature access</span></div>" +
+      '<div class="settings-access-chips">' + chips + "</div>" +
+      (locked
+        ? '<div class="settings-access-note">যে ফিচার প্যাকেজে নেই সেটি এখানে দেখাবে না — আপগ্রেড করলে চালু হবে।</div>'
+        : "");
+    box.hidden = false;
+  }
+
   function renderAll() {
     // header + footer
     Object.entries(STATIC_FIELDS).forEach(([id, key]) => {
@@ -4045,6 +4116,7 @@
     Object.keys(PAY_TOGGLE).forEach((key) => applyPayEnabled(key));
     renderWholesale();
     renderPartial();
+    applyAccessUi();
   }
 
   /* ------------------------------------------------------------------ *
@@ -4052,6 +4124,7 @@
    * ------------------------------------------------------------------ */
   function applyData(data) {
     state.settings = { ...(data.settings || {}) };
+    state.access = data.access || null;
     state.social = (data.social || []).map((s) => ({ icon: s.icon || "", name: s.name || "", url: s.url || "" }));
     state.stores = data.stores || [];
     state.favicons = (data.favicons || []).map((f) => ({
@@ -4173,6 +4246,32 @@
     };
   }
 
+  function showModuleLock(message) {
+    const layout = document.querySelector("#view-settings .settings-layout");
+    const saveBtn = $("settingsSaveBtn");
+    const accessBox = $("settingsAccess");
+    if (layout) layout.hidden = true;
+    if (saveBtn) saveBtn.hidden = true;
+    if (accessBox) accessBox.hidden = true;
+    const host = document.getElementById("view-settings");
+    if (!host) return;
+    let box = $("settingsLocked");
+    if (!box) {
+      box = document.createElement("div");
+      box.id = "settingsLocked";
+      box.style.cssText =
+        "margin:40px auto;max-width:520px;padding:32px 24px;border-radius:16px;" +
+        "background:var(--panel,#161b22);border:1px solid var(--line,#2a313c);text-align:center;";
+      host.appendChild(box);
+    }
+    box.innerHTML =
+      '<h2 style="margin:0 0 10px;font-size:20px;">Settings মডিউল বন্ধ আছে</h2>' +
+      "<p style=\"margin:0;color:var(--muted,#8b949e);line-height:1.6;\">" +
+      esc(message || "এই সুবিধাটি আপনার প্যাকেজে নেই — প্যাকেজ আপগ্রেড করুন") +
+      "</p>";
+    box.hidden = false;
+  }
+
   async function load() {
     state.loading = true;
     const [res, intlRes] = await Promise.all([
@@ -4184,6 +4283,10 @@
     const intlData = intlRes ? await intlRes.json().catch(() => ({})) : {};
     state.loading = false;
     if (!res.ok) {
+      if (res.status === 403 && data.code === "feature_locked") {
+        showModuleLock(data.message);
+        return;
+      }
       toast(data.message || "Settings load hoyni", "err");
       return;
     }
@@ -4222,7 +4325,7 @@
     }
 
     let wholesalePayload = null;
-    if (state.wholesaleLoaded) {
+    if (state.wholesaleLoaded && featureAllowed("wholesale")) {
       const wholesaleError = validateWholesaleSettings();
       if (wholesaleError) {
         showPane("wholesale");
@@ -4380,8 +4483,13 @@
   fillDatalists();
   window.settingsPage = {
     open() {
-      if (!state.ready && !state.loading) load();
-      if (!state.wholesaleLoaded && !state.wholesaleLoading) loadWholesale();
+      if (!state.ready && !state.loading) {
+        load().then(() => {
+          if (featureAllowed("wholesale") && !state.wholesaleLoaded && !state.wholesaleLoading) loadWholesale();
+        });
+      } else if (featureAllowed("wholesale") && !state.wholesaleLoaded && !state.wholesaleLoading) {
+        loadWholesale();
+      }
     },
   };
 })();

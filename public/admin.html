@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/css/style.css" />
-  <link rel="stylesheet" href="/css/admin.css?v=11" />
+  <link rel="stylesheet" href="/css/admin.css?v=13" />
   <script>
     (function () {
       try {
@@ -97,6 +97,7 @@
             <h3>সব দোকান</h3>
             <p class="count" id="storeCount">0 টি দোকান</p>
           </div>
+          <button class="btn-add" id="addStoreBtn" type="button">নতুন স্টোর</button>
         </div>
         <div class="table-wrap">
           <table>
@@ -286,13 +287,15 @@
           </div>
         </div>
         <div class="field">
-          <label>ফিচার</label>
-          <div class="feat-grid">
-            <label class="check"><input type="checkbox" id="fCustomDomain" /> কাস্টম ডোমেইন</label>
-            <label class="check"><input type="checkbox" id="fAnalytics" /> অ্যানালিটিক্স</label>
-            <label class="check"><input type="checkbox" id="fApi" /> API</label>
-            <label class="check"><input type="checkbox" id="fPriority" /> প্রায়োরিটি সাপোর্ট</label>
+          <label>ফিচার ও মডিউল</label>
+          <div class="fp-toolbar">
+            <span class="fp-total" id="planFeaturesTotal">—</span>
+            <button type="button" class="fp-quick" data-picker="planFeatures" data-pick="all">সব সিলেক্ট</button>
+            <button type="button" class="fp-quick" data-picker="planFeatures" data-pick="none">সব বাদ</button>
+            <button type="button" class="fp-quick" data-picker="planFeatures" data-pick="core">শুধু কোর</button>
           </div>
+          <div class="fp-scroll" id="planFeatures"></div>
+          <p class="muted" style="font-size:12px;margin-top:8px;">আংশিক পেমেন্টের জন্য হোলসেল মোড আগে চালু থাকতে হবে।</p>
         </div>
         <div class="field">
           <label class="check"><input type="checkbox" id="fActive" checked /> সক্রিয়</label>
@@ -303,6 +306,80 @@
           <button type="submit" class="btn-gold" id="savePlanBtn">সেভ করুন</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- per-store feature access modal -->
+  <div class="modal-overlay" id="accessOverlay">
+    <div class="modal" style="max-width:600px;">
+      <h3>ফিচার অ্যাক্সেস — <span id="accessStoreName">—</span></h3>
+      <p class="muted" style="margin-top:8px;font-size:13px;">প্ল্যানের বাইরে আলাদা অ্যাক্সেস দিন, বা এই দোকানের জন্য নির্দিষ্ট ফিচার বন্ধ রাখুন।</p>
+      <div class="fp-toolbar" style="margin-top:12px;">
+        <span class="fp-total" id="accessTotal">—</span>
+        <button type="button" class="fp-quick" data-access-all="grant">সব চালু</button>
+        <button type="button" class="fp-quick" data-access-all="block">সব বন্ধ</button>
+        <button type="button" class="fp-quick" data-access-all="inherit">প্ল্যান অনুযায়ী</button>
+      </div>
+      <div id="accessList"></div>
+      <p class="msg" id="accessMsg"></p>
+      <div class="modal-actions">
+        <button type="button" class="btn-ghost" id="accessCancelBtn">বাতিল</button>
+        <button type="button" class="btn-gold" id="accessSaveBtn">সেভ করুন</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- new store modal -->
+  <div class="modal-overlay" id="storeOverlay">
+    <div class="modal" style="max-width:720px;">
+      <h3>নতুন স্টোর</h3>
+      <p class="muted" style="margin-top:8px;font-size:13px;">মালিকের অ্যাকাউন্ট আগে থেকেই থাকতে হবে (সাইনআপ করা ইমেইল)। শুরুতেই ঠিক করে দিন সে কোন কোন মডিউল পাবে।</p>
+      <form id="storeForm" novalidate>
+        <div class="grid-2">
+          <div class="field"><label for="sOwnerEmail">মালিকের ইমেইল</label><input id="sOwnerEmail" type="email" placeholder="owner@shop.com" /></div>
+          <div class="field"><label for="sStoreName">দোকানের নাম</label><input id="sStoreName" type="text" placeholder="Rakib Store" /></div>
+          <div class="field"><label for="sStoreSlug">ঠিকানা (slug)</label><input id="sStoreSlug" type="text" placeholder="rakib-store" /></div>
+          <div class="field"><label for="sStorePlan">প্যাকেজ</label><select id="sStorePlan"></select></div>
+        </div>
+        <div class="field">
+          <label>অ্যাক্সেস</label>
+          <div class="fp-toolbar">
+            <span class="fp-total" id="storeFeaturesTotal">—</span>
+            <button type="button" class="fp-quick" data-picker="storeFeatures" data-pick="all">সব সিলেক্ট</button>
+            <button type="button" class="fp-quick" data-picker="storeFeatures" data-pick="none">সব বাদ</button>
+            <button type="button" class="fp-quick" data-picker="storeFeatures" data-pick="core">শুধু কোর</button>
+          </div>
+          <div class="fp-scroll" id="storeFeatures"></div>
+        </div>
+        <p class="msg" id="storeMsg"></p>
+        <div class="modal-actions">
+          <button type="button" class="btn-ghost" id="storeCancelBtn">বাতিল</button>
+          <button type="submit" class="btn-gold" id="storeSaveBtn">স্টোর তৈরি</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- payment approve + access picker -->
+  <div class="modal-overlay" id="approveOverlay">
+    <div class="modal" style="max-width:720px;">
+      <h3>পেমেন্ট অনুমোদন</h3>
+      <p class="muted" style="margin-top:8px;font-size:13px;" id="approveSub">—</p>
+      <div class="field" style="margin-top:12px;">
+        <label>এই স্টোর কী কী অ্যাক্সেস পাবে</label>
+        <div class="fp-toolbar">
+          <span class="fp-total" id="approveFeaturesTotal">—</span>
+          <button type="button" class="fp-quick" data-picker="approveFeatures" data-pick="all">সব সিলেক্ট</button>
+          <button type="button" class="fp-quick" data-picker="approveFeatures" data-pick="none">সব বাদ</button>
+          <button type="button" class="fp-quick" data-picker="approveFeatures" data-pick="core">শুধু কোর</button>
+        </div>
+        <div class="fp-scroll" id="approveFeatures"></div>
+      </div>
+      <p class="msg" id="approveMsg"></p>
+      <div class="modal-actions">
+        <button type="button" class="btn-ghost" id="approveCancelBtn">বাতিল</button>
+        <button type="button" class="btn-gold" id="approveSaveBtn">অনুমোদন করুন</button>
+      </div>
     </div>
   </div>
 
@@ -325,6 +402,6 @@
 
   <div class="toast" id="toast"></div>
 
-  <script src="/js/admin.js?v=14"></script>
+  <script src="/js/admin.js?v=16"></script>
 </body>
 </html>

@@ -2,8 +2,9 @@ const express = require("express");
 const router = express.Router();
 const ctrl = require("../controllers/customerController");
 const { auth, requireAdmin } = require("../middleware/auth");
+const { requireFeature } = require("../lib/features");
 
-router.use(auth, requireAdmin);
+router.use(auth, requireAdmin, requireFeature("customers"));
 
 router.get("/", ctrl.list);
 router.get("/:id", ctrl.detail);

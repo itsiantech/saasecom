@@ -16,6 +16,10 @@ const { getReservedSlugs, saveReservedSlugs, getSlugCooldownDays, DEFAULT_COOLDO
 const sharedShopAddress = require("../public/js/shop-address");
 const billing = require("../lib/platformBilling");
 const { approvePayment, rejectPayment } = require("../lib/billingApproval");
+const { cleanKeys, featuresForStore, featureList, overridesForSelection } = require("../lib/features");
+const { syncFeatureEntitlements, createStoreWithSubscription } = require("../lib/storeProvisioning");
+const { assertShopName } = require("../lib/shopAddress");
+const { writeAudit } = require("../lib/audit");
 
 // platform stats
 router.get("/stats", auth, requireSuperAdmin, async (req, res) => {
@@ -31,25 +35,148 @@ router.get("/plans", auth, requireSuperAdmin, async (req, res) => {
   res.json(plans);
 });
 
-// sobgulo store (owner er naam/email soho)
-router.get("/stores", auth, requireSuperAdmin, async (req, res) => {
-  const stores = await Store.find().sort({ createdAt: -1 }).populate("owner", "name email").populate("plan");
-  res.json(stores);
+// the feature registry — plan editor and store access UI read the same list
+router.get("/features", auth, requireSuperAdmin, (_req, res) => {
+  res.json(featureList());
 });
 
-// kono store er plan bodla
+// sobgulo store (owner er naam/email + effective feature access soho)
+router.get("/stores", auth, requireSuperAdmin, async (req, res) => {
+  const stores = await Store.find().sort({ createdAt: -1 }).populate("owner", "name email").populate("plan");
+  const rows = await Promise.all(
+    stores.map(async (store) => {
+      const row = store.toObject();
+      row.access = await featuresForStore(store, store.plan);
+      return row;
+    })
+  );
+  res.json(rows);
+});
+
+// super admin notun dokan khola — owner age theke registered thakte hobe
+router.post("/stores", auth, requireSuperAdmin, async (req, res) => {
+  try {
+    const email = String((req.body && req.body.email) || "").trim().toLowerCase();
+    const name = String((req.body && req.body.name) || "").trim();
+    if (!email) return res.status(400).json({ message: "মালিকের ইমেইল দিন" });
+    if (!name) return res.status(400).json({ message: "দোকানের নাম দিন" });
+
+    const owner = await User.findOne({ email }).select("_id name email");
+    if (!owner) {
+      return res.status(404).json({ message: "এই ইমেইলে কোনো অ্যাকাউন্ট নেই — মালিককে আগে সাইনআপ করতে বলুন" });
+    }
+
+    const planSlug = String((req.body && req.body.planSlug) || "").trim().toLowerCase();
+    const plan = planSlug
+      ? await Plan.findOne({ slug: planSlug, active: true })
+      : await Plan.findOne({ slug: "free", active: true });
+    if (!plan) return res.status(404).json({ message: "প্যাকেজ পাওয়া যায়নি" });
+
+    const wanted = String((req.body && req.body.slug) || "").trim();
+    const finalSlug = wanted ? await assertShopName(wanted) : "";
+
+    const { store, subscription } = await createStoreWithSubscription({
+      ownerId: owner._id,
+      name,
+      slug: finalSlug,
+      plan,
+      strictSlug: Boolean(wanted),
+    });
+
+    const selected = req.body && req.body.features;
+    if (Array.isArray(selected)) {
+      const ov = overridesForSelection(plan, selected);
+      store.featureOverrides = {
+        granted: ov.granted,
+        revoked: ov.revoked,
+        updatedAt: new Date(),
+        updatedBy: req.user.id,
+      };
+      await store.save();
+      await syncFeatureEntitlements(store, plan);
+    }
+
+    await writeAudit({
+      store: store._id,
+      user: req.user.id,
+      action: "store.create",
+      entity: "Store",
+      entityId: store._id,
+      newValue: {
+        name: store.name,
+        slug: store.slug,
+        owner: String(owner._id),
+        plan: plan.slug,
+        features: Array.isArray(selected) ? cleanKeys(selected) : null,
+      },
+    });
+
+    res.status(201).json({
+      store: store.toObject(),
+      subscription,
+      access: await featuresForStore(store, plan),
+    });
+  } catch (err) {
+    res.status(err.status || 400).json({ message: err.message, code: err.code, reason: err.reason });
+  }
+});
+
+// kono store er plan bodla — feature entitlement sathe sathe apply hoy
 router.put("/stores/:id/plan", auth, requireSuperAdmin, async (req, res) => {
   try {
     const { planSlug } = req.body;
     const plan = await Plan.findOne({ slug: planSlug });
     if (!plan) return res.status(404).json({ message: "Plan pawa jayni" });
-    const store = await Store.findByIdAndUpdate(
-      req.params.id,
-      { $set: { plan: plan._id } },
-      { returnDocument: "after" }
-    );
+    const store = await Store.findById(req.params.id);
     if (!store) return res.status(404).json({ message: "Store pawa jayni" });
-    res.json(store);
+    const previous = String(store.plan);
+    store.plan = plan._id;
+    await store.save();
+    const access = await syncFeatureEntitlements(store, plan);
+    await writeAudit({
+      store: store._id,
+      user: req.user.id,
+      action: "store.plan.change",
+      entity: "Store",
+      entityId: store._id,
+      oldValue: { plan: previous },
+      newValue: { plan: String(plan._id), slug: plan.slug },
+    });
+    res.json({ ...store.toObject(), access });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// per-store extra access — granted = plan er baire, revoked = plan e thakleo bondho
+router.patch("/stores/:id/features", auth, requireSuperAdmin, async (req, res) => {
+  try {
+    const store = await Store.findById(req.params.id).populate("plan");
+    if (!store) return res.status(404).json({ message: "Store pawa jayni" });
+    const granted = cleanKeys(req.body && req.body.granted);
+    const revoked = cleanKeys(req.body && req.body.revoked);
+    const before = {
+      granted: cleanKeys(store.featureOverrides && store.featureOverrides.granted),
+      revoked: cleanKeys(store.featureOverrides && store.featureOverrides.revoked),
+    };
+    store.featureOverrides = {
+      granted: granted.filter((key) => !revoked.includes(key)),
+      revoked,
+      updatedAt: new Date(),
+      updatedBy: req.user.id,
+    };
+    await store.save();
+    const access = await syncFeatureEntitlements(store, store.plan);
+    await writeAudit({
+      store: store._id,
+      user: req.user.id,
+      action: "store.features.update",
+      entity: "Store",
+      entityId: store._id,
+      oldValue: before,
+      newValue: { granted: store.featureOverrides.granted, revoked: store.featureOverrides.revoked },
+    });
+    res.json(access);
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
@@ -237,7 +364,25 @@ router.get("/billing/payments", auth, requireSuperAdmin, async (req, res) => {
 // approve → store create / plan upgrade (atomic claim bhitore hoy)
 router.put("/billing/payments/:id/approve", auth, requireSuperAdmin, async (req, res) => {
   try {
-    const out = await approvePayment({ paymentId: req.params.id, adminId: req.user.id });
+    const out = await approvePayment({
+      paymentId: req.params.id,
+      adminId: req.user.id,
+      features: req.body && req.body.features,
+    });
+    if (Array.isArray(req.body && req.body.features) && out.store) {
+      await writeAudit({
+        store: out.store._id,
+        user: req.user.id,
+        action: "store.features.update",
+        entity: "Store",
+        entityId: out.store._id,
+        newValue: {
+          granted: (out.store.featureOverrides && out.store.featureOverrides.granted) || [],
+          revoked: (out.store.featureOverrides && out.store.featureOverrides.revoked) || [],
+          via: "payment.approve",
+        },
+      });
+    }
     res.json({
       payment: billing.paymentView(out.payment),
       storeSlug: out.store ? out.store.slug : null,

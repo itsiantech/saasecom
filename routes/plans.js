@@ -2,6 +2,31 @@ const express = require("express");
 const router = express.Router();
 const Plan = require("../models/Plan");
 const { auth, requireSuperAdmin } = require("../middleware/auth");
+const { FEATURES } = require("../lib/features");
+const { syncPlanStores } = require("../lib/storeProvisioning");
+const { writeAudit } = require("../lib/audit");
+
+function featuresFromInput(input, existing) {
+  const out = {};
+  FEATURES.forEach((def) => {
+    if (existing && input[def.key] === undefined) {
+      out[def.key] = existing[def.key];
+    } else {
+      out[def.key] = Boolean(input && input[def.key]);
+    }
+  });
+  return out;
+}
+
+function dependencyError(features) {
+  for (const def of FEATURES) {
+    if (!def.requires || features[def.key] !== true) continue;
+    if (features[def.requires] === true) continue;
+    const parent = FEATURES.find((f) => f.key === def.requires);
+    return def.bn + " চালু করতে আগে " + (parent ? parent.bn : def.requires) + " চালু করুন";
+  }
+  return null;
+}
 
 // public: active plan gulo (signup/setup page e dekhay)
 router.get("/", async (req, res) => {
@@ -18,6 +43,9 @@ router.post("/", auth, requireSuperAdmin, async (req, res) => {
     if (await Plan.exists({ slug: finalSlug })) {
       return res.status(409).json({ message: "Ei slug er plan age theke ache" });
     }
+    const featInput = featuresFromInput(features);
+    const depErr = dependencyError(featInput);
+    if (depErr) return res.status(400).json({ message: depErr });
     const plan = await Plan.create({
       name,
       slug: finalSlug,
@@ -30,12 +58,7 @@ router.post("/", auth, requireSuperAdmin, async (req, res) => {
         storageMB: Number(limits?.storageMB) || 0,
         staffMembers: Number(limits?.staffMembers) || 1,
       },
-      features: {
-        customDomain: Boolean(features?.customDomain),
-        analytics: Boolean(features?.analytics),
-        apiAccess: Boolean(features?.apiAccess),
-        prioritySupport: Boolean(features?.prioritySupport),
-      },
+      features: featInput,
       order: Number(order) || 0,
     });
     res.status(201).json(plan);
@@ -48,36 +71,48 @@ router.post("/", auth, requireSuperAdmin, async (req, res) => {
 router.put("/:id", auth, requireSuperAdmin, async (req, res) => {
   try {
     const { name, slug, price, durationDays, trialDays, limits, features, order, active } = req.body;
-    const updateData = {};
-    if (name !== undefined) updateData.name = name;
-    if (slug !== undefined) updateData.slug = slug;
-    if (price !== undefined) updateData.price = Number(price);
-    if (durationDays !== undefined) updateData.durationDays = Number(durationDays);
-    if (trialDays !== undefined) updateData.trialDays = Number(trialDays);
-    if (active !== undefined) updateData.active = Boolean(active);
+    const plan = await Plan.findById(req.params.id);
+    if (!plan) return res.status(404).json({ message: "Plan pawa jayni" });
+
+    if (name !== undefined) plan.name = name;
+    if (slug !== undefined) plan.slug = slug;
+    if (price !== undefined) plan.price = Number(price);
+    if (durationDays !== undefined) plan.durationDays = Number(durationDays);
+    if (trialDays !== undefined) plan.trialDays = Number(trialDays);
+    if (active !== undefined) plan.active = Boolean(active);
+    if (order !== undefined) plan.order = Number(order);
     if (limits !== undefined) {
-      updateData.limits = {
+      plan.limits = {
         products: Number(limits?.products) || 0,
         orders: Number(limits?.orders) || 0,
         storageMB: Number(limits?.storageMB) || 0,
         staffMembers: Number(limits?.staffMembers) || 1,
       };
     }
+    let featuresChanged = false;
+    const before = { ...(plan.features || {}) };
     if (features !== undefined) {
-      updateData.features = {
-        customDomain: Boolean(features?.customDomain),
-        analytics: Boolean(features?.analytics),
-        apiAccess: Boolean(features?.apiAccess),
-        prioritySupport: Boolean(features?.prioritySupport),
-      };
+      const next = featuresFromInput(features, plan.features || {});
+      const depErr = dependencyError(next);
+      if (depErr) return res.status(400).json({ message: depErr });
+      plan.features = next;
+      plan.markModified("features");
+      featuresChanged = FEATURES.some((def) => before[def.key] !== plan.features[def.key]);
     }
-    if (order !== undefined) updateData.order = Number(order);
 
-    const plan = await Plan.findByIdAndUpdate(req.params.id, updateData, {
-      returnDocument: "after",
-      runValidators: true,
-    });
-    if (!plan) return res.status(404).json({ message: "Plan pawa jayni" });
+    await plan.save();
+
+    if (featuresChanged) {
+      await syncPlanStores(plan);
+      await writeAudit({
+        user: req.user.id,
+        action: "plan.features.update",
+        entity: "Plan",
+        entityId: plan._id,
+        oldValue: before,
+        newValue: plan.features,
+      });
+    }
     res.json(plan);
   } catch (err) {
     res.status(400).json({ message: err.message });
