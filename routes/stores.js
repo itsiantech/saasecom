@@ -9,7 +9,13 @@ const { auth } = require("../middleware/auth");
 const { RESERVED_SUBS, SUB_RE, normalizeDomain, platformDomain, platformTarget } = require("../lib/hostStore");
 const { storefrontUrl } = require("../lib/storefrontUrl");
 const { normalizeSlug } = require("../lib/storeSlug");
-const { assertShopName } = require("../lib/shopAddress");
+const {
+  assertShopName,
+  recordSlugHistory,
+  getSlugCooldownDays,
+  nextSlugChangeAt,
+} = require("../lib/shopAddress");
+const { writeAudit } = require("../lib/audit");
 const { createStoreWithSubscription } = require("../lib/storeProvisioning");
 const { applyStarterPack } = require("../services/starterPack");
 
@@ -78,7 +84,13 @@ router.get("/mine", auth, async (req, res) => {
   const stores = await Store.find({ owner: req.user.id }).populate("plan").sort({ createdAt: 1 });
   const subs = await Subscription.find({ store: { $in: stores.map((s) => s._id) } });
   const byStore = new Map(subs.map((s) => [String(s.store), s]));
-  const rows = stores.map((s) => ({ ...s.toObject(), subscription: byStore.get(String(s._id)) || null }));
+  const cooldownDays = await getSlugCooldownDays();
+  const rows = stores.map((s) => {
+    const row = { ...s.toObject(), subscription: byStore.get(String(s._id)) || null };
+    row.slugCooldownDays = cooldownDays;
+    row.nextSlugChangeAt = nextSlugChangeAt(s, cooldownDays);
+    return row;
+  });
   // panel er "ওয়েবসাইট দেখুন" link — themed Next site, legacy page na
   const urls = await Promise.all(stores.map((s) => storefrontUrl(s)));
   rows.forEach((row, i) => (row.storefrontUrl = urls[i]));
@@ -97,8 +109,8 @@ router.get("/current", auth, async (req, res) => {
   });
 });
 
-// je slug gulo app er nijer path — dokaner thikana e use kora jabe na
-// dokaner thikana (slug) poroborton — shudhu malik ba super admin
+// dokaner thikana (slug) poroborton — malik ba super admin.
+// owners: N diner cooldown; the old address keeps redirecting for 90 days.
 router.patch("/:id/slug", auth, async (req, res) => {
   try {
     const store = await Store.findById(req.params.id);
@@ -109,15 +121,30 @@ router.patch("/:id/slug", auth, async (req, res) => {
       return res.status(403).json({ message: "Ei store er thikana change korte parben na" });
     }
 
+    const cooldownDays = await getSlugCooldownDays();
+    const nextChange = nextSlugChangeAt(store, cooldownDays);
     const raw = String(req.body.slug || "").trim();
-    if (normalizeSlug(raw) === store.slug) return res.json(store);
+    if (normalizeSlug(raw) === store.slug) {
+      return res.json({ ...store.toObject(), slugCooldownDays: cooldownDays, nextSlugChangeAt: nextChange });
+    }
+    if (!isSuper && nextChange && nextChange > new Date()) {
+      const daysLeft = Math.ceil((nextChange.getTime() - Date.now()) / (24 * 60 * 60 * 1000));
+      return res.status(429).json({
+        message: `ঠিকানা ${cooldownDays} দিনে একবার বদলানো যায় — ${daysLeft} দিন পরে আবার চেষ্টা করুন`,
+        code: "slug_cooldown",
+        retryAt: nextChange,
+      });
+    }
+
     const check = await assertShopName(raw).catch((err) => err);
     if (check instanceof Error) {
       return res.status(check.status || 400).json({ message: check.message, code: check.code, reason: check.reason });
     }
     const slug = check;
+    const previous = store.slug;
 
     store.slug = slug;
+    store.slugChangedAt = new Date();
     try {
       await store.save();
     } catch (err) {
@@ -126,7 +153,24 @@ router.patch("/:id/slug", auth, async (req, res) => {
       }
       throw err;
     }
-    res.json(store);
+
+    await recordSlugHistory({ slug: previous, store: store._id, kind: "renamed", replacedBySlug: slug });
+    await writeAudit({
+      store: store._id,
+      user: req.user.id,
+      action: "store.slug.change",
+      entity: "Store",
+      entityId: store._id,
+      oldValue: { slug: previous },
+      newValue: { slug, by: isSuper ? "superadmin" : "owner" },
+    });
+
+    res.json({
+      ...store.toObject(),
+      previousSlug: previous,
+      slugCooldownDays: cooldownDays,
+      nextSlugChangeAt: nextSlugChangeAt(store, cooldownDays),
+    });
   } catch (err) {
     res.status(400).json({ message: err.message });
   }

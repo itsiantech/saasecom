@@ -85,21 +85,29 @@
   const STATUS_LABEL = { active: "চালু", trial: "ট্রায়ালে", expired: "মেয়াদ শেষ", cancelled: "বাতিল" };
 
   function addrRow(store) {
-    const url = location.origin + "/" + store.slug;
+    const full = store.storefrontUrl || (domainCfg.platformDomain ? "http://" + store.slug + "." + domainCfg.platformDomain : "");
+    const nextChange = store.nextSlugChangeAt ? new Date(store.nextSlugChangeAt) : null;
+    const locked = nextChange && nextChange > new Date();
+    const cooldown = Number(store.slugCooldownDays || 30);
+    const shown = full.replace(/^https?:\/\//, "").replace(/\/$/, "");
     return `
       <div>
         <span class="pt-addr-label">দোকানের ঠিকানা</span>
         <div class="pt-addr-row">
-          <span class="pt-addr-pre">${esc(location.host)}/</span>
           <input class="pt-addr-input" id="addr-${esc(store._id)}" value="${esc(store.slug)}" maxlength="63"
-                 spellcheck="false" autocomplete="off" aria-label="দোকানের ঠিকানা" />
-          <button class="pt-btn pt-btn-ghost pt-btn-sm" type="button" data-save="${esc(store._id)}">সংরক্ষণ</button>
+                 spellcheck="false" autocomplete="off" autocapitalize="none" aria-label="দোকানের ঠিকানা" />
+          <span class="pt-addr-pre">.${esc(domainCfg.platformDomain || "<আপনার-ডোমেইন>")}</span>
+          <button class="pt-btn pt-btn-ghost pt-btn-sm" type="button" data-save="${esc(store._id)}" ${locked ? "disabled" : ""}>সংরক্ষণ</button>
         </div>
+        ${shown ? '<p class="pt-dom-note">এখনকার ঠিকানা: <code>' + esc(shown) + "</code></p>" : ""}
         <div class="pt-addr-foot">
-          <a class="pt-addr-link" href="/${esc(store.slug)}" target="_blank" rel="noopener">দোকান খুলে দেখুন →</a>
-          <button class="pt-btn pt-btn-quiet pt-btn-sm pt-copy" type="button" data-copy="${esc(url)}">লিংক কপি</button>
+          <a class="pt-addr-link" href="${esc(full || "#")}" target="_blank" rel="noopener">দোকান খুলে দেখুন →</a>
+          <button class="pt-btn pt-btn-quiet pt-btn-sm pt-copy" type="button" data-copy="${esc(full)}">লিংক কপি</button>
         </div>
-        <p class="pt-warn" data-warn="${esc(store._id)}" hidden>ঠিকানা বদলালে আগের লিংক আর কাজ করবে না।</p>
+        <p class="pt-warn" data-warn="${esc(store._id)}" hidden>পুরনো ঠিকানা ৯০ দিন নতুন ঠিকানায় রিডাইরেক্ট হবে — সরাসরি আর কাজ করবে না।</p>
+        ${locked
+          ? '<p class="pt-dom-warn">পরবর্তী পরিবর্তন ' + esc(fmtDate(nextChange)) + " থেকে সম্ভব (" + cooldown + " দিনে একবার)।</p>"
+          : '<p class="pt-dom-note">' + cooldown + " দিনে একবার ঠিকানা বদলানো যায়।</p>"}
       </div>`;
   }
 
@@ -191,12 +199,13 @@
     return `
       <div class="pt-dom" id="dom-panel-${esc(store._id)}" ${openDomains.has(store._id) ? "" : "hidden"}>
         <div class="pt-dom-step">
-          <h4>১. ফোল্ডার ঠিকানা (চালু)</h4>
-          <p class="pt-dom-note"><code>${esc(location.host)}/${esc(store.slug)}</code> — এটা সবসময় কাজ করবে, ডোমেইন যোগ করলেও এটা থেকে যাবে।</p>
+          <h4>১. দোকানের ঠিকানা (চালু)</h4>
+          <p class="pt-dom-note"><code>${esc(store.slug)}${main ? "." + esc(main) : ".<আপনার-ডোমেইন>"}</code> — প্রতিটি দোকানের নিজস্ব ঠিকানা; কাস্টম ডোমেইন যোগ করলেও এটা চালু থাকে।</p>
         </div>
 
         <div class="pt-dom-step">
-          <h4>২. সাব-ডোমেইন (তাৎক্ষণিক, DNS লাগে না)</h4>
+          <h4>২. পুরনো সাব-ডোমেইন alias (ঐচ্ছিক)</h4>
+          <p class="pt-dom-note">নতুন দোকানে দরকার নেই — উপরের ঘরেই ঠিকানা বদলান। পুরনো লিংকের জন্য চাইলে একটা alias রাখতে পারেন।</p>
           <div class="pt-addr-row">
             <input class="pt-addr-input" id="sub-${esc(store._id)}" value="${esc(sub)}" placeholder="amar-dokan" maxlength="63" spellcheck="false" autocomplete="off" aria-label="সাব-ডোমেইন" />
             <span class="pt-addr-pre">${main ? "." + esc(main) : ".<আপনার-ডোমেইন>"}</span>
@@ -469,7 +478,13 @@
       const id = saveBtn.dataset.save;
       const store = stores.find((s) => String(s._id) === id);
       const input = $("addr-" + id);
-      const slug = String(input.value || "").trim().toLowerCase();
+      const raw = String(input.value || "").trim().toLowerCase();
+      const check = window.ShopAddress ? window.ShopAddress.validate(raw) : { ok: true, value: raw };
+      if (!check.ok) {
+        toast(check.message || "ঠিকানাটি ঠিক নয়", "err");
+        return;
+      }
+      const slug = check.value;
       if (store && slug === store.slug) {
         toast("ঠিকানা একই আছে", "err");
         return;
@@ -477,7 +492,7 @@
       saveBtn.disabled = true;
       try {
         await api("/api/stores/" + enc(id) + "/slug", { method: "PATCH", body: JSON.stringify({ slug }) });
-        toast("ঠিকানা বদলেছে", "ok");
+        toast("ঠিকানা বদলেছে — পুরনো লিংক ৯০ দিন নতুন ঠিকানায় যাবে", "ok");
         await loadAll();
       } catch (err) {
         toast(err.message, "err");

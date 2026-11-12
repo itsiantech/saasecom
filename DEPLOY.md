@@ -106,6 +106,19 @@ stores keep their `Store.slug` and resolve at the new suffix automatically.
 4. Store identity is fetched `no-store` on every render, so suspending or
    deleting a shop takes effect immediately.
 
+### Changing a shop address
+
+- Owners change the address from the portal (`/portal.html`). `Store.slug`
+  becomes the new first label; the old label is kept in `SlugHistory` for 90
+  days and the Next proxy answers a real `301` to the current site (path and
+  query preserved) by asking `/api/public/address-redirect`.
+- Owners can rename once per cooldown period, default **30 days**, configurable
+  by the superadmin via platform settings (`slugChangeCooldownDays`, 0–365).
+  Superadmin renames bypass the cooldown. Every rename writes an
+  `AuditLog` row (`store.slug.change`).
+- After the 90-day window the old label stops redirecting; it stays reserved
+  only while its quarantine lasts, then becomes available like any other name.
+
 ## 6. Deploy checklist
 
 ```bash

@@ -12,7 +12,7 @@ const { makeImageUpload, singleImage, finalizeImage } = require("../middleware/u
 const { normalizeTheme, parseTheme } = require("../lib/adminTheme");
 const { getBranding, saveBranding } = require("../lib/landingBranding");
 const { normalizeDomain, platformDomain, platformTarget } = require("../lib/hostStore");
-const { getReservedSlugs, saveReservedSlugs } = require("../lib/shopAddress");
+const { getReservedSlugs, saveReservedSlugs, getSlugCooldownDays, DEFAULT_COOLDOWN_DAYS } = require("../lib/shopAddress");
 const sharedShopAddress = require("../public/js/shop-address");
 const billing = require("../lib/platformBilling");
 const { approvePayment, rejectPayment } = require("../lib/billingApproval");
@@ -82,6 +82,8 @@ router.get("/settings/platform", auth, requireSuperAdmin, async (req, res) => {
       platformIp: (await platformTarget()) || "",
       reservedSlugs: await getReservedSlugs(),
       defaultReservedSlugs: sharedShopAddress.DEFAULT_RESERVED,
+      slugCooldownDays: await getSlugCooldownDays(),
+      defaultCooldownDays: DEFAULT_COOLDOWN_DAYS,
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -106,10 +108,23 @@ router.put("/settings/platform", auth, requireSuperAdmin, async (req, res) => {
     if (body.reservedSlugs !== undefined) {
       await saveReservedSlugs(body.reservedSlugs);
     }
+    if (body.slugCooldownDays !== undefined) {
+      const days = Number(body.slugCooldownDays);
+      if (!Number.isFinite(days) || days < 0 || days > 365) {
+        return res.status(400).json({ message: "কুলডাউন ০–৩৬৫ দিনের মধ্যে হতে হবে" });
+      }
+      await Settings.findOneAndUpdate(
+        { key: "slugChangeCooldownDays" },
+        { $set: { value: String(Math.floor(days)) } },
+        { upsert: true }
+      );
+    }
     res.json({
       platformDomain: (await platformDomain()) || "",
       platformIp: (await platformTarget()) || "",
       reservedSlugs: await getReservedSlugs(),
+      slugCooldownDays: await getSlugCooldownDays(),
+      defaultCooldownDays: DEFAULT_COOLDOWN_DAYS,
     });
   } catch (err) {
     res.status(err.status || 400).json({ message: err.message });

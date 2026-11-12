@@ -4,6 +4,8 @@ const storeSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
     slug: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    // set on every owner-visible rename; gates the change cooldown
+    slugChangedAt: { type: Date, default: null },
     owner: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     plan: { type: mongoose.Schema.Types.ObjectId, ref: "Plan", required: true },
     // domain gulo optional — default deya hoy na, na-hole sparse unique index null niye dhake

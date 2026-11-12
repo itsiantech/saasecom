@@ -6,6 +6,7 @@ const shop = require("../controllers/publicShopController");
 const settings = require("../controllers/settingsController");
 const appearance = require("../controllers/appearanceController");
 const landingBranding = require("../lib/landingBranding");
+const { renamedAddress } = require("../lib/shopAddress");
 const { auth, optionalAuth } = require("../middleware/auth");
 
 /* ------------------------------------------------------------------ *
@@ -24,6 +25,19 @@ router.get("/branding", async (_req, res) => {
     res.json({ branding: await landingBranding.getBranding() });
   } catch (err) {
     res.status(500).json({ message: err.message });
+  }
+});
+
+// an old shop address (renamed within the last 90 days) → its current site.
+// The Next proxy asks before rendering so old links get a real 301.
+router.get("/address-redirect", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  const host = String(req.query.host || "").trim().toLowerCase().slice(0, 300);
+  if (!host) return res.json({ redirect: null });
+  try {
+    res.json({ redirect: await renamedAddress(host) });
+  } catch {
+    res.json({ redirect: null });
   }
 });
 
