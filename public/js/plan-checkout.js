@@ -74,13 +74,21 @@
   let methods = [];
   let store = null;
   let selected = null;
+  let addressField = null;
+  let platformDomain = "";
+
+  function fullAddress(slug) {
+    const shared = window.ShopAddress;
+    return shared ? shared.fullAddress(slug, platformDomain) : "";
+  }
 
   /* ------------------------------------------------------------- render */
   function renderSummary() {
     $("pcPlanName").textContent = plan.name;
     $("pcPlanDur").textContent = Number(plan.durationDays || 30) + " দিন" + (plan.trialDays > 0 ? " + " + plan.trialDays + " দিন ট্রায়াল" : "");
     $("pcTotal").textContent = "৳ " + num(plan.price);
-    $("pcSumStore").textContent = store ? "/" + store.slug : $("pcStoreSlug").value.trim() || "—";
+    const slug = store ? store.slug : addressField ? addressField.value() : "";
+    $("pcSumStore").textContent = fullAddress(slug) || slug || "—";
     $("pcSumMethod").textContent = selected ? selected.label : "—";
   }
 
@@ -212,16 +220,20 @@
     let plans;
     let methodData;
     let mine;
+    let domainConfig;
     try {
-      [me, plans, methodData, mine] = await Promise.all([
+      [me, plans, methodData, mine, domainConfig] = await Promise.all([
         api("/api/auth/me"),
         api("/api/plans"),
         api("/api/billing/methods"),
         api("/api/billing/payments/mine").catch(() => ({ payments: [] })),
+        api("/api/stores/domain-config").catch(() => null),
       ]);
     } catch (err) {
       return fatal(err.message);
     }
+
+    platformDomain = (domainConfig && domainConfig.platformDomain) || "";
 
     $("pcWho").textContent = me.name + (me.email ? " · " + me.email : "");
     plan = (plans || []).find((p) => p.slug === planSlug);
@@ -241,15 +253,26 @@
       }
       if (!store) return fatal("দোকানটি পাওয়া যায়নি — প্যানেল থেকে আবার চেষ্টা করুন।");
       $("storeStep").hidden = true;
-      $("pcLede").textContent = "/" + store.slug + " দোকানের প্যাকেজ " + plan.name + " — পেমেন্ট যাচাই হলে প্যাকেজ চালু হবে।";
+      $("pcLede").textContent = (fullAddress(store.slug) || "/" + store.slug) + " দোকানের প্যাকেজ " + plan.name + " — পেমেন্ট যাচাই হলে প্যাকেজ চালু হবে।";
     } else {
       $("storeStep").hidden = false;
       $("pcLede").textContent = plan.name + " প্যাকেজে দোকান খুলতে পেমেন্ট মেথড বেছে নিন।";
       const preName = qs.get("name") || "";
-      const preSlug = (qs.get("slug") || "").toLowerCase();
+      const preSlug = qs.get("slug") || "";
       $("pcStoreName").value = preName;
       $("pcStoreSlug").value = preSlug;
-      $("pcHostPrefix").textContent = location.host + "/";
+
+      addressField = window.ShopAddressField.mount({
+        input: $("pcStoreSlug"),
+        nameInput: $("pcStoreName"),
+        suffixEl: $("pcHostSuffix"),
+        urlEl: $("pcStoreUrl"),
+        statusEl: $("pcStoreStatus"),
+        suggestionsEl: $("pcStoreSuggest"),
+        ruleEl: $("pcStoreRule"),
+        domain: platformDomain,
+        onState: renderSummary,
+      });
     }
 
     if (!store) {
@@ -298,18 +321,26 @@
 
     if (!store) {
       const name = $("pcStoreName").value.trim();
-      const slug = $("pcStoreSlug").value.trim().toLowerCase();
       if (!name) return showError("দোকানের নাম লিখুন");
-      if (!/^[a-z0-9][a-z0-9-]{2,62}$/.test(slug)) {
-        return showError("ঠিকানা ৩–৬৩ অক্ষরের হতে হবে — ছোট হাতের অক্ষর, সংখ্যা বা hyphen");
-      }
-      body.storeName = name;
-      body.storeSlug = slug;
     } else {
       body.storeId = String(store._id);
     }
 
     btn.disabled = true;
+    btn.textContent = "চেক করা হচ্ছে...";
+
+    if (!store) {
+      const available = await addressField.ensureAvailable();
+      if (!available) {
+        showError(addressField.message() || "এই ঠিকানাটি ব্যবহার করা যাচ্ছে না");
+        btn.disabled = false;
+        btn.textContent = "পেমেন্ট জমা দিন";
+        return;
+      }
+      body.storeName = $("pcStoreName").value.trim();
+      body.storeSlug = addressField.value();
+    }
+
     btn.textContent = "জমা হচ্ছে...";
     try {
       const data = await api("/api/billing/payments", { method: "POST", body: JSON.stringify(body) });

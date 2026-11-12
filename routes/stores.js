@@ -8,7 +8,8 @@ const dns = require("dns").promises;
 const { auth } = require("../middleware/auth");
 const { RESERVED_SUBS, SUB_RE, normalizeDomain, platformDomain, platformTarget } = require("../lib/hostStore");
 const { storefrontUrl } = require("../lib/storefrontUrl");
-const { normalizeSlug, slugProblem } = require("../lib/storeSlug");
+const { normalizeSlug } = require("../lib/storeSlug");
+const { assertShopName } = require("../lib/shopAddress");
 const { createStoreWithSubscription } = require("../lib/storeProvisioning");
 const { applyStarterPack } = require("../services/starterPack");
 
@@ -18,12 +19,9 @@ router.post("/", auth, async (req, res) => {
     const { name, slug, planSlug, starterPack } = req.body;
     if (!name) return res.status(400).json({ message: "Store er naam lagbe" });
 
-    const finalSlug = normalizeSlug(slug) || "store-" + randomBytes(3).toString("hex");
-    const problem = slugProblem(finalSlug);
-    if (problem) return res.status(400).json({ message: problem });
-    if (await Store.exists({ slug: finalSlug })) {
-      return res.status(409).json({ message: "Ei slug age theke nie neya hoyeche" });
-    }
+    // empty = generated store-xxxxxx; a typed address must pass the shared rules
+    const wanted = String(slug || "").trim();
+    const finalSlug = wanted ? await assertShopName(wanted) : "";
 
     // planSlug dile validate kore store er plan set hoy
     let plan;
@@ -48,6 +46,7 @@ router.post("/", auth, async (req, res) => {
       name,
       slug: finalSlug,
       plan,
+      strictSlug: Boolean(wanted),
     });
 
     // Apply starter pack if requested (default: true)
@@ -63,7 +62,7 @@ router.post("/", auth, async (req, res) => {
 
     res.status(201).json({ store, subscription });
   } catch (err) {
-    res.status(400).json({ message: err.message });
+    res.status(err.status || 400).json({ message: err.message, code: err.code, reason: err.reason });
   }
 });
 
@@ -110,15 +109,23 @@ router.patch("/:id/slug", auth, async (req, res) => {
       return res.status(403).json({ message: "Ei store er thikana change korte parben na" });
     }
 
-    const slug = String(req.body.slug || "").toLowerCase().trim();
-    const problem = slugProblem(slug);
-    if (problem) return res.status(400).json({ message: problem });
-    if (await Store.exists({ slug, _id: { $ne: store._id } })) {
-      return res.status(409).json({ message: "এই ঠিকানা আগেই নেওয়া হয়েছে" });
+    const raw = String(req.body.slug || "").trim();
+    if (normalizeSlug(raw) === store.slug) return res.json(store);
+    const check = await assertShopName(raw).catch((err) => err);
+    if (check instanceof Error) {
+      return res.status(check.status || 400).json({ message: check.message, code: check.code, reason: check.reason });
     }
+    const slug = check;
 
     store.slug = slug;
-    await store.save();
+    try {
+      await store.save();
+    } catch (err) {
+      if (err && err.code === 11000) {
+        return res.status(409).json({ message: "এই ঠিকানা এইমাত্র নেওয়া হয়েছে — অন্য নাম বেছে নিন", code: "slug_taken", reason: "taken" });
+      }
+      throw err;
+    }
     res.json(store);
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -175,7 +182,7 @@ router.put("/:id/subdomain", auth, async (req, res) => {
       return res.status(400).json({ message: "সাব-ডোমেইন ৩-৬৩ অক্ষরের — ছোট হাতের অক্ষর, সংখ্যা বা hyphen" });
     }
     if (RESERVED_SUBS.has(label)) return res.status(400).json({ message: "এই নামটি সংরক্ষিত, অন্য কিছু নিন" });
-    if (await Store.exists({ subdomain: label, _id: { $ne: store._id } })) {
+    if (await Store.exists({ $or: [{ subdomain: label }, { slug: label }], _id: { $ne: store._id } })) {
       return res.status(409).json({ message: "এই সাব-ডোমেইন আগেই নেওয়া হয়েছে" });
     }
 

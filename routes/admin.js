@@ -11,6 +11,9 @@ const { auth, requireSuperAdmin } = require("../middleware/auth");
 const { makeImageUpload, singleImage, finalizeImage } = require("../middleware/upload");
 const { normalizeTheme, parseTheme } = require("../lib/adminTheme");
 const { getBranding, saveBranding } = require("../lib/landingBranding");
+const { normalizeDomain, platformDomain, platformTarget } = require("../lib/hostStore");
+const { getReservedSlugs, saveReservedSlugs } = require("../lib/shopAddress");
+const sharedShopAddress = require("../public/js/shop-address");
 const billing = require("../lib/platformBilling");
 const { approvePayment, rejectPayment } = require("../lib/billingApproval");
 
@@ -69,6 +72,48 @@ router.put("/settings/saas", auth, requireSuperAdmin, async (req, res) => {
     { upsert: true }
   );
   res.json({ saasEnabled: enabled === "true" });
+});
+
+// platform addressing: the domain every shop lives under + the reserved names
+router.get("/settings/platform", auth, requireSuperAdmin, async (req, res) => {
+  try {
+    res.json({
+      platformDomain: (await platformDomain()) || "",
+      platformIp: (await platformTarget()) || "",
+      reservedSlugs: await getReservedSlugs(),
+      defaultReservedSlugs: sharedShopAddress.DEFAULT_RESERVED,
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+router.put("/settings/platform", auth, requireSuperAdmin, async (req, res) => {
+  try {
+    const body = req.body || {};
+    if (body.platformDomain !== undefined) {
+      const raw = String(body.platformDomain || "").trim();
+      const domain = raw ? normalizeDomain(raw) : "";
+      if (raw && !domain) {
+        return res.status(400).json({ message: "ডোমেইন ঠিকভাবে লিখুন (যেমন: myshop.com)" });
+      }
+      await Settings.findOneAndUpdate({ key: "platformDomain" }, { $set: { value: domain } }, { upsert: true });
+    }
+    if (body.platformIp !== undefined) {
+      const ip = String(body.platformIp || "").trim().slice(0, 120);
+      await Settings.findOneAndUpdate({ key: "platformIp" }, { $set: { value: ip } }, { upsert: true });
+    }
+    if (body.reservedSlugs !== undefined) {
+      await saveReservedSlugs(body.reservedSlugs);
+    }
+    res.json({
+      platformDomain: (await platformDomain()) || "",
+      platformIp: (await platformTarget()) || "",
+      reservedSlugs: await getReservedSlugs(),
+    });
+  } catch (err) {
+    res.status(err.status || 400).json({ message: err.message });
+  }
 });
 
 // super admin panel er design colors (platform level, kono store er noy)

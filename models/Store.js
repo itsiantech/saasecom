@@ -23,6 +23,8 @@ const storeSchema = new mongoose.Schema(
     currency: { type: String, default: "BDT", trim: true, uppercase: true, maxlength: 3 },
     language: { type: String, enum: ["bn", "en"], default: "bn" },
     status: { type: String, enum: ["active", "suspended"], default: "active" },
+    // trashed stores keep their address reserved; nothing is hard-deleted
+    deletedAt: { type: Date, default: null },
   },
   { timestamps: true }
 );

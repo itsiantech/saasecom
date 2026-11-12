@@ -86,6 +86,40 @@ function switchView(viewName) {
     if (window.reportsPage) window.reportsPage.open("coupons");
   } else if (viewName === "report-customers") {
     if (window.reportsPage) window.reportsPage.open("customers");
+  } else if (viewName === "inventory-overview") {
+    if (window.inventoryPage) window.inventoryPage.open("overview");
+  } else if (viewName === "inventory-category") {
+    if (window.inventoryPage) window.inventoryPage.open("category");
+  } else if (viewName === "inventory-variant") {
+    if (window.inventoryPage) window.inventoryPage.open("variant");
+  } else if (viewName === "inventory-supplier") {
+    if (window.inventoryPage) window.inventoryPage.open("supplier");
+  } else if (viewName === "inventory-movements") {
+    if (window.inventoryPage) window.inventoryPage.open("movements");
+  } else if (viewName === "inventory-damage") {
+    if (window.inventoryPage) window.inventoryPage.open("damage");
+  } else if (viewName === "inventory-adjustment") {
+    if (window.inventoryPage) window.inventoryPage.open("adjustment");
+  } else if (viewName === "inventory-transfer") {
+    if (window.inventoryPage) window.inventoryPage.open("transfer");
+  } else if (viewName === "accounts-dashboard") {
+    if (window.accountsPage) window.accountsPage.open("dashboard");
+  } else if (viewName === "accounts-sales") {
+    if (window.accountsPage) window.accountsPage.open("sales");
+  } else if (viewName === "accounts-suppliers") {
+    if (window.accountsPage) window.accountsPage.open("suppliers");
+  } else if (viewName === "accounts-office") {
+    if (window.accountsPage) window.accountsPage.open("office");
+  } else if (viewName === "accounts-tech") {
+    if (window.accountsPage) window.accountsPage.open("tech");
+  } else if (viewName === "accounts-marketing") {
+    if (window.accountsPage) window.accountsPage.open("marketing");
+  } else if (viewName === "accounts-salary") {
+    if (window.accountsPage) window.accountsPage.open("salary");
+  } else if (viewName === "accounts-voids") {
+    if (window.accountsPage) window.accountsPage.open("voids");
+  } else if (viewName === "accounts-export") {
+    if (window.accountsPage) window.accountsPage.open("export");
   }
 }
 

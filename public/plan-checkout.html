@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/css/plan-checkout.css?v=1" />
+  <link rel="stylesheet" href="/css/shop-address.css?v=1" />
 </head>
 <body>
   <header class="pc-head">
@@ -37,12 +38,16 @@
             <input id="pcStoreName" autocomplete="organization" />
           </div>
           <div class="pc-field">
-            <label for="pcStoreSlug">দোকানের ঠিকানা (slug)</label>
-            <div class="pc-slug">
-              <span id="pcHostPrefix">luxe.shop/</span>
-              <input id="pcStoreSlug" placeholder="amar-dokan" spellcheck="false" autocomplete="off" />
+            <label for="pcStoreSlug">দোকানের ঠিকানা</label>
+            <div class="addr-field">
+              <input id="pcStoreSlug" placeholder="amar-dokan" spellcheck="false" autocomplete="off" autocapitalize="none" aria-describedby="pcStoreUrl pcStoreStatus pcStoreRule" />
+              <span class="addr-suffix" id="pcHostSuffix" hidden></span>
             </div>
-            <p class="pc-hint">ছোট হাতের অক্ষর, সংখ্যা বা hyphen — ৩–৬৩ অক্ষর। পেমেন্ট অনুমোদনের পর এই ঠিকানায় দোকান তৈরি হবে।</p>
+            <p class="addr-url" id="pcStoreUrl" hidden></p>
+            <p class="addr-status" id="pcStoreStatus" role="status" aria-live="polite" hidden></p>
+            <div class="addr-suggest" id="pcStoreSuggest" hidden></div>
+            <p class="pc-hint addr-rule" id="pcStoreRule"></p>
+            <p class="pc-hint">পেমেন্ট অনুমোদনের পর এই ঠিকানায় দোকান তৈরি হবে।</p>
           </div>
         </div>
 
@@ -94,6 +99,8 @@
     </section>
   </main>
 
-  <script src="/js/plan-checkout.js?v=1"></script>
+  <script src="/js/shop-address.js?v=1"></script>
+  <script src="/js/shop-address-field.js?v=1"></script>
+  <script src="/js/plan-checkout.js?v=2"></script>
 </body>
 </html>

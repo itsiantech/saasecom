@@ -16,6 +16,9 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "ok", db: mongoose.connection.readyState === 1 ? "up" : "down" });
 });
 
+// live shop-address check — onboarding has no store yet, so this must skip tenant resolution
+app.use("/api", require("./routes/shopAddress"));
+
 // public storefront resolves its own store by slug, so it mounts before tenant middleware
 app.use("/api/storefront", require("./routes/storefront"));
 app.use("/api/public", require("./routes/publicApi"));
@@ -41,6 +44,18 @@ try {
   app.use("/api/admin/reports", require("./routes/reports"));
 } catch (err) {
   console.error("Reports module mount failed:", err.message);
+}
+// Isolated module: inventory must never stop the app from booting.
+try {
+  app.use("/api/admin/inventory", require("./routes/inventory"));
+} catch (err) {
+  console.error("Inventory module mount failed:", err.message);
+}
+// Isolated module: accounts must never stop the app from booting.
+try {
+  app.use("/api/admin/accounts", require("./routes/accounts"));
+} catch (err) {
+  console.error("Accounts module mount failed:", err.message);
 }
 app.use("/api/staff", require("./routes/staff"));
 app.use("/api/plans", require("./routes/plans"));

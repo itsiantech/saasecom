@@ -1,0 +1,240 @@
+/* ==========================================================================
+   Accounts & Finance — reports under Reports. Reuses the shared .rep-* blocks
+   and layers its own form, badge and amount styles on top.
+   ========================================================================== */
+
+#navGroupAccounts[hidden] { display: none !important; }
+
+/* -------------------------------- header -------------------------------- */
+
+.acct-page { display: grid; gap: 18px; min-width: 0; }
+.acct-page > * { min-width: 0; }
+
+.acct-hint {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--muted);
+  max-width: 320px;
+}
+
+.acct-period-note {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.acct-period-note b { color: var(--text); font-weight: 600; }
+
+[data-role="period-custom"][hidden] { display: none !important; }
+
+/* --------------------------------- cards -------------------------------- */
+
+.acct-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+
+.acct-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+
+@media (min-width: 900px) {
+  .acct-split { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); }
+}
+
+.acct-note {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  font-size: 12.5px;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.acct-note b { color: var(--text); font-weight: 600; }
+.acct-note code {
+  font-family: inherit;
+  color: var(--text);
+  background: var(--line-soft);
+  border-radius: 5px;
+  padding: 1px 5px;
+}
+
+/* --------------------------------- badges ------------------------------- */
+
+.acct-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  color: var(--muted);
+  background: transparent;
+}
+
+.acct-badge.is-ok { color: var(--ok); border-color: rgba(127, 199, 154, 0.4); background: rgba(127, 199, 154, 0.08); }
+.acct-badge.is-warn { color: var(--warn, #d9a441); border-color: rgba(217, 164, 65, 0.4); background: rgba(217, 164, 65, 0.08); }
+.acct-badge.is-danger { color: var(--danger); border-color: rgba(220, 100, 100, 0.4); background: rgba(220, 100, 100, 0.08); }
+.acct-badge.is-info { color: var(--gold); border-color: var(--line); background: var(--gold-soft); }
+.acct-badge.is-neutral { color: var(--muted); border-color: var(--line); background: transparent; }
+
+/* ---------------------------------- money ------------------------------- */
+
+.acct-pos { color: var(--ok); font-variant-numeric: tabular-nums; }
+.acct-neg { color: var(--danger); font-variant-numeric: tabular-nums; }
+.acct-muted { color: var(--muted); font-variant-numeric: tabular-nums; }
+.acct-money { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* --------------------------------- forms -------------------------------- */
+
+.acct-form {
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid var(--line-soft);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.015);
+}
+
+.acct-form-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+
+@media (min-width: 720px) {
+  .acct-form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .acct-form-grid .acct-wide { grid-column: 1 / -1; }
+}
+
+.acct-form label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.acct-form input,
+.acct-form select {
+  width: 100%;
+  min-height: 42px;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface, transparent);
+  color: var(--text);
+  font: inherit;
+  font-size: 13.5px;
+}
+
+.acct-form input:focus,
+.acct-form select:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px var(--gold-soft);
+}
+
+.acct-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.acct-form-msg {
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.acct-form-msg.is-ok { color: var(--ok); }
+.acct-form-msg.is-err { color: var(--danger); }
+
+.acct-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.acct-search input {
+  min-height: 40px;
+  min-width: 180px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+}
+
+.acct-search input:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px var(--gold-soft);
+}
+
+/* -------------------------------- actions -------------------------------- */
+
+.acct-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.acct-icon-btn:hover { color: var(--danger); border-color: var(--danger); }
+.acct-icon-btn[disabled] { opacity: 0.45; cursor: wait; }
+
+.acct-icon-btn svg { width: 15px; height: 15px; }
+
+/* --------------------------------- export -------------------------------- */
+
+.acct-export-card {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: linear-gradient(135deg, var(--gold-soft), transparent 65%);
+}
+
+.acct-export-card h2 { margin: 0; font-size: 17px; }
+.acct-export-card p { margin: 0; font-size: 12.5px; color: var(--muted); line-height: 1.65; }
+
+.acct-export-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+
+.acct-sheet-list {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12.5px;
+  color: var(--muted);
+  line-height: 1.8;
+}
+
+.acct-sheet-list b { color: var(--text); font-weight: 600; }
+
+@media (max-width: 720px) {
+  .acct-page { gap: 14px; }
+  .acct-form { padding: 12px; }
+  .acct-search { flex-wrap: wrap; }
+  .acct-search input { min-width: 0; flex: 1; }
+}

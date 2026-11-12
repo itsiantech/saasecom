@@ -16,6 +16,30 @@ function showMsg(text, type) {
   msg.className = "msg" + (type ? " " + type : "");
 }
 
+/* ---- live shop address ---- */
+const addressField = window.ShopAddressField.mount({
+  input: document.getElementById("sSlug"),
+  nameInput: document.getElementById("sName"),
+  suffixEl: document.getElementById("sSlugSuffix"),
+  urlEl: document.getElementById("sSlugUrl"),
+  statusEl: document.getElementById("sSlugStatus"),
+  suggestionsEl: document.getElementById("sSlugSuggest"),
+  ruleEl: document.getElementById("sSlugRule"),
+});
+
+(async function loadDomain() {
+  try {
+    const res = await fetch("/api/stores/domain-config", {
+      headers: { Authorization: "Bearer " + token },
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data && data.platformDomain) addressField.setDomain(data.platformDomain);
+  } catch {
+    /* suffix hidden; the field still validates the name */
+  }
+})();
+
 /* ---- logged in user ---- */
 (async function initUser() {
   try {
@@ -114,15 +138,28 @@ form.addEventListener("submit", async (e) => {
   showMsg("");
 
   const name = document.getElementById("sName").value.trim();
-  const slug = document.getElementById("sSlug").value.trim().toLowerCase();
   if (!name) return showMsg("দোকানের নাম লিখুন", "err");
   if (!selectedPlan) return showMsg("একটা প্ল্যান বেছে নিন", "err");
 
+  const slug = addressField.value();
+  if (!slug) return showMsg("দোকানের ঠিকানা লিখুন", "err");
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = "চেক করা হচ্ছে...";
+  let ok = false;
+  try {
+    ok = await addressField.ensureAvailable();
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = "দোকান তৈরি করুন";
+  }
+  if (!ok) {
+    showMsg(addressField.message() || "এই ঠিকানাটি ব্যবহার করা যাচ্ছে না", "err");
+    return;
+  }
+
   // paid plan: dokan ekhoni toiri na — prothome payment checkout
   if (selectedPlanData && Number(selectedPlanData.price || 0) > 0) {
-    if (!/^[a-z0-9][a-z0-9-]{2,62}$/.test(slug)) {
-      return showMsg("ঠিকানা ৩–৬৩ অক্ষরের হতে হবে — ছোট হাতের অক্ষর, সংখ্যা বা hyphen", "err");
-    }
     location.href =
       "/plan-checkout.html?plan=" + encodeURIComponent(selectedPlan) +
       "&name=" + encodeURIComponent(name) +

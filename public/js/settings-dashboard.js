@@ -375,6 +375,218 @@
   });
 
   /* ------------------------------------------------------------------ *
+   * Google SEO
+   * ------------------------------------------------------------------ */
+  const SEO_TOGGLES = {
+    seoGoogleEnabled: "seo_google_enabled",
+    seoSearchConsoleEnabled: "seo_search_console_enabled",
+    seoGa4Enabled: "seo_ga4_enabled",
+    seoGtmEnabled: "seo_gtm_enabled",
+    seoSitemapEnabled: "seo_sitemap_enabled",
+    seoRobotsEnabled: "seo_robots_enabled",
+    seoSchemaEnabled: "seo_schema_enabled",
+  };
+  const SEO_TEXT_FIELDS = {
+    seoSearchConsoleCode: "seo_search_console_code",
+    seoGa4Id: "seo_ga4_id",
+    seoGtmId: "seo_gtm_id",
+    seoRobotsText: "seo_robots_text",
+  };
+
+  function applySeoEnabled() {
+    const on = String(state.settings.seo_google_enabled) === "true";
+    const badge = document.querySelector("[data-seo-off]");
+    if (badge) badge.hidden = on;
+    const status = $("seoGoogleStatus");
+    if (status) {
+      status.textContent = on
+        ? "Google SEO ON — selected feature gulo storefront e add hobe."
+        : "Google SEO OFF — storefront e kono SEO tag add hobe na.";
+    }
+    document
+      .querySelectorAll('#view-settings .settings-pane[data-pane="google-seo"] input:not(#seoGoogleEnabled), #view-settings .settings-pane[data-pane="google-seo"] textarea')
+      .forEach((el) => {
+        el.disabled = !on;
+      });
+  }
+
+  Object.entries(SEO_TOGGLES).forEach(([id, key]) => {
+    const el = $(id);
+    if (!el) return;
+    el.addEventListener("change", () => {
+      state.settings[key] = el.checked ? "true" : "false";
+      if (key === "seo_google_enabled") applySeoEnabled();
+      markDirty();
+    });
+  });
+  Object.entries(SEO_TEXT_FIELDS).forEach(([id, key]) => {
+    const el = $(id);
+    if (!el) return;
+    el.addEventListener("input", () => {
+      state.settings[key] = el.value;
+      markDirty();
+    });
+  });
+
+  /* ------------------------------------------------------------------ *
+   * Server side tracking (Meta / TikTok / GA4 / Google Ads)
+   * ------------------------------------------------------------------ */
+  const SST_TOGGLES = {
+    sstEnabled: "sst_enabled",
+    sstMetaEnabled: "sst_meta_enabled",
+    sstMetaTestMode: "sst_meta_test_mode",
+    sstTiktokEnabled: "sst_tiktok_enabled",
+    sstTiktokTestMode: "sst_tiktok_test_mode",
+    sstGa4Enabled: "sst_ga4_enabled",
+    sstGa4TestMode: "sst_ga4_test_mode",
+    sstGadsEnabled: "sst_gads_enabled",
+    sstGadsTestMode: "sst_gads_test_mode",
+  };
+  const SST_FIELDS = {
+    sstMetaName: "sst_meta_name",
+    sstMetaPixelId: "sst_meta_pixel_id",
+    sstMetaAccessToken: "sst_meta_access_token",
+    sstMetaTestEventCode: "sst_meta_test_event_code",
+    sstMetaApiVersion: "sst_meta_api_version",
+    sstTiktokName: "sst_tiktok_name",
+    sstTiktokPixelId: "sst_tiktok_pixel_id",
+    sstTiktokAccessToken: "sst_tiktok_access_token",
+    sstTiktokTestEventCode: "sst_tiktok_test_event_code",
+    sstGa4Name: "sst_ga4_name",
+    sstGa4MeasurementId: "sst_ga4_measurement_id",
+    sstGa4ApiSecret: "sst_ga4_api_secret",
+    sstGadsName: "sst_gads_name",
+    sstGadsConversionId: "sst_gads_conversion_id",
+    sstGadsConversionLabel: "sst_gads_conversion_label",
+  };
+  const SST_PROVIDER_FIELDS = {
+    meta: [
+      "sst_meta_enabled",
+      "sst_meta_name",
+      "sst_meta_pixel_id",
+      "sst_meta_access_token",
+      "sst_meta_test_event_code",
+      "sst_meta_api_version",
+      "sst_meta_test_mode",
+    ],
+    tiktok: [
+      "sst_tiktok_enabled",
+      "sst_tiktok_name",
+      "sst_tiktok_pixel_id",
+      "sst_tiktok_access_token",
+      "sst_tiktok_test_event_code",
+      "sst_tiktok_test_mode",
+    ],
+    ga4: ["sst_ga4_enabled", "sst_ga4_name", "sst_ga4_measurement_id", "sst_ga4_api_secret", "sst_ga4_test_mode"],
+    gads: [
+      "sst_gads_enabled",
+      "sst_gads_name",
+      "sst_gads_conversion_id",
+      "sst_gads_conversion_label",
+      "sst_gads_test_mode",
+    ],
+  };
+
+  function applyTrackingEnabled() {
+    const on = String(state.settings.sst_enabled) === "true";
+    const badge = document.querySelector("[data-tracking-off]");
+    if (badge) badge.hidden = on;
+    const status = $("sstStatus");
+    if (status) {
+      status.textContent = on
+        ? "Server side tracking ON — selected provider gulo te order event server theke pathabe."
+        : "Server side tracking OFF — kono provider e event pathabe na.";
+    }
+    document
+      .querySelectorAll('#view-settings .settings-pane[data-pane="server-tracking"] input:not(#sstEnabled)')
+      .forEach((el) => {
+        el.disabled = !on;
+      });
+  }
+
+  Object.entries(SST_TOGGLES).forEach(([id, key]) => {
+    const el = $(id);
+    if (!el) return;
+    el.addEventListener("change", () => {
+      state.settings[key] = el.checked ? "true" : "false";
+      if (key === "sst_enabled") applyTrackingEnabled();
+      markDirty();
+    });
+  });
+  Object.entries(SST_FIELDS).forEach(([id, key]) => {
+    const el = $(id);
+    if (!el) return;
+    el.addEventListener("input", () => {
+      state.settings[key] = el.value;
+      markDirty();
+    });
+  });
+
+  document.querySelectorAll("#view-settings .sst-tab").forEach((tab) => {
+    tab.addEventListener("click", () => {
+      document
+        .querySelectorAll("#view-settings .sst-tab")
+        .forEach((t) => t.classList.toggle("active", t === tab));
+      document
+        .querySelectorAll("#view-settings .sst-panel")
+        .forEach((p) => p.classList.toggle("active", p.dataset.sstPanel === tab.dataset.sstTab));
+    });
+  });
+
+  function sstConfig(provider) {
+    const out = {};
+    (SST_PROVIDER_FIELDS[provider] || []).forEach((key) => {
+      out[key] = state.settings[key] == null ? "" : state.settings[key];
+    });
+    return out;
+  }
+
+  async function runSstTest(provider, mode, resultEl, btn) {
+    if (!btn) return;
+    const label = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = mode === "test-connection" ? "Testing…" : "Sending…";
+    if (resultEl) {
+      resultEl.textContent = "";
+      resultEl.className = "sst-result";
+    }
+    try {
+      const res = await api(`/api/settings/tracking/${mode}`, {
+        method: "POST",
+        body: JSON.stringify({ provider, config: sstConfig(provider) }),
+      });
+      if (!res) return;
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok && !data.message) throw new Error("Request fail hoyeche");
+      if (resultEl) {
+        resultEl.textContent = data.message || (data.ok ? "OK" : "Fail");
+        resultEl.className = "sst-result " + (data.ok ? "is-ok" : "is-err");
+      }
+    } catch (e) {
+      if (resultEl) {
+        resultEl.textContent = e.message;
+        resultEl.className = "sst-result is-err";
+      }
+    } finally {
+      btn.disabled = false;
+      btn.textContent = label;
+    }
+  }
+
+  [
+    { provider: "meta", conn: "sstMetaTestConn", event: "sstMetaTestEvent", result: "sstMetaResult" },
+    { provider: "tiktok", conn: "sstTiktokTestConn", event: "sstTiktokTestEvent", result: "sstTiktokResult" },
+    { provider: "ga4", conn: "sstGa4TestConn", event: "sstGa4TestEvent", result: "sstGa4Result" },
+    { provider: "gads", conn: "sstGadsTestConn", event: "sstGadsTestEvent", result: "sstGadsResult" },
+  ].forEach((row) => {
+    const conn = $(row.conn);
+    const evt = $(row.event);
+    const result = $(row.result);
+    if (conn) conn.addEventListener("click", () => runSstTest(row.provider, "test-connection", result, conn));
+    if (evt) evt.addEventListener("click", () => runSstTest(row.provider, "test-event", result, evt));
+  });
+
+  /* ------------------------------------------------------------------ *
    * Home page category sections
    * ------------------------------------------------------------------ */
   const HOME_MODE_LABELS = { slider: "Slider", drag: "Drag", grid: "Grid" };
@@ -3742,6 +3954,30 @@
   );
   $("invoicePreviewBtn").addEventListener("click", () => previewInvoice());
 
+  function renderGoogleSeo() {
+    Object.entries(SEO_TOGGLES).forEach(([id, key]) => {
+      const el = $(id);
+      if (el) el.checked = String(state.settings[key]) === "true";
+    });
+    Object.entries(SEO_TEXT_FIELDS).forEach(([id, key]) => {
+      const el = $(id);
+      if (el) el.value = state.settings[key] == null ? "" : state.settings[key];
+    });
+    applySeoEnabled();
+  }
+
+  function renderTracking() {
+    Object.entries(SST_TOGGLES).forEach(([id, key]) => {
+      const el = $(id);
+      if (el) el.checked = String(state.settings[key]) === "true";
+    });
+    Object.entries(SST_FIELDS).forEach(([id, key]) => {
+      const el = $(id);
+      if (el) el.value = state.settings[key] == null ? "" : state.settings[key];
+    });
+    applyTrackingEnabled();
+  }
+
   function renderAll() {
     // header + footer
     Object.entries(STATIC_FIELDS).forEach(([id, key]) => {
@@ -3802,6 +4038,8 @@
     renderInvoice();
     renderInternational();
     applyFlashSalesUi();
+    renderGoogleSeo();
+    renderTracking();
 
     Object.keys(TOGGLE_ID).forEach((key) => applyEnabled(key));
     Object.keys(PAY_TOGGLE).forEach((key) => applyPayEnabled(key));
@@ -4108,7 +4346,7 @@
     settingsGuard = window.FormGuard.attach({
       root: view,
       type: "settings",
-      exclude: ["smtpPassword", "smsApiKey"],
+      exclude: ["smtpPassword", "smsApiKey", "sstMetaAccessToken", "sstTiktokAccessToken", "sstGa4ApiSecret"],
       onRestore: syncRestoredState,
     });
   }

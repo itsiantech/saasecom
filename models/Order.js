@@ -28,6 +28,12 @@ const orderSchema = new mongoose.Schema(
       enum: ["", "mobile", "tablet", "desktop"],
       default: "",
     },
+    // Ad click ids captured on the storefront; used by server-side tracking.
+    clickIds: {
+      gclid: { type: String, default: "" },
+      fbclid: { type: String, default: "" },
+      ttclid: { type: String, default: "" },
+    },
     billing: {
       name: { type: String, default: "" },
       address: { type: String, default: "" },

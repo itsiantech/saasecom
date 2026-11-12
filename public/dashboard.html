@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="/css/style-settings.css?v=1" />
   <link rel="stylesheet" href="/css/categories.css" />
   <link rel="stylesheet" href="/css/product-form.css" />
-  <link rel="stylesheet" href="/css/settings-dashboard.css?v=5" />
+  <link rel="stylesheet" href="/css/settings-dashboard.css?v=6" />
   <link rel="stylesheet" href="/css/installments.css?v=1" />
   <link rel="stylesheet" href="/css/product-catalog.css?v=1" />
   <link rel="stylesheet" href="/css/order-catalog.css?v=2" />
@@ -22,6 +22,8 @@
   <link rel="stylesheet" href="/css/customers.css?v=1" />
   <link rel="stylesheet" href="/css/suppliers.css?v=2" />
   <link rel="stylesheet" href="/css/reports.css?v=2" />
+  <link rel="stylesheet" href="/css/inventory.css?v=1" />
+  <link rel="stylesheet" href="/css/accounts.css?v=2" />
   <!-- Font Awesome Free (icon library) -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
   <script src="/js/style-settings.js?v=1"></script>
@@ -128,6 +130,100 @@
             <a href="#" class="nav-item" data-view="report-customers">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
               Top customers
+            </a>
+          </div>
+        </div>
+        <div class="nav-group" id="navGroupInventory" hidden>
+          <div class="nav-parent-row">
+            <a href="#" class="nav-item" data-view="inventory-overview">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><path d="M3.3 8.3L12 13l8.7-4.7M12 13v9"/></svg>
+              Inventory &amp; Stock Manage
+            </a>
+            <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="inventorySubmenu" aria-label="Toggle Inventory submenu">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+          </div>
+          <div class="nav-sub" id="inventorySubmenu" hidden>
+            <a href="#" class="nav-item" data-view="inventory-overview">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 13h4l3-8 4 16 3-8h4"/></svg>
+              Stock Overview
+            </a>
+            <a href="#" class="nav-item" data-view="inventory-category">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h6l2 3h8a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/></svg>
+              Category Wise Stock
+            </a>
+            <a href="#" class="nav-item" data-view="inventory-variant">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/></svg>
+              Attribute / Variant Stock
+            </a>
+            <a href="#" class="nav-item" data-view="inventory-supplier">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h11v10H3z"/><path d="M14 10h4l3 3v4h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg>
+              Supplier Stock (Purchase)
+            </a>
+            <a href="#" class="nav-item" data-view="inventory-movements">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h13l-3-3M20 17H7l3 3"/></svg>
+              Stock Movements
+            </a>
+            <a href="#" class="nav-item" data-view="inventory-damage">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l9 16H3L12 3z"/><path d="M12 9v5M12 17h.01"/></svg>
+              Damage &amp; Returned Stock
+            </a>
+            <a href="#" class="nav-item" data-view="inventory-adjustment">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/><circle cx="17" cy="18" r="2"/></svg>
+              Stock Adjustment
+            </a>
+            <a href="#" class="nav-item" data-view="inventory-transfer">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 4l-4 4 4 4M4 8h12a4 4 0 0 1 0 8h-1"/><path d="M16 20l4-4-4-4"/></svg>
+              Warehouse Transfer
+            </a>
+          </div>
+        </div>
+        <div class="nav-group" id="navGroupAccounts" hidden>
+          <div class="nav-parent-row">
+            <a href="#" class="nav-item" data-view="accounts-dashboard">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v14"/><path d="M4 19h16"/><path d="M8 15v-4M12 15V7M16 15v-6"/></svg>
+              Accounts &amp; Finance
+            </a>
+            <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="accountsSubmenu" aria-label="Toggle Accounts submenu">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+          </div>
+          <div class="nav-sub" id="accountsSubmenu" hidden>
+            <a href="#" class="nav-item" data-view="accounts-dashboard">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v14"/><path d="M4 19h16"/><path d="M8 15v-4M12 15V7M16 15v-6"/></svg>
+              Accounts Dashboard
+            </a>
+            <a href="#" class="nav-item" data-view="accounts-sales">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3z"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>
+              Sales &amp; Return Cost
+            </a>
+            <a href="#" class="nav-item" data-view="accounts-suppliers">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h11v11H3z"/><path d="M14 9h4l3 3v5h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg>
+              Supplier Ledger
+            </a>
+            <a href="#" class="nav-item" data-view="accounts-office">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 21V8l8-5 8 5v13"/><path d="M9 21v-5h6v5"/><path d="M8 10h.01M12 10h.01M16 10h.01M8 13h.01M12 13h.01M16 13h.01"/></svg>
+              Office Operating Cost
+            </a>
+            <a href="#" class="nav-item" data-view="accounts-tech">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 7.5h.01M7 16.5h.01M12 7.5h5M12 16.5h5"/></svg>
+              Tech &amp; Server Cost
+            </a>
+            <a href="#" class="nav-item" data-view="accounts-marketing">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l14-6v14L3 13v-2z"/><path d="M17 8a4 4 0 0 1 0 8"/><path d="M6 13v5a1 1 0 0 0 1 1h2v-5"/></svg>
+              Marketing &amp; Ads Cost
+            </a>
+            <a href="#" class="nav-item" data-view="accounts-salary">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7H5a2 2 0 0 1 0-4h13v4"/><path d="M3 7h17v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/><path d="M16 12h.01"/></svg>
+              Salary &amp; Investment
+            </a>
+            <a href="#" class="nav-item" data-view="accounts-voids">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg>
+              Void &amp; Cancel Logs
+            </a>
+            <a href="#" class="nav-item" data-view="accounts-export">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 19h16"/></svg>
+              Export Excel Report
             </a>
           </div>
         </div>
@@ -786,6 +882,10 @@
             <button class="settings-menu-item" data-pane="checkout" type="button">Checkout fields</button>
             <div class="settings-menu-group">Marketing</div>
             <button class="settings-menu-item" data-pane="marketing" type="button">Flash sales <span class="off-badge" data-flash-off hidden>Off</span></button>
+            <div class="settings-menu-group">SEO</div>
+            <button class="settings-menu-item" data-pane="google-seo" type="button">Google SEO <span class="off-badge" data-seo-off hidden>Off</span></button>
+            <div class="settings-menu-group">Tracking</div>
+            <button class="settings-menu-item" data-pane="server-tracking" type="button">Server side tracking <span class="off-badge" data-tracking-off hidden>Off</span></button>
             <div class="settings-menu-group">Notifications</div>
             <button class="settings-menu-item" data-pane="email" type="button">Email settings</button>
             <button class="settings-menu-item" data-pane="invoice" type="button">Invoice settings</button>
@@ -1764,6 +1864,311 @@
               </div>
             </section>
 
+            <!-- ===== GOOGLE SEO ===== -->
+            <section class="settings-pane" data-pane="google-seo">
+              <div class="pf-card">
+                <div class="pf-card-head">
+                  <h3>Google SEO</h3>
+                  <label class="pf-switch" title="Enable / disable"><input type="checkbox" id="seoGoogleEnabled" aria-label="Enable Google SEO" /><span class="slider"></span></label>
+                </div>
+                <div class="settings-body" id="seoBody">
+                  <p class="pf-note" id="seoGoogleStatus">Google SEO OFF — storefront e kono SEO tag add hobe na.</p>
+                  <p class="pf-note">Master switch ON korle niche selected feature gulo storefront er HTML e add hobe. Save korar por storefront reload korlei change dekha jabe.</p>
+                </div>
+              </div>
+
+              <div class="pf-card">
+                <div class="pf-card-head">
+                  <h3>Search Console</h3>
+                  <label class="pf-switch" title="Enable / disable"><input type="checkbox" id="seoSearchConsoleEnabled" aria-label="Enable Search Console verification" /><span class="slider"></span></label>
+                </div>
+                <div class="settings-body">
+                  <div class="pf-field">
+                    <label for="seoSearchConsoleCode">Verification code</label>
+                    <input id="seoSearchConsoleCode" placeholder="google-site-verification content" spellcheck="false" autocomplete="off" />
+                    <p class="pf-note">Search Console → Settings → Ownership verification → HTML tag theke <code>content="..."</code> er value ta paste korun.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="pf-card">
+                <div class="pf-card-head">
+                  <h3>Google Analytics 4</h3>
+                  <label class="pf-switch" title="Enable / disable"><input type="checkbox" id="seoGa4Enabled" aria-label="Enable Google Analytics 4" /><span class="slider"></span></label>
+                </div>
+                <div class="settings-body">
+                  <div class="pf-field">
+                    <label for="seoGa4Id">Measurement ID</label>
+                    <input id="seoGa4Id" placeholder="G-XXXXXXXXXX" spellcheck="false" autocomplete="off" />
+                    <p class="pf-note">GA4 → Admin → Data streams → Web stream theke Measurement ID copy korun. ON thakle every page e gtag script add hobe.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="pf-card">
+                <div class="pf-card-head">
+                  <h3>Google Tag Manager</h3>
+                  <label class="pf-switch" title="Enable / disable"><input type="checkbox" id="seoGtmEnabled" aria-label="Enable Google Tag Manager" /><span class="slider"></span></label>
+                </div>
+                <div class="settings-body">
+                  <div class="pf-field">
+                    <label for="seoGtmId">Container ID</label>
+                    <input id="seoGtmId" placeholder="GTM-XXXXXXX" spellcheck="false" autocomplete="off" />
+                    <p class="pf-note">tagmanager.google.com → workspace → Container ID. ON thakle head er script ar body er noscript iframe add hobe.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="pf-card">
+                <div class="pf-card-head">
+                  <h3>XML sitemap</h3>
+                  <label class="pf-switch" title="Enable / disable"><input type="checkbox" id="seoSitemapEnabled" aria-label="Enable XML sitemap" /><span class="slider"></span></label>
+                </div>
+                <div class="settings-body">
+                  <p class="pf-note">ON thakle <code>/sitemap.xml</code> e home, shop, shop e thaka category ar product page er list thakbe. OFF korle sitemap 404 hobe.</p>
+                  <p class="pf-note">Storefront URL: <code>/sitemap.xml</code></p>
+                </div>
+              </div>
+
+              <div class="pf-card">
+                <div class="pf-card-head">
+                  <h3>Robots.txt</h3>
+                  <label class="pf-switch" title="Enable / disable"><input type="checkbox" id="seoRobotsEnabled" aria-label="Enable custom robots.txt" /><span class="slider"></span></label>
+                </div>
+                <div class="settings-body">
+                  <div class="pf-field">
+                    <label for="seoRobotsText">Custom robots.txt (optional)</label>
+                    <textarea id="seoRobotsText" rows="7" class="settings-code" spellcheck="false" placeholder="User-agent: *&#10;Allow: /"></textarea>
+                    <p class="pf-note">Khali rakhle default <code>User-agent: * / Allow: /</code> serve hobe. Sitemap ON thakle sitemap line auto add hoy.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="pf-card">
+                <div class="pf-card-head">
+                  <h3>Schema markup</h3>
+                  <label class="pf-switch" title="Enable / disable"><input type="checkbox" id="seoSchemaEnabled" aria-label="Enable schema markup" /><span class="slider"></span></label>
+                </div>
+                <div class="settings-body">
+                  <p class="pf-note">Store name, logo, social links ar website search JSON-LD hisebe add hobe; product page e product, price ar stock er schema add hobe — Google rich result er jonno.</p>
+                </div>
+              </div>
+            </section>
+
+            <!-- ===== SERVER SIDE TRACKING ===== -->
+            <section class="settings-pane" data-pane="server-tracking">
+              <div class="pf-card">
+                <div class="pf-card-head">
+                  <h3>Server side tracking</h3>
+                  <label class="pf-switch" title="Enable / disable"><input type="checkbox" id="sstEnabled" aria-label="Enable server side tracking" /><span class="slider"></span></label>
+                </div>
+                <div class="settings-body" id="sstBody">
+                  <p class="pf-note" id="sstStatus">Server side tracking OFF — kono provider e event pathabe na.</p>
+                  <p class="pf-note">ON korle selected provider gulote checkout er Purchase / CompletePayment event server theke pathabe. Access token / API secret encrypted (AES-256-GCM) save hoy — save korar por full secret ar dekhano hoy na. Purono secret thakle field e •••• dekhabe; notun value dile replace hobe.</p>
+                </div>
+              </div>
+
+              <div class="sst-tabs" role="tablist">
+                <button type="button" class="sst-tab active" data-sst-tab="meta">Meta (Facebook)</button>
+                <button type="button" class="sst-tab" data-sst-tab="tiktok">TikTok</button>
+                <button type="button" class="sst-tab" data-sst-tab="ga4">GA4</button>
+                <button type="button" class="sst-tab" data-sst-tab="gads">Google Ads</button>
+                <button type="button" class="sst-tab" data-sst-tab="guide">Setup Guide</button>
+              </div>
+
+              <!-- Meta -->
+              <div class="sst-panel active" data-sst-panel="meta">
+                <div class="pf-card">
+                  <div class="pf-card-head">
+                    <h3>Meta (Facebook)</h3>
+                    <label class="pf-switch" title="Enable / disable"><input type="checkbox" id="sstMetaEnabled" aria-label="Enable Meta tracking" /><span class="slider"></span></label>
+                  </div>
+                  <div class="settings-body">
+                    <div class="pf-grid-2">
+                      <div class="pf-field">
+                        <label for="sstMetaName">Name</label>
+                        <input id="sstMetaName" placeholder="Meta Pixel" />
+                      </div>
+                      <div class="pf-field">
+                        <label for="sstMetaPixelId">Pixel ID</label>
+                        <input id="sstMetaPixelId" inputmode="numeric" placeholder="120017432329609" spellcheck="false" autocomplete="off" />
+                      </div>
+                    </div>
+                    <div class="pf-field">
+                      <label for="sstMetaAccessToken">Access token</label>
+                      <input id="sstMetaAccessToken" placeholder="EAAG… (Events Manager → Conversions API)" spellcheck="false" autocomplete="off" />
+                    </div>
+                    <div class="pf-grid-2">
+                      <div class="pf-field">
+                        <label for="sstMetaTestEventCode">Test event code</label>
+                        <input id="sstMetaTestEventCode" placeholder="TEST12345" spellcheck="false" autocomplete="off" />
+                      </div>
+                      <div class="pf-field">
+                        <label for="sstMetaApiVersion">API version</label>
+                        <input id="sstMetaApiVersion" placeholder="v19.0" spellcheck="false" autocomplete="off" />
+                      </div>
+                    </div>
+                    <label class="pf-check"><input type="checkbox" id="sstMetaTestMode" /> Test mode <span class="hint">— event Test Events tab e jabe, live report e count hobe na</span></label>
+                    <div class="sst-actions">
+                      <button class="pf-btn-sm" type="button" id="sstMetaTestConn">Test Connection</button>
+                      <button class="pf-btn-sm" type="button" id="sstMetaTestEvent">Send Test Event</button>
+                      <span class="sst-result" id="sstMetaResult"></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- TikTok -->
+              <div class="sst-panel" data-sst-panel="tiktok">
+                <div class="pf-card">
+                  <div class="pf-card-head">
+                    <h3>TikTok</h3>
+                    <label class="pf-switch" title="Enable / disable"><input type="checkbox" id="sstTiktokEnabled" aria-label="Enable TikTok tracking" /><span class="slider"></span></label>
+                  </div>
+                  <div class="settings-body">
+                    <div class="pf-grid-2">
+                      <div class="pf-field">
+                        <label for="sstTiktokName">Name</label>
+                        <input id="sstTiktokName" placeholder="TikTok Pixel" />
+                      </div>
+                      <div class="pf-field">
+                        <label for="sstTiktokPixelId">Pixel ID</label>
+                        <input id="sstTiktokPixelId" placeholder="CXXXXXXXXXXXXXXXXXXX" spellcheck="false" autocomplete="off" />
+                      </div>
+                    </div>
+                    <div class="pf-field">
+                      <label for="sstTiktokAccessToken">Access token</label>
+                      <input id="sstTiktokAccessToken" placeholder="Events API access token" spellcheck="false" autocomplete="off" />
+                    </div>
+                    <div class="pf-field">
+                      <label for="sstTiktokTestEventCode">Test event code</label>
+                      <input id="sstTiktokTestEventCode" placeholder="TEST12345" spellcheck="false" autocomplete="off" />
+                    </div>
+                    <label class="pf-check"><input type="checkbox" id="sstTiktokTestMode" /> Test mode</label>
+                    <div class="sst-actions">
+                      <button class="pf-btn-sm" type="button" id="sstTiktokTestConn">Test Connection</button>
+                      <button class="pf-btn-sm" type="button" id="sstTiktokTestEvent">Send Test Event</button>
+                      <span class="sst-result" id="sstTiktokResult"></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- GA4 -->
+              <div class="sst-panel" data-sst-panel="ga4">
+                <div class="pf-card">
+                  <div class="pf-card-head">
+                    <h3>GA4 server events</h3>
+                    <label class="pf-switch" title="Enable / disable"><input type="checkbox" id="sstGa4Enabled" aria-label="Enable GA4 server tracking" /><span class="slider"></span></label>
+                  </div>
+                  <div class="settings-body">
+                    <div class="pf-grid-2">
+                      <div class="pf-field">
+                        <label for="sstGa4Name">Name</label>
+                        <input id="sstGa4Name" placeholder="GA4 Server" />
+                      </div>
+                      <div class="pf-field">
+                        <label for="sstGa4MeasurementId">Measurement ID</label>
+                        <input id="sstGa4MeasurementId" placeholder="G-XXXXXXXXXX" spellcheck="false" autocomplete="off" />
+                      </div>
+                    </div>
+                    <div class="pf-field">
+                      <label for="sstGa4ApiSecret">API secret</label>
+                      <input id="sstGa4ApiSecret" placeholder="Measurement Protocol API secret" spellcheck="false" autocomplete="off" />
+                      <p class="pf-note">GA4 → Admin → Data streams → Web stream → Measurement Protocol API secrets theke create korun.</p>
+                    </div>
+                    <label class="pf-check"><input type="checkbox" id="sstGa4TestMode" /> Test mode</label>
+                    <div class="sst-actions">
+                      <button class="pf-btn-sm" type="button" id="sstGa4TestConn">Test Connection</button>
+                      <button class="pf-btn-sm" type="button" id="sstGa4TestEvent">Send Test Event</button>
+                      <span class="sst-result" id="sstGa4Result"></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Google Ads -->
+              <div class="sst-panel" data-sst-panel="gads">
+                <div class="pf-card">
+                  <div class="pf-card-head">
+                    <h3>Google Ads</h3>
+                    <label class="pf-switch" title="Enable / disable"><input type="checkbox" id="sstGadsEnabled" aria-label="Enable Google Ads server tracking" /><span class="slider"></span></label>
+                  </div>
+                  <div class="settings-body">
+                    <div class="pf-grid-2">
+                      <div class="pf-field">
+                        <label for="sstGadsName">Name</label>
+                        <input id="sstGadsName" placeholder="Google Ads" />
+                      </div>
+                      <div class="pf-field">
+                        <label for="sstGadsConversionId">Conversion ID</label>
+                        <input id="sstGadsConversionId" placeholder="AW-123456789" spellcheck="false" autocomplete="off" />
+                      </div>
+                    </div>
+                    <div class="pf-field">
+                      <label for="sstGadsConversionLabel">Conversion label</label>
+                      <input id="sstGadsConversionLabel" placeholder="AbC-D_efGhIjKl" spellcheck="false" autocomplete="off" />
+                      <p class="pf-note">Google Ads → Goals → Conversions → tag setup theke label copy korun. Server ping shudhu <code>gclid</code> wala order e pathabe (auto-tagging ON rakhen).</p>
+                    </div>
+                    <label class="pf-check"><input type="checkbox" id="sstGadsTestMode" /> Test mode</label>
+                    <div class="sst-actions">
+                      <button class="pf-btn-sm" type="button" id="sstGadsTestConn">Test Connection</button>
+                      <button class="pf-btn-sm" type="button" id="sstGadsTestEvent">Send Test Event</button>
+                      <span class="sst-result" id="sstGadsResult"></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Setup guide -->
+              <div class="sst-panel" data-sst-panel="guide">
+                <div class="pf-card">
+                  <div class="pf-card-head"><h3>Setup Guide (বাংলা)</h3></div>
+                  <div class="settings-body sst-guide">
+                    <p class="pf-note">Server side tracking mane holo order hobar por apnar server theke provider er API te event pathano — browser block/throttle korleo event jambe na. Facebook/TikTok er Conversion API er jonno eta recommended.</p>
+
+                    <h4 class="settings-subhead">1. Meta (Facebook)</h4>
+                    <ol>
+                      <li>business.facebook.com → Events Manager → apnar Pixel → Settings → Conversions API → <strong>Generate access token</strong>.</li>
+                      <li>Pixel ID ar token ei panel er Meta tab e bosan. API version <code>v19.0</code> rakhte paren.</li>
+                      <li>Test korte Events Manager → <strong>Test Events</strong> tab theke ekta test code copy kore Test event code field e din, Test mode ON korun, tarpor <strong>Send Test Event</strong> chapun. Event Test Events tab e dekha jabe.</li>
+                      <li>Live e pathate Test mode OFF kore Save korun — tokhn Purchase event real report e count hobe.</li>
+                    </ol>
+
+                    <h4 class="settings-subhead">2. TikTok</h4>
+                    <ol>
+                      <li>ads.tiktok.com → Assets → Events → Web Events → apnar pixel → Settings → <strong>Events API</strong> → Generate access token.</li>
+                      <li>Pixel ID ar token TikTok tab e din, Save korun.</li>
+                      <li>Checkout hole <strong>CompletePayment</strong> event server theke pathabe; test mode ON thakle test event code dorkar.</li>
+                    </ol>
+
+                    <h4 class="settings-subhead">3. GA4</h4>
+                    <ol>
+                      <li>analytics.google.com → Admin → Data streams → Web stream select korun.</li>
+                      <li>Measurement ID (<code>G-XXXXXXX</code>) copy korun.</li>
+                      <li>Measurement Protocol API secrets → <strong>Create</strong> → secret value copy korun.</li>
+                      <li>Duitai GA4 tab e din. Order hole <code>purchase</code> event server theke pathabe — Realtime report e 1–2 min er moddhe dekha jabe.</li>
+                    </ol>
+
+                    <h4 class="settings-subhead">4. Google Ads</h4>
+                    <ol>
+                      <li>ads.google.com → Goals → Conversions → conversion action → Tag setup → <strong>Conversion ID</strong> (AW-…) ar <strong>Conversion Label</strong> copy korun.</li>
+                      <li>Duitai Google Ads tab e din ar Save korun.</li>
+                      <li>Auto-tagging ON thakle ad click URL e <code>gclid</code> ashe; site seta order er sathe save kore. Server ping shudhu sei order gulote pathabe — gclid chara order skip hobe.</li>
+                    </ol>
+
+                    <h4 class="settings-subhead">5. Common</h4>
+                    <ol>
+                      <li>Uporer master switch ON + je provider use korben tar switch ON.</li>
+                      <li>Credentials diye <strong>Save changes</strong> korun, tarpor <strong>Test Connection</strong> ar <strong>Send Test Event</strong> diye verify korun.</li>
+                      <li>Meta/TikTok/GA4/GAds sab shathe ek sathe on rakha jabe — ekta fail korle baki gulo te kono effect porbe na.</li>
+                      <li>Token / secret encrypted save hoy; API theke shudhu <code>••••last4</code> fire ashe.</li>
+                    </ol>
+                  </div>
+                </div>
+              </div>
+            </section>
+
             <!-- ===== EMAIL / SMTP ===== -->
             <section class="settings-pane" data-pane="email">
               <div class="pf-card">
@@ -2551,6 +2956,278 @@
         <div id="repCustomersRoot"></div>
       </section><!-- /#view-report-customers -->
 
+      <!-- ===================== INVENTORY: STOCK OVERVIEW ===================== -->
+      <section class="view" id="view-inventory-overview" hidden>
+        <div class="topbar">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <button class="menu-btn" aria-label="Menu">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+            <div>
+              <h1>Stock overview</h1>
+              <p class="crumb">On-hand units · low stock · stock value</p>
+            </div>
+          </div>
+        </div>
+        <div id="invOverviewRoot"></div>
+      </section><!-- /#view-inventory-overview -->
+
+      <!-- ===================== INVENTORY: CATEGORY WISE ===================== -->
+      <section class="view" id="view-inventory-category" hidden>
+        <div class="topbar">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <button class="menu-btn" aria-label="Menu">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+            <div>
+              <h1>Category-wise stock</h1>
+              <p class="crumb">Primary category attribution</p>
+            </div>
+          </div>
+        </div>
+        <div id="invCategoryRoot"></div>
+      </section><!-- /#view-inventory-category -->
+
+      <!-- ===================== INVENTORY: VARIANT ===================== -->
+      <section class="view" id="view-inventory-variant" hidden>
+        <div class="topbar">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <button class="menu-btn" aria-label="Menu">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+            <div>
+              <h1>Attribute / variant stock</h1>
+              <p class="crumb">Term-wise units · swatch group</p>
+            </div>
+          </div>
+        </div>
+        <div id="invVariantRoot"></div>
+      </section><!-- /#view-inventory-variant -->
+
+      <!-- ===================== INVENTORY: SUPPLIER ===================== -->
+      <section class="view" id="view-inventory-supplier" hidden>
+        <div class="topbar">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <button class="menu-btn" aria-label="Menu">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+            <div>
+              <h1>Supplier stock (purchase)</h1>
+              <p class="crumb">Purchase orders · units · cost</p>
+            </div>
+          </div>
+        </div>
+        <div id="invSupplierRoot"></div>
+      </section><!-- /#view-inventory-supplier -->
+
+      <!-- ===================== INVENTORY: MOVEMENTS ===================== -->
+      <section class="view" id="view-inventory-movements" hidden>
+        <div class="topbar">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <button class="menu-btn" aria-label="Menu">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+            <div>
+              <h1>Stock movements</h1>
+              <p class="crumb">Sales · purchases · adjustments · transfers</p>
+            </div>
+          </div>
+        </div>
+        <div id="invMovementsRoot"></div>
+      </section><!-- /#view-inventory-movements -->
+
+      <!-- ===================== INVENTORY: DAMAGE / RETURN ===================== -->
+      <section class="view" id="view-inventory-damage" hidden>
+        <div class="topbar">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <button class="menu-btn" aria-label="Menu">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+            <div>
+              <h1>Damage &amp; returned stock</h1>
+              <p class="crumb">Damage decreases · return restocks</p>
+            </div>
+          </div>
+        </div>
+        <div id="invDamageRoot"></div>
+      </section><!-- /#view-inventory-damage -->
+
+      <!-- ===================== INVENTORY: ADJUSTMENT ===================== -->
+      <section class="view" id="view-inventory-adjustment" hidden>
+        <div class="topbar">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <button class="menu-btn" aria-label="Menu">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+            <div>
+              <h1>Stock adjustment</h1>
+              <p class="crumb">Manual set · increase · decrease + CSV</p>
+            </div>
+          </div>
+        </div>
+        <div id="invAdjustmentRoot"></div>
+      </section><!-- /#view-inventory-adjustment -->
+
+      <!-- ===================== INVENTORY: TRANSFER ===================== -->
+      <section class="view" id="view-inventory-transfer" hidden>
+        <div class="topbar">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <button class="menu-btn" aria-label="Menu">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+            <div>
+              <h1>Warehouse transfer</h1>
+              <p class="crumb">Move stock between warehouses</p>
+            </div>
+          </div>
+        </div>
+        <div id="invTransferRoot"></div>
+      </section><!-- /#view-inventory-transfer -->
+
+      <!-- ===================== ACCOUNTS: DASHBOARD ===================== -->
+      <section class="view" id="view-accounts-dashboard" hidden>
+        <div class="topbar">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <button class="menu-btn" aria-label="Menu">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+            <div>
+              <h1>Accounts dashboard</h1>
+              <p class="crumb">Sales · returns · purchases · costs · profit · cash</p>
+            </div>
+          </div>
+        </div>
+        <div id="acctDashboardRoot"></div>
+      </section><!-- /#view-accounts-dashboard -->
+
+      <!-- ===================== ACCOUNTS: SALES & RETURN ===================== -->
+      <section class="view" id="view-accounts-sales" hidden>
+        <div class="topbar">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <button class="menu-btn" aria-label="Menu">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+            <div>
+              <h1>Sales &amp; return cost</h1>
+              <p class="crumb">Net sales · discounts · shipping · refunds</p>
+            </div>
+          </div>
+        </div>
+        <div id="acctSalesRoot"></div>
+      </section><!-- /#view-accounts-sales -->
+
+      <!-- ===================== ACCOUNTS: SUPPLIER LEDGER ===================== -->
+      <section class="view" id="view-accounts-suppliers" hidden>
+        <div class="topbar">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <button class="menu-btn" aria-label="Menu">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+            <div>
+              <h1>Supplier ledger</h1>
+              <p class="crumb">Purchases · payments · outstanding</p>
+            </div>
+          </div>
+        </div>
+        <div id="acctSuppliersRoot"></div>
+      </section><!-- /#view-accounts-suppliers -->
+
+      <!-- ===================== ACCOUNTS: OFFICE COST ===================== -->
+      <section class="view" id="view-accounts-office" hidden>
+        <div class="topbar">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <button class="menu-btn" aria-label="Menu">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+            <div>
+              <h1>Office operating cost</h1>
+              <p class="crumb">Rent · utilities · day-to-day expenses</p>
+            </div>
+          </div>
+        </div>
+        <div id="acctOfficeRoot"></div>
+      </section><!-- /#view-accounts-office -->
+
+      <!-- ===================== ACCOUNTS: TECH COST ===================== -->
+      <section class="view" id="view-accounts-tech" hidden>
+        <div class="topbar">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <button class="menu-btn" aria-label="Menu">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+            <div>
+              <h1>Tech &amp; server cost</h1>
+              <p class="crumb">Hosting · domains · tools · software</p>
+            </div>
+          </div>
+        </div>
+        <div id="acctTechRoot"></div>
+      </section><!-- /#view-accounts-tech -->
+
+      <!-- ===================== ACCOUNTS: MARKETING COST ===================== -->
+      <section class="view" id="view-accounts-marketing" hidden>
+        <div class="topbar">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <button class="menu-btn" aria-label="Menu">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+            <div>
+              <h1>Marketing &amp; ads cost</h1>
+              <p class="crumb">Ads · boosts · campaigns</p>
+            </div>
+          </div>
+        </div>
+        <div id="acctMarketingRoot"></div>
+      </section><!-- /#view-accounts-marketing -->
+
+      <!-- ===================== ACCOUNTS: SALARY & INVESTMENT ===================== -->
+      <section class="view" id="view-accounts-salary" hidden>
+        <div class="topbar">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <button class="menu-btn" aria-label="Menu">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+            <div>
+              <h1>Salary &amp; investment</h1>
+              <p class="crumb">Payroll cost · owner capital in</p>
+            </div>
+          </div>
+        </div>
+        <div id="acctSalaryRoot"></div>
+      </section><!-- /#view-accounts-salary -->
+
+      <!-- ===================== ACCOUNTS: VOID & CANCEL ===================== -->
+      <section class="view" id="view-accounts-voids" hidden>
+        <div class="topbar">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <button class="menu-btn" aria-label="Menu">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+            <div>
+              <h1>Void &amp; cancel logs</h1>
+              <p class="crumb">Orders · supplier documents · expense voids</p>
+            </div>
+          </div>
+        </div>
+        <div id="acctVoidsRoot"></div>
+      </section><!-- /#view-accounts-voids -->
+
+      <!-- ===================== ACCOUNTS: EXPORT ===================== -->
+      <section class="view" id="view-accounts-export" hidden>
+        <div class="topbar">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <button class="menu-btn" aria-label="Menu">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+            <div>
+              <h1>Export Excel report</h1>
+              <p class="crumb">One workbook · six sheets · selected period</p>
+            </div>
+          </div>
+        </div>
+        <div id="acctExportRoot"></div>
+      </section><!-- /#view-accounts-export -->
+
       <!-- ===================== FOOTER ===================== -->
       <footer class="dash-footer">
         <div class="footer-left">
@@ -2834,7 +3511,7 @@
   <script src="/js/categories.js"></script>
   <script src="/js/brands.js"></script>
   <script src="/js/product-form.js"></script>
-  <script src="/js/settings-dashboard.js?v=13"></script>
+  <script src="/js/settings-dashboard.js?v=15"></script>
   <script src="/js/installments-admin.js?v=1"></script>
   <script src="/js/orders.js?v=3"></script>
   <script src="/js/product-catalog.js?v=1"></script>
@@ -2843,6 +3520,8 @@
   <script src="/js/customers.js?v=1"></script>
   <script src="/js/suppliers.js?v=4"></script>
   <script src="/js/reports.js?v=2"></script>
+  <script src="/js/inventory.js?v=1"></script>
+  <script src="/js/accounts.js?v=2"></script>
   <script src="/js/sidebar-scroll.js?v=1"></script>
 </body>
 </html>

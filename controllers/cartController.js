@@ -987,6 +987,7 @@ async function createOrder(req, res) {
       orderNote: meta.orderNote,
       orderSource: meta.orderSource,
       deviceType: meta.deviceType,
+      clickIds: meta.clickIds,
       billing: contact,
       shipping: contact,
       items: lineItems,

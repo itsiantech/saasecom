@@ -24,6 +24,7 @@ const { toPaisa, fromPaisa } = require("../lib/money");
 const { parseSections } = require("../lib/homeSections");
 const { sanitizeRichText } = require("../lib/richText");
 const { buildMenu } = require("../lib/storeMenu");
+const { buildGoogleSeo } = require("../lib/googleSeo");
 
 /* ------------------------------------------------------------------ *
  * Public catalog reads. Every query here is store-scoped BY HAND:
@@ -733,6 +734,7 @@ async function getStoreInfo(req, res, next) {
       },
       social: social.map((row) => ({ name: row.name, icon: row.icon || "", url: row.url })),
       menu: buildMenu(map.storefront_menu, { categories: menuCategories, language: store.language }),
+      googleSeo: buildGoogleSeo(map),
     });
   } catch (err) {
     next(err);

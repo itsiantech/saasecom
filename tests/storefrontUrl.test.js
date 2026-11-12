@@ -35,7 +35,7 @@ test("a claimed subdomain keeps the Next port from STOREFRONT_URL", async () => 
   assert.equal(url, "http://amar-dokan.localtest.me:3000/");
 });
 
-test("without a domain the folder address points at the themed site, not the legacy page", async () => {
+test("without a custom domain the slug subdomain is the address", async () => {
   const url = await storefrontUrl({ slug: "rashanest" });
-  assert.equal(url, "http://localhost:3000/?store=rashanest");
+  assert.equal(url, "http://rashanest.localtest.me:3000/");
 });

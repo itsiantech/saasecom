@@ -6,7 +6,7 @@ const Plan = require("../models/Plan");
 const PlatformPayment = require("../models/PlatformPayment");
 const { auth } = require("../middleware/auth");
 const billing = require("../lib/platformBilling");
-const { slugProblem } = require("../lib/storeSlug");
+const { assertShopName } = require("../lib/shopAddress");
 const { buildPlatformInvoiceHtml } = require("../lib/platformInvoice");
 
 // public: checkout page kon kon manual method dekhabe (kono key jay na)
@@ -60,12 +60,15 @@ router.post("/payments", auth, async (req, res) => {
     } else {
       storeName = String(body.storeName || "").trim().slice(0, 80);
       if (!storeName) return res.status(400).json({ message: "দোকানের নাম লিখুন" });
-      storeSlug = String(body.storeSlug || "").toLowerCase().trim();
-      const problem = slugProblem(storeSlug);
-      if (problem) return res.status(400).json({ message: problem });
-      if (await Store.exists({ slug: storeSlug })) {
-        return res.status(409).json({ message: "এই ঠিকানাটি আগেই নেওয়া হয়েছে — অন্য একটি বেছে নিন" });
+      const checkSlug = await assertShopName(body.storeSlug).catch((err) => err);
+      if (checkSlug instanceof Error) {
+        return res.status(checkSlug.status || 400).json({
+          message: checkSlug.message,
+          code: checkSlug.code,
+          reason: checkSlug.reason,
+        });
       }
+      storeSlug = checkSlug;
     }
 
     const pendingFilter = { user: req.user.id, status: "pending" };

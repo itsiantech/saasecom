@@ -69,6 +69,8 @@ router.put("/dashboard-style", auth, requireAdmin, async (req, res) => {
 // notification test + invoice preview (admin)
 router.post("/email/test", auth, requireAdmin, ctrl.emailTest);
 router.post("/sms/test", auth, requireAdmin, ctrl.smsTest);
+router.post("/tracking/test-connection", auth, requireAdmin, ctrl.trackingConnectionTest);
+router.post("/tracking/test-event", auth, requireAdmin, ctrl.trackingEventTest);
 router.get("/invoice/preview", auth, requireAdmin, ctrl.invoicePreview);
 router.post("/invoice/preview", auth, requireAdmin, ctrl.invoicePreview);
 

@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="/css/style.css" />
   <link rel="stylesheet" href="/css/auth.css" />
   <link rel="stylesheet" href="/css/setup.css" />
+  <link rel="stylesheet" href="/css/shop-address.css?v=1" />
 </head>
 <body class="auth-body">
   <main class="setup-wrap">
@@ -27,9 +28,15 @@
         </div>
 
         <div class="field">
-          <label for="sSlug">স্লাগ (ঐচ্ছিক)</label>
-          <input id="sSlug" type="text" placeholder="aarong-style" />
-          <p class="hint">শুধু ছোট হাতের অক্ষর, সংখ্যা আর hyphen (-)</p>
+          <label for="sSlug">দোকানের ঠিকানা</label>
+          <div class="addr-field">
+            <input id="sSlug" type="text" placeholder="amar-dokan" spellcheck="false" autocomplete="off" autocapitalize="none" aria-describedby="sSlugUrl sSlugStatus sSlugRule" />
+            <span class="addr-suffix" id="sSlugSuffix" hidden></span>
+          </div>
+          <p class="addr-url" id="sSlugUrl" hidden></p>
+          <p class="addr-status" id="sSlugStatus" role="status" aria-live="polite" hidden></p>
+          <div class="addr-suggest" id="sSlugSuggest" hidden></div>
+          <p class="hint addr-rule" id="sSlugRule"></p>
         </div>
 
         <div class="field">
@@ -47,6 +54,8 @@
     </section>
   </main>
 
-  <script src="/js/setup.js?v=2"></script>
+  <script src="/js/shop-address.js?v=1"></script>
+  <script src="/js/shop-address-field.js?v=1"></script>
+  <script src="/js/setup.js?v=3"></script>
 </body>
 </html>

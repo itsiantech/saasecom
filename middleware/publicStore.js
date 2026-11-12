@@ -11,7 +11,7 @@ async function fromDomainHeader(req) {
   if (!host) return null;
   const main = await platformDomain();
   const label = main ? subLabel(host, main) : null;
-  if (label) return Store.findOne({ subdomain: label });
+  if (label) return (await Store.findOne({ slug: label })) || Store.findOne({ subdomain: label });
   return Store.findOne({ customDomain: host, customDomainStatus: "verified" });
 }
 
@@ -25,7 +25,7 @@ async function resolvePublicStore(req) {
   if (headerDomain) return headerDomain;
 
   const raw = String(req.headers["x-store-slug"] || req.query.store || "").trim().toLowerCase();
-  if (raw && SLUG_RE.test(raw)) return Store.findOne({ slug: raw });
+  if (raw && SLUG_RE.test(raw)) return (await Store.findOne({ slug: raw })) || Store.findOne({ subdomain: raw });
 
   return null;
 }
@@ -33,7 +33,8 @@ async function resolvePublicStore(req) {
 module.exports = async function publicStore(req, res, next) {
   try {
     const store = await resolvePublicStore(req);
-    if (!store) return res.status(404).json({ message: "Ei thikanay kono dokan nei" });
+    // trashed shops keep their address reserved but must not answer publicly
+    if (!store || store.deletedAt) return res.status(404).json({ message: "Ei thikanay kono dokan nei" });
     if (store.status === "suspended") {
       return res.status(403).json({ message: "Ei dokan ta ekhon bondho ache" });
     }

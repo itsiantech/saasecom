@@ -28,6 +28,23 @@ const { encrypt, decrypt, maskSecret, isMasked } = require("../lib/secretBox");
 const { DEFAULT_TEMPLATES, TEMPLATE_LABELS } = require("../lib/emailTemplates");
 const { parseSections, normalizeSections } = require("../lib/homeSections");
 const { buildMenu, normalizeMenu } = require("../lib/storeMenu");
+const {
+  GOOGLE_SEO_DEFAULTS,
+  BOOL_FIELDS: GOOGLE_SEO_BOOL_FIELDS,
+  normalizeSeoValue,
+  googleSeoError,
+} = require("../lib/googleSeo");
+const {
+  TRACKING_DEFAULTS,
+  BOOL_FIELDS: TRACKING_BOOL_FIELDS,
+} = require("../lib/serverTracking");
+const {
+  TRACKING_KEYS,
+  adminSettings: trackingAdminSettings,
+  prepareSave: prepareTrackingSave,
+  testConnection: trackingTestConnection,
+  sendTestEvent: trackingSendTestEvent,
+} = require("../services/serverTracking");
 const { sendMail } = require("../lib/mailer");
 const { sendSms } = require("../lib/sms");
 const {
@@ -91,6 +108,10 @@ const SETTING_KEYS = [
   "home_new_products_enabled",
   // storefront navigation
   "storefront_menu",
+  // Google SEO
+  ...Object.keys(GOOGLE_SEO_DEFAULTS),
+  // Server side tracking
+  ...TRACKING_KEYS,
 ];
 
 const BOOL_KEYS = [
@@ -116,6 +137,8 @@ const BOOL_KEYS = [
   "card_checkout_popup_enabled",
   "home_hot_deals_enabled",
   "home_new_products_enabled",
+  ...GOOGLE_SEO_BOOL_FIELDS,
+  ...TRACKING_BOOL_FIELDS,
 ];
 
 const DEFAULTS = {
@@ -153,6 +176,8 @@ const DEFAULTS = {
   home_hot_deals_enabled: "true",
   home_new_products_enabled: "true",
   storefront_menu: "[]",
+  ...GOOGLE_SEO_DEFAULTS,
+  ...TRACKING_DEFAULTS,
 };
 
 // je branding key gulo prottek dokan alada rakhbe — SiteSetting er field er sathe mapping
@@ -425,7 +450,7 @@ async function buildAdminPayload() {
   // field order always fixed
   const fieldMap = new Map(fields.map((f) => [f.fieldKey, f]));
   return {
-    settings,
+    settings: trackingAdminSettings(settings),
     homeSections: parseSections(settings.home_category_sections),
     menu: buildMenu(settings.storefront_menu, {
       categories: cats.filter((row) => row.status !== "trashed" && !row.deletedAt),
@@ -498,6 +523,10 @@ async function adminSave(req, res) {
   const payments = body.payments || {};
 
   const current = await getSettingsMap();
+  const seoError = googleSeoError(settings);
+  if (seoError) return res.status(400).json({ message: seoError });
+  const trackingSave = prepareTrackingSave(storeId, current, settings);
+  if (trackingSave.error) return res.status(400).json({ message: trackingSave.error });
   const nextEmail = settings.login_email_enabled === undefined
     ? boolOf(current, "login_email_enabled")
     : String(settings.login_email_enabled) === "true";
@@ -525,12 +554,15 @@ async function adminSave(req, res) {
   }
   SETTING_KEYS.forEach((key) => {
     if (settings[key] === undefined) return;
+    // tracking keys (including encrypted secrets) go through prepareTrackingSave
+    if (TRACKING_KEYS.includes(key)) return;
     let value = settings[key];
     if (key === "home_category_sections") {
       value = JSON.stringify(normalizeSections(value, allowedHomeCategories));
     } else if (key === "storefront_menu") {
       value = JSON.stringify(normalizeMenu(value, { allowedCategoryIds: allowedMenuCategories }));
     } else if (BOOL_KEYS.includes(key)) value = value === true || value === "true" ? "true" : "false";
+    else if (key.startsWith("seo_")) value = normalizeSeoValue(key, value);
     else value = String(value == null ? "" : value);
     if (["logo_width", "logo_height"].includes(key)) {
       const n = Number(value);
@@ -548,6 +580,7 @@ async function adminSave(req, res) {
     });
   });
   if (ops.length) await Settings.bulkWrite(ops);
+  if (trackingSave.ops.length) await Settings.bulkWrite(trackingSave.ops);
   if (Object.keys(branding).length) {
     await SiteSetting.updateOne({ store: storeId }, { $set: branding }, { upsert: true });
   }
@@ -1164,6 +1197,33 @@ async function smsTest(req, res) {
 }
 
 /* ------------------------------------------------------------------ *
+ * POST /api/settings/tracking/test-connection
+ * POST /api/settings/tracking/test-event
+ * Body: { provider, config } — config = unsaved form values; masked/blank
+ * secrets fall back to the stored ones.
+ * ------------------------------------------------------------------ */
+async function trackingConnectionTest(req, res) {
+  const storeId = storeIdOf(req);
+  if (!storeId) return res.status(400).json({ message: "Store pawa jayni" });
+  const body = req.body || {};
+  const result = await trackingTestConnection(storeId, String(body.provider || "").toLowerCase(), body.config || {});
+  res.json(result);
+}
+
+async function trackingEventTest(req, res) {
+  const storeId = storeIdOf(req);
+  if (!storeId) return res.status(400).json({ message: "Store pawa jayni" });
+  const body = req.body || {};
+  const result = await trackingSendTestEvent(
+    storeId,
+    String(body.provider || "").toLowerCase(),
+    body.config || {},
+    req.user || null
+  );
+  res.json(result);
+}
+
+/* ------------------------------------------------------------------ *
  * GET /api/settings/invoice/preview — sample double-copy invoice
  * ------------------------------------------------------------------ */
 async function invoicePreview(req, res) {
@@ -1205,6 +1265,8 @@ module.exports = {
   checkoutGet,
   emailTest,
   smsTest,
+  trackingConnectionTest,
+  trackingEventTest,
   invoicePreview,
   getShippingConfig,
   quoteFromConfig,
