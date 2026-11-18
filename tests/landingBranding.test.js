@@ -51,7 +51,8 @@ function admin(method, url, token) {
 
 test("defaults cover every branding field", () => {
   const value = branding.defaults();
-  assert.deepEqual(Object.keys(value).sort(), ["copyright", "favicon", "footerLeft", "footerRight", "logo", "title"]);
+  assert.deepEqual(Object.keys(value).sort(), ["copyright", "favicon", "footerLeft", "footerRight", "logo", "name", "title"]);
+  assert.equal(value.name, "LUXE");
   assert.equal(value.logo, "");
   assert.equal(value.favicon, "");
   assert.equal(value.footerRight, branding.DEFAULT_FOOTER_RIGHT);
@@ -77,6 +78,9 @@ test("text fields are trimmed, capped and unknown keys dropped", () => {
   assert.equal(branding.normalizeBranding({ title: "   " }).title, branding.DEFAULT_TITLE);
   assert.equal(branding.normalizeBranding({ footerLeft: "" }).footerLeft, "");
   assert.equal(branding.normalizeBranding({ title: "x".repeat(300) }).title.length, 140);
+  assert.equal(branding.normalizeBranding({ name: "  Amar   Platform " }).name, "Amar Platform");
+  assert.equal(branding.normalizeBranding({ name: "   " }).name, branding.DEFAULT_NAME);
+  assert.equal(branding.normalizeBranding({ name: "x".repeat(100) }).name.length, 60);
 });
 
 test("only uploaded paths and http(s) urls survive normalization", () => {
@@ -118,6 +122,7 @@ test("only the superadmin can read or write landing settings", async () => {
 test("saving updates the landing texts and is visible publicly", async () => {
   const res = await admin("put", "/api/admin/settings/landing", state.superToken).send({
     branding: {
+      name: "ITSIAN",
       title: "আমার প্ল্যাটফর্ম",
       footerLeft: "",
       copyright: "Design and Developed by ITSIAN",
@@ -129,6 +134,7 @@ test("saving updates the landing texts and is visible publicly", async () => {
   });
   assert.equal(res.status, 200, JSON.stringify(res.body));
   assert.equal(res.body.branding.title, "আমার প্ল্যাটফর্ম");
+  assert.equal(res.body.branding.name, "ITSIAN");
   assert.equal(res.body.branding.footerLeft, "");
   assert.equal(res.body.branding.copyright, "Design and Developed by ITSIAN");
   assert.equal(res.body.branding.footerRight, "Built in Bangladesh");

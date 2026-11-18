@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>LUXE — Super Admin</title>
+  <title data-pb-title>LUXE — Super Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -23,10 +23,10 @@
 <body>
   <div class="dash">
     <aside class="sidebar">
-      <div class="sb-brand">
-        <div class="mark">L</div>
+      <div class="sb-brand" data-pb-logo-wrap>
+        <div class="mark" data-pb-mark>L</div>
         <div>
-          <div class="name">LUXE</div>
+          <div class="name" data-pb-name>LUXE</div>
           <div class="role">Super Admin</div>
         </div>
       </div>
@@ -190,6 +190,10 @@
         <div class="landing-body">
           <div class="landing-grid">
             <div class="field">
+              <label for="lbName">ব্র্যান্ড নাম</label>
+              <input id="lbName" type="text" maxlength="60" placeholder="LUXE" />
+            </div>
+            <div class="field">
               <label for="lbTitle">টাইটেল</label>
               <input id="lbTitle" type="text" maxlength="140" placeholder="LUXE — নিজের অনলাইন দোকান, মিনিটে" />
             </div>
@@ -232,7 +236,7 @@
 
           <div class="landing-foot">
             <span class="theme-note" id="landingNote"></span>
-            <span class="billing-hint">লোগো সেট করলে সুপার অ্যাডমিন সাইডবারেও একই লোগো দেখাবে। খালি রাখলে LUXE. ডিফল্ট থাকবে।</span>
+            <span class="billing-hint">ব্র্যান্ড নাম ল্যান্ডিং, লগইন, পোর্টাল, সেটআপ আর প্যানেলের সব লোগোটেক্সটে বসবে। লোগো দিলে সাইডবারে লোগোই দেখাবে।</span>
           </div>
         </div>
       </section>
@@ -402,6 +406,7 @@
 
   <div class="toast" id="toast"></div>
 
-  <script src="/js/admin.js?v=16"></script>
+  <script src="/js/platform-brand.js?v=1"></script>
+  <script src="/js/admin.js?v=17"></script>
 </body>
 </html>

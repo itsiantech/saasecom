@@ -8,6 +8,7 @@ const { auth } = require("../middleware/auth");
 const billing = require("../lib/platformBilling");
 const { assertShopName } = require("../lib/shopAddress");
 const { buildPlatformInvoiceHtml } = require("../lib/platformInvoice");
+const landingBranding = require("../lib/landingBranding");
 
 // public: checkout page kon kon manual method dekhabe (kono key jay na)
 router.get("/methods", async (req, res) => {
@@ -145,7 +146,8 @@ router.get("/payments/:id/invoice", async (req, res) => {
     }
     if (!allowed) return res.status(403).send("এই ইনভয়েস দেখার অনুমতি নেই");
 
-    res.type("html").send(buildPlatformInvoiceHtml(payment, { brand: "LUXE" }));
+    const branding = await landingBranding.getBranding();
+    res.type("html").send(buildPlatformInvoiceHtml(payment, { brand: branding.name }));
   } catch (err) {
     res.status(500).send(err.message);
   }

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>LUXE — Admin Dashboard</title>
+  <title>Admin Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -39,7 +39,7 @@
       <div class="sb-brand">
         <div class="mark">L</div>
         <div>
-          <div class="name">LUXE</div>
+          <div class="name">Store</div>
           <div class="s-store" id="storeName" hidden></div>
         </div>
       </div>
@@ -999,7 +999,7 @@
                 </div>
                 <div class="pf-field">
                   <label for="siteTitle">Website title</label>
-                  <input id="siteTitle" type="text" placeholder="LUXE Store" />
+                  <input id="siteTitle" type="text" placeholder="Your Store" />
                   <p class="pf-note">No logo thakle ei title text hisebe dekhabe. Title khali hole project folder name use hobe.</p>
                 </div>
               </div>
@@ -2260,7 +2260,7 @@
                   <div class="pf-grid-2">
                     <div class="pf-field">
                       <label for="emailFromName">From name</label>
-                      <input id="emailFromName" placeholder="LUXE Store" />
+                      <input id="emailFromName" placeholder="Your Store" />
                     </div>
                     <div class="pf-field">
                       <label for="emailFromEmail">From email</label>
@@ -3248,7 +3248,7 @@
             </div>
             <div class="ss-preview" id="ssPreview">
               <div class="ss-pv-side">
-                <div class="ss-pv-brand"><span class="ss-pv-mark">L</span><span class="ss-pv-name">LUXE</span></div>
+                <div class="ss-pv-brand"><span class="ss-pv-mark">S</span><span class="ss-pv-name">Store</span></div>
                 <div class="ss-pv-nav">
                   <div class="ss-pv-item active"><span class="ss-pv-ico"></span>Categories</div>
                   <div class="ss-pv-item"><span class="ss-pv-ico"></span>Products</div>
@@ -3780,7 +3780,7 @@
       <footer class="dash-footer">
         <div class="footer-left">
           <img id="footerLogo" src="" alt="Footer logo" hidden />
-          <span id="siteFooterCopyright">© <span id="footerYear">2026</span> LUXE Admin — all rights reserved.</span>
+          <span id="siteFooterCopyright" data-pb-copyright>© <span id="footerYear">2026</span> LUXE Admin — all rights reserved.</span>
         </div>
         <div class="f-links">
           <a href="#" onclick="return false;">Help</a>
@@ -4054,7 +4054,8 @@
 
   <script src="/js/store-hint.js?v=1"></script>
   <script src="/js/api-session.js?v=1"></script>
-  <script src="/js/dashboard.js?v=17"></script>
+  <script src="/js/platform-brand.js?v=1"></script>
+  <script src="/js/dashboard.js?v=18"></script>
   <script src="/js/form-guard.js?v=2"></script>
   <script src="/js/categories.js"></script>
   <script src="/js/brands.js"></script>

@@ -1013,35 +1013,6 @@ function imageNode(src) {
   return img;
 }
 
-function setPanelFavicon(url) {
-  let link = document.querySelector('link[rel="icon"]');
-  if (!url) {
-    if (link && link.dataset.dynamic) link.remove();
-    return;
-  }
-  if (!link) {
-    link = document.createElement("link");
-    link.rel = "icon";
-    document.head.appendChild(link);
-  }
-  link.dataset.dynamic = "1";
-  link.href = url;
-}
-
-function setSidebarLogo(url) {
-  const brand = document.querySelector(".sb-brand");
-  const mark = brand && brand.querySelector(".mark");
-  if (!brand || !mark) return;
-  brand.classList.toggle("has-logo", !!url);
-  mark.classList.toggle("has-logo", !!url);
-  if (url) {
-    mark.textContent = "";
-    mark.appendChild(imageNode(url));
-  } else {
-    mark.textContent = "L";
-  }
-}
-
 function setPreview(el, url, fallback) {
   if (!el) return;
   if (url) {
@@ -1056,16 +1027,17 @@ function setPreview(el, url, fallback) {
 
 function renderLanding(branding) {
   const b = branding || {};
+  const name = b.name || "LUXE";
+  $("lbName").value = b.name || "";
   $("lbTitle").value = b.title || "";
   $("lbFooterLeft").value = b.footerLeft || "";
   $("lbCopyright").value = b.copyright || "";
   $("lbFooterRight").value = b.footerRight || "";
-  setPreview($("lbLogoPreview"), b.logo, "LUXE.");
+  setPreview($("lbLogoPreview"), b.logo, name + ".");
   setPreview($("lbFaviconPreview"), b.favicon, "—");
   $("lbLogoRemove").disabled = !b.logo;
   $("lbFaviconRemove").disabled = !b.favicon;
-  setSidebarLogo(b.logo);
-  setPanelFavicon(b.favicon);
+  if (window.PlatformBrand) window.PlatformBrand.apply({ ...b, name });
 
   // the "view landing" button must leave the api/admin host
   const landingLink = document.querySelector(".sb-bottom .sb-ghost");
@@ -1106,6 +1078,7 @@ async function saveLanding() {
       method: "PUT",
       body: JSON.stringify({
         branding: {
+          name: $("lbName").value,
           title: $("lbTitle").value,
           footerLeft: $("lbFooterLeft").value,
           copyright: $("lbCopyright").value,
@@ -1351,7 +1324,7 @@ const BILLING_CARDS = [
     title: "বিকাশ",
     fields: [
       { key: "number", label: "নম্বর", placeholder: "01XXXXXXXXX" },
-      { key: "accountName", label: "অ্যাকাউন্টের নাম", placeholder: "LUXE" },
+      { key: "accountName", label: "অ্যাকাউন্টের নাম", placeholder: "আপনার নাম" },
       { key: "instructions", label: "ইন্সট্রাকশন (কাস্টমার যা পড়বে)", textarea: true, placeholder: "সেন্ড মানি করে ট্রানজেকশন আইডি দিন" },
     ],
   },
@@ -1360,7 +1333,7 @@ const BILLING_CARDS = [
     title: "নগদ",
     fields: [
       { key: "number", label: "নম্বর", placeholder: "01XXXXXXXXX" },
-      { key: "accountName", label: "অ্যাকাউন্টের নাম", placeholder: "LUXE" },
+      { key: "accountName", label: "অ্যাকাউন্টের নাম", placeholder: "আপনার নাম" },
       { key: "instructions", label: "ইন্সট্রাকশন (কাস্টমার যা পড়বে)", textarea: true },
     ],
   },

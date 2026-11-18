@@ -3674,7 +3674,7 @@
 
   function sampleMailContext() {
     return {
-      store_name: state.settings.site_title || "LUXE Store",
+      store_name: state.settings.site_title || "Your Store",
       order_number: "ORD-DEMO-1001",
       invoice_number: "INV-01001",
       customer_name: "Demo Customer",

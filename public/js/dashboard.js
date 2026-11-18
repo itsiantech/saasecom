@@ -324,6 +324,12 @@ async function loadSiteSettings() {
       else mark.textContent = (d.siteTitleResolved || "L")[0].toUpperCase();
     }
 
+    // storefront style preview in the Style panel follows the same brand
+    const pvName = document.querySelector(".ss-pv-name");
+    const pvMark = document.querySelector(".ss-pv-mark");
+    if (pvName) pvName.textContent = d.siteTitleResolved;
+    if (pvMark) pvMark.textContent = (d.siteTitleResolved || "L")[0].toUpperCase();
+
     if (d.favicon) {
       let link = document.querySelector('link[rel="icon"]');
       if (!link) {
@@ -332,10 +338,14 @@ async function loadSiteSettings() {
         document.head.appendChild(link);
       }
       link.href = d.favicon;
+      link.dataset.store = "1"; // the store's icon wins over the platform icon
     }
 
     const copyright = document.getElementById("siteFooterCopyright");
-    if (copyright && d.footerCopyright) copyright.textContent = d.footerCopyright;
+    if (copyright && d.footerCopyright) {
+      copyright.removeAttribute("data-pb-copyright"); // store text wins
+      copyright.textContent = d.footerCopyright;
+    }
 
     const footerLogo = document.getElementById("footerLogo");
     if (footerLogo && d.footerLogo) {

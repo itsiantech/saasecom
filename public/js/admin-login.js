@@ -15,34 +15,8 @@
     backLink.hidden = false;
   }
 
-  // platform branding — same logo/favicon as the landing page
-  (async function loadBranding() {
-    try {
-      const res = await fetch("/api/public/branding", { cache: "no-store" });
-      if (!res.ok) return;
-      const branding = ((await res.json()) || {}).branding || {};
-      const mark = document.querySelector(".brand-mark");
-      if (mark && branding.logo) {
-        const img = document.createElement("img");
-        img.src = branding.logo;
-        img.alt = "";
-        mark.textContent = "";
-        mark.appendChild(img);
-        mark.classList.add("has-logo");
-        document.querySelector(".brand-panel")?.classList.add("has-logo");
-      }
-      if (branding.favicon) {
-        const link = document.createElement("link");
-        link.rel = "icon";
-        link.href = branding.favicon;
-        document.head.appendChild(link);
-      }
-      const foot = document.querySelector(".brand-foot");
-      if (foot && branding.copyright) foot.textContent = branding.copyright;
-    } catch {
-      /* offline — default LUXE mark stays */
-    }
-  })();
+  // platform branding (logo / name / favicon / copyright) comes from
+  // /js/platform-brand.js, included before this file
 
   function show(text, kind) {
     msg.textContent = text || "";

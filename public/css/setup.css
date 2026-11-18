@@ -15,6 +15,14 @@
   margin: 0 auto 18px;
 }
 
+.brand-mark.small.has-logo {
+  width: 150px;
+  height: 44px;
+  border-radius: 10px;
+  padding: 6px 12px;
+  justify-content: center;
+}
+
 .plan-list {
   display: grid;
   gap: 12px;

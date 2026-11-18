@@ -43,6 +43,8 @@ h1, h2 { margin: 0; font-weight: 600; }
 .pc-head-in { display: flex; align-items: center; justify-content: space-between; gap: 16px; height: 66px; }
 .pc-brand { font-size: 21px; font-weight: 700; letter-spacing: 0.16em; }
 .pc-brand span { color: var(--accent); }
+.pc-brand .pc-name { color: inherit; }
+.pc-brand.has-logo img { display: block; height: 28px; max-width: 150px; }
 .pc-head-right { display: flex; align-items: center; gap: 16px; font-size: 14px; }
 .pc-who { color: var(--muted); max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pc-link { background: none; border: none; padding: 0; color: var(--muted); font-size: 14px; font-family: inherit; cursor: pointer; }

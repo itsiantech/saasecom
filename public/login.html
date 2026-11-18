@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>LUXE — Admin Login</title>
+  <title data-pb-title>LUXE — Admin Login</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -12,16 +12,16 @@
 </head>
 <body class="auth-body">
   <main class="auth-wrap">
-    <section class="brand-panel">
-      <div class="brand-mark">L</div>
-      <h1>LUXE</h1>
+    <section class="brand-panel" data-pb-logo-wrap>
+      <div class="brand-mark" data-pb-mark>L</div>
+      <h1 data-pb-name>LUXE</h1>
       <p class="tagline">Premium Commerce Suite</p>
       <ul class="brand-points">
         <li>সব প্রোডাক্ট এক ড্যাশবোর্ড থেকে নিয়ন্ত্রণ</li>
         <li>স্টক আর দাম রিয়েল-টাইম আপডেট</li>
         <li>সিকিউর অ্যাডমিন অ্যাক্সেস — JWT + Google</li>
       </ul>
-      <p class="brand-foot">© 2026 LUXE COMMERCE</p>
+      <p class="brand-foot" data-pb-copyright>© 2026 LUXE COMMERCE</p>
     </section>
 
     <section class="form-panel">
@@ -58,6 +58,7 @@
   </main>
 
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script src="/js/login.js?v=4"></script>
+  <script src="/js/platform-brand.js?v=1"></script>
+  <script src="/js/login.js?v=5"></script>
 </body>
 </html>
