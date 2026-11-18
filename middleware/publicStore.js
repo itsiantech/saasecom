@@ -11,8 +11,13 @@ async function fromDomainHeader(req) {
   if (!host) return null;
   const main = await platformDomain();
   const label = main ? subLabel(host, main) : null;
-  if (label) return (await Store.findOne({ slug: label })) || Store.findOne({ subdomain: label });
-  return Store.findOne({ customDomain: host, customDomainStatus: "verified" });
+  if (label) {
+    return (
+      (await Store.findOne({ slug: label, deletedAt: null })) ||
+      Store.findOne({ subdomain: label, deletedAt: null })
+    );
+  }
+  return Store.findOne({ customDomain: host, customDomainStatus: "verified", deletedAt: null });
 }
 
 // /public/* store identity SHUDHU request theke ase — JWT user er first store theke na.
@@ -25,7 +30,12 @@ async function resolvePublicStore(req) {
   if (headerDomain) return headerDomain;
 
   const raw = String(req.headers["x-store-slug"] || req.query.store || "").trim().toLowerCase();
-  if (raw && SLUG_RE.test(raw)) return (await Store.findOne({ slug: raw })) || Store.findOne({ subdomain: raw });
+  if (raw && SLUG_RE.test(raw)) {
+    return (
+      (await Store.findOne({ slug: raw, deletedAt: null })) ||
+      Store.findOne({ subdomain: raw, deletedAt: null })
+    );
+  }
 
   return null;
 }

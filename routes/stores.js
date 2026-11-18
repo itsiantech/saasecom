@@ -75,14 +75,14 @@ router.post("/", auth, async (req, res) => {
 
 // public: slug diye store er basic info (storefront page e dekhay)
 router.get("/public/:slug", async (req, res) => {
-  const store = await Store.findOne({ slug: req.params.slug.toLowerCase() }).select("name slug");
+  const store = await Store.findOne({ slug: req.params.slug.toLowerCase(), deletedAt: null }).select("name slug");
   if (!store) return res.status(404).json({ message: "Store pawa jayni" });
   res.json(store);
 });
 
-// amar dokan gulo (plan + subscription soho)
+// amar dokan gulo (plan + subscription soho) — trashed dokan owner er panel e ashe na
 router.get("/mine", auth, async (req, res) => {
-  const stores = await Store.find({ owner: req.user.id }).populate("plan").sort({ createdAt: 1 });
+  const stores = await Store.find({ owner: req.user.id, deletedAt: null }).populate("plan").sort({ createdAt: 1 });
   const subs = await Subscription.find({ store: { $in: stores.map((s) => s._id) } });
   const byStore = new Map(subs.map((s) => [String(s.store), s]));
   const cooldownDays = await getSlugCooldownDays();

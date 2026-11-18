@@ -484,3 +484,8 @@ select.plan-select:focus { border-color: var(--gold); }
   color: var(--muted);
 }
 .cycle-preview b { color: var(--gold); font-weight: 600; }
+
+/* ---- store trash ---- */
+.head-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.btn-ghost.btn-sm { flex: none; padding: 9px 16px; font-size: 13px; border-radius: 10px; }
+.btn-ghost.btn-sm.on { color: var(--gold); border-color: var(--gold); background: var(--gold-soft); }

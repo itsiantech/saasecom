@@ -206,6 +206,8 @@ async function loadStats() {
     $("stStores").textContent = s.stores;
     $("stUsers").textContent = s.users;
     $("stProducts").textContent = s.products;
+    trashCount = Number(s.trashedStores) || 0;
+    $("storeTrashBtn").textContent = storeView === "trashed" ? "← সক্রিয় দোকান" : "ট্র্যাশ (" + trashCount + ")";
   } catch (e) {
     toast(e.message, "err");
   }
@@ -393,11 +395,26 @@ async function deletePlan(id) {
 
 /* ---------- stores ---------- */
 let stores = [];
+let storeView = "active";
+let trashCount = 0;
+
+function renderStoreChrome() {
+  const trashed = storeView === "trashed";
+  $("storeTitle").textContent = trashed ? "ট্র্যাশ" : "সব দোকান";
+  $("storeCount").textContent = stores.length + " টি দোকান" + (trashed ? " ট্র্যাশে" : "");
+  $("storeTrashBtn").textContent = trashed ? "← সক্রিয় দোকান" : "ট্র্যাশ (" + trashCount + ")";
+  $("storeTrashBtn").classList.toggle("on", trashed);
+  $("addStoreBtn").style.display = trashed ? "none" : "";
+  $("storeHead").innerHTML = trashed
+    ? "<tr><th>দোকান</th><th>মালিক</th><th>ট্র্যাশ হয়েছে</th><th>অ্যাকশন</th></tr>"
+    : "<tr><th>দোকান</th><th>মালিক</th><th>বর্তমান প্ল্যান</th><th>প্ল্যান বদলান</th></tr>";
+}
 
 async function loadStores() {
   try {
-    stores = await api("/api/admin/stores");
-    $("storeCount").textContent = stores.length + " টি দোকান";
+    const url = "/api/admin/stores" + (storeView === "trashed" ? "?status=trashed" : "");
+    stores = await api(url);
+    renderStoreChrome();
     renderStores();
   } catch (e) {
     toast(e.message, "err");
@@ -407,24 +424,47 @@ async function loadStores() {
 function renderStores() {
   const tbody = $("storeBody");
   if (!stores.length) {
-    tbody.innerHTML = '<tr><td colspan="4"><div class="empty">কোনো দোকান নেই</div></td></tr>';
+    const msg = storeView === "trashed" ? "ট্র্যাশ খালি" : "কোনো দোকান নেই";
+    tbody.innerHTML = '<tr><td colspan="4"><div class="empty">' + msg + "</div></td></tr>";
     return;
   }
 
   tbody.innerHTML = stores
     .map((s) => {
+      const owner = s.owner ? s.owner.name + " · " + s.owner.email : "—";
+      const shop = `<div class="p-name">${esc(s.name)}</div><div class="muted" style="font-size:12px;">/${esc(s.slug)}</div>`;
+
+      if (storeView === "trashed") {
+        const when = s.deletedAt ? new Date(s.deletedAt).toLocaleDateString("bn-BD", { day: "numeric", month: "short", year: "numeric" }) : "—";
+        return `
+        <tr>
+          <td>${shop}</td>
+          <td class="muted" style="font-size:12px;">${esc(owner)}</td>
+          <td><span class="badge off">${esc(when)}</span></td>
+          <td>
+            <div class="row-actions">
+              <button class="icon-btn edit" title="পুনরুদ্ধার" onclick="restoreStore('${s._id}')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
+              </button>
+              <button class="icon-btn del" title="স্থায়ীভাবে মুছুন" onclick="openPurgeStore('${s._id}')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+              </button>
+            </div>
+          </td>
+        </tr>`;
+      }
+
       const current = s.plan && typeof s.plan === "object" ? s.plan.slug : (s.plan || "");
       const planLabel = s.plan && typeof s.plan === "object" ? (s.plan.name || s.plan.slug) : s.plan;
       const opts = plans
         .map((p) => `<option value="${esc(p.slug)}" ${p.slug === current ? "selected" : ""}>${esc(p.name)}</option>`)
         .join("");
-      const owner = s.owner ? s.owner.name + " · " + s.owner.email : "—";
       const mods = s.access && s.access.features
         ? Object.values(s.access.features).filter(Boolean).length
         : 0;
       return `
       <tr>
-        <td><div class="p-name">${esc(s.name)}</div><div class="muted" style="font-size:12px;">/${esc(s.slug)}</div></td>
+        <td>${shop}</td>
         <td class="muted" style="font-size:12px;">${esc(owner)}</td>
         <td>${planLabel ? '<span class="badge on">' + esc(planLabel) + "</span>" : '<span class="badge off">—</span>'}
           <div class="muted" style="font-size:11px;margin-top:4px;">${mods} মডিউল</div></td>
@@ -440,12 +480,122 @@ function renderStores() {
             <a class="icon-btn" title="এই দোকানের Store Settings" href="/settings.html?store=${encodeURIComponent(s.slug)}">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1.11-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 8.89a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 8.96 4.5a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1z"/></svg>
             </a>
+            <button class="icon-btn del" title="ট্র্যাশে ফেলুন" onclick="openTrashStore('${s._id}')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+            </button>
           </div>
         </td>
       </tr>`;
     })
     .join("");
 }
+
+/* ---------- trash / restore / permanent delete ---------- */
+const storeActionOverlay = $("storeActionOverlay");
+let storeAction = null;
+
+function openStoreAction({ id, mode, title, sub, submitLabel, confirmSlug }) {
+  storeAction = { id, mode, confirmSlug: confirmSlug || "" };
+  $("storeActionTitle").textContent = title;
+  $("storeActionSub").textContent = sub;
+  $("storeActionMsg").textContent = "";
+  $("storeActionConfirmField").style.display = confirmSlug ? "" : "none";
+  $("storeActionConfirmWord").textContent = confirmSlug || "";
+  $("storeActionConfirmInput").value = "";
+  const btn = $("storeActionSubmit");
+  btn.textContent = submitLabel;
+  btn.disabled = false;
+  storeActionOverlay.classList.add("open");
+  if (confirmSlug) $("storeActionConfirmInput").focus();
+}
+
+function closeStoreAction() {
+  storeActionOverlay.classList.remove("open");
+  storeAction = null;
+}
+
+function openTrashStore(id) {
+  const s = stores.find((row) => row._id === id);
+  if (!s) return;
+  openStoreAction({
+    id,
+    mode: "trash",
+    title: "ট্র্যাশে ফেলুন",
+    sub: `"${s.name}" (/${s.slug}) ট্র্যাশে গেলে দোকান ও স্টোরফ্রন্ট বন্ধ হয়ে যাবে। ডেটা মুছবে না — ট্র্যাশ থেকে যেকোনো সময় পুনরুদ্ধার করা যাবে।`,
+    submitLabel: "ট্র্যাশে ফেলুন",
+  });
+}
+
+function openPurgeStore(id) {
+  const s = stores.find((row) => row._id === id);
+  if (!s) return;
+  openStoreAction({
+    id,
+    mode: "purge",
+    title: "স্থায়ীভাবে মুছুন",
+    sub: `"${s.name}" (/${s.slug}) এর সব প্রোডাক্ট, অর্ডার, কাস্টমার, সেটিংস স্থায়ীভাবে মুছে যাবে। এটি ফেরানো যাবে না — নিশ্চিত হলে নিচে "${s.slug}" লিখুন।`,
+    submitLabel: "স্থায়ীভাবে মুছুন",
+    confirmSlug: s.slug,
+  });
+}
+
+$("storeActionCancel").addEventListener("click", closeStoreAction);
+$("storeActionConfirmInput").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    $("storeActionSubmit").click();
+  }
+});
+storeActionOverlay.addEventListener("click", (e) => {
+  if (e.target === storeActionOverlay) closeStoreAction();
+});
+
+$("storeActionSubmit").addEventListener("click", async () => {
+  if (!storeAction) return;
+  const { id, mode, confirmSlug } = storeAction;
+  const msg = $("storeActionMsg");
+  const btn = $("storeActionSubmit");
+  msg.textContent = "";
+  if (mode === "purge") {
+    if ($("storeActionConfirmInput").value.trim().toLowerCase() !== confirmSlug.toLowerCase()) {
+      msg.textContent = "নাম মেলেনি — ঠিক \"" + confirmSlug + "\" লিখুন";
+      msg.className = "msg err";
+      return;
+    }
+  }
+  btn.disabled = true;
+  try {
+    if (mode === "trash") {
+      await api("/api/admin/stores/" + id + "/trash", { method: "POST" });
+      toast("দোকান ট্র্যাশে গেছে", "ok");
+    } else {
+      await api("/api/admin/stores/" + id, { method: "DELETE" });
+      toast("দোকান স্থায়ীভাবে মুছে গেছে", "ok");
+    }
+    closeStoreAction();
+    await Promise.all([loadStores(), loadStats()]);
+  } catch (e) {
+    msg.textContent = e.message;
+    msg.className = "msg err";
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+async function restoreStore(id) {
+  try {
+    await api("/api/admin/stores/" + id + "/restore", { method: "POST" });
+    toast("দোকান পুনরুদ্ধার হয়েছে", "ok");
+    await Promise.all([loadStores(), loadStats()]);
+  } catch (e) {
+    toast(e.message, "err");
+  }
+}
+
+$("storeTrashBtn").addEventListener("click", async () => {
+  storeView = storeView === "trashed" ? "active" : "trashed";
+  await loadStores();
+});
 
 async function changeStorePlan(storeId) {
   const sel = document.querySelector(`.plan-select[data-store="${storeId}"]`);

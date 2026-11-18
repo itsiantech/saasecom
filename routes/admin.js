@@ -20,13 +20,17 @@ const { cleanKeys, featuresForStore, featureList, overridesForSelection } = requ
 const { syncFeatureEntitlements, createStoreWithSubscription } = require("../lib/storeProvisioning");
 const { assertShopName } = require("../lib/shopAddress");
 const { writeAudit } = require("../lib/audit");
+const { purgeStoreData } = require("../lib/storePurge");
 
-// platform stats
+// platform stats (trashed shops stay out of the live count)
 router.get("/stats", auth, requireSuperAdmin, async (req, res) => {
-  const stores = await Store.countDocuments();
-  const users = await User.countDocuments();
-  const products = await Product.countDocuments();
-  res.json({ stores, users, products });
+  const [stores, trashedStores, users, products] = await Promise.all([
+    Store.countDocuments({ deletedAt: null }),
+    Store.countDocuments({ deletedAt: { $ne: null } }),
+    User.countDocuments(),
+    Product.countDocuments(),
+  ]);
+  res.json({ stores, trashedStores, users, products });
 });
 
 // sobgulo plan (super admin management er jonno — active ba inactive sob)
@@ -41,8 +45,13 @@ router.get("/features", auth, requireSuperAdmin, (_req, res) => {
 });
 
 // sobgulo store (owner er naam/email + effective feature access soho)
+// ?status=trashed → sudhu trash list; default e trashed gulo dekha jay na
 router.get("/stores", auth, requireSuperAdmin, async (req, res) => {
-  const stores = await Store.find().sort({ createdAt: -1 }).populate("owner", "name email").populate("plan");
+  const trashed = String(req.query.status || "").toLowerCase() === "trashed";
+  const stores = await Store.find(trashed ? { deletedAt: { $ne: null } } : { deletedAt: null })
+    .sort(trashed ? { deletedAt: -1 } : { createdAt: -1 })
+    .populate("owner", "name email")
+    .populate("plan");
   const rows = await Promise.all(
     stores.map(async (store) => {
       const row = store.toObject();
@@ -179,6 +188,78 @@ router.patch("/stores/:id/features", auth, requireSuperAdmin, async (req, res) =
     res.json(access);
   } catch (err) {
     res.status(400).json({ message: err.message });
+  }
+});
+
+// trash = soft delete. the address stays reserved and nothing is removed, so
+// a restore brings the same shop back with all of its data.
+router.post("/stores/:id/trash", auth, requireSuperAdmin, async (req, res) => {
+  try {
+    const store = await Store.findById(req.params.id);
+    if (!store) return res.status(404).json({ message: "Store pawa jayni" });
+    if (store.deletedAt) return res.json({ ...store.toObject(), alreadyTrashed: true });
+    store.deletedAt = new Date();
+    await store.save();
+    await writeAudit({
+      store: store._id,
+      user: req.user.id,
+      action: "store.trash",
+      entity: "Store",
+      entityId: store._id,
+      oldValue: { deletedAt: null },
+      newValue: { deletedAt: store.deletedAt, name: store.name, slug: store.slug },
+    });
+    res.json({ ...store.toObject(), alreadyTrashed: false });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+router.post("/stores/:id/restore", auth, requireSuperAdmin, async (req, res) => {
+  try {
+    const store = await Store.findById(req.params.id);
+    if (!store) return res.status(404).json({ message: "Store pawa jayni" });
+    if (!store.deletedAt) return res.json({ ...store.toObject(), alreadyActive: true });
+    const trashedAt = store.deletedAt;
+    store.deletedAt = null;
+    await store.save();
+    await writeAudit({
+      store: store._id,
+      user: req.user.id,
+      action: "store.restore",
+      entity: "Store",
+      entityId: store._id,
+      oldValue: { deletedAt: trashedAt },
+      newValue: { deletedAt: null, name: store.name, slug: store.slug },
+    });
+    res.json({ ...store.toObject(), alreadyActive: false });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// permanent delete — only from trash, and it wipes every tenant collection
+router.delete("/stores/:id", auth, requireSuperAdmin, async (req, res) => {
+  try {
+    const store = await Store.findById(req.params.id).select("name slug deletedAt");
+    if (!store) return res.status(404).json({ message: "Store pawa jayni" });
+    if (!store.deletedAt) {
+      return res.status(409).json({ message: "স্থায়ীভাবে মুছতে আগে দোকানটি ট্র্যাশে দিন", code: "not_trashed" });
+    }
+    const removed = await purgeStoreData(store._id);
+    await Store.deleteOne({ _id: store._id });
+    await writeAudit({
+      store: store._id,
+      user: req.user.id,
+      action: "store.purge",
+      entity: "Store",
+      entityId: store._id,
+      oldValue: { name: store.name, slug: store.slug, deletedAt: store.deletedAt },
+      newValue: { removed },
+    });
+    res.json({ purged: true, removed });
+  } catch (err) {
+    res.status(err.status || 400).json({ message: err.message });
   }
 });
 

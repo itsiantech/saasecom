@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/css/style.css" />
-  <link rel="stylesheet" href="/css/admin.css?v=14" />
+  <link rel="stylesheet" href="/css/admin.css?v=15" />
   <script>
     (function () {
       try {
@@ -94,14 +94,17 @@
       <section class="panel" id="stores">
         <div class="panel-head">
           <div>
-            <h3>সব দোকান</h3>
+            <h3 id="storeTitle">সব দোকান</h3>
             <p class="count" id="storeCount">0 টি দোকান</p>
           </div>
-          <button class="btn-add" id="addStoreBtn" type="button">নতুন স্টোর</button>
+          <div class="head-actions">
+            <button class="btn-ghost btn-sm" id="storeTrashBtn" type="button">ট্র্যাশ (0)</button>
+            <button class="btn-add" id="addStoreBtn" type="button">নতুন স্টোর</button>
+          </div>
         </div>
         <div class="table-wrap">
           <table>
-            <thead>
+            <thead id="storeHead">
               <tr><th>দোকান</th><th>মালিক</th><th>বর্তমান প্ল্যান</th><th>প্ল্যান বদলান</th></tr>
             </thead>
             <tbody id="storeBody"></tbody>
@@ -405,9 +408,26 @@
     </div>
   </div>
 
+  <!-- store trash / permanent delete confirmation -->
+  <div class="modal-overlay" id="storeActionOverlay">
+    <div class="modal">
+      <h3 id="storeActionTitle">ট্র্যাশে ফেলুন</h3>
+      <p class="muted" id="storeActionSub" style="margin-top:8px;font-size:13px;"></p>
+      <div class="field" id="storeActionConfirmField" style="display:none;">
+        <label>নিশ্চিত করতে লিখুন <b id="storeActionConfirmWord"></b></label>
+        <input id="storeActionConfirmInput" type="text" autocomplete="off" />
+      </div>
+      <p class="msg" id="storeActionMsg"></p>
+      <div class="modal-actions">
+        <button type="button" class="btn-ghost" id="storeActionCancel">ফিরে যান</button>
+        <button type="button" class="btn-gold" id="storeActionSubmit">ট্র্যাশে ফেলুন</button>
+      </div>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
 
   <script src="/js/platform-brand.js?v=1"></script>
-  <script src="/js/admin.js?v=18"></script>
+  <script src="/js/admin.js?v=19"></script>
 </body>
 </html>

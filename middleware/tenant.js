@@ -38,7 +38,7 @@ async function randomSlug() {
 async function resolveStore(req, saas) {
   // single mode: sob request ek e dokane jay (standalone bikrir jonno)
   if (!saas) {
-    let store = await Store.findOne().sort({ createdAt: 1 });
+    let store = await Store.findOne({ deletedAt: null }).sort({ createdAt: 1 });
     if (!store) {
       const ownerId = getTokenUserId(req);
       if (!ownerId) return null;
@@ -60,11 +60,11 @@ async function resolveStore(req, saas) {
 
   // saas mode 1b: explicitly slug deya thakle (frontend header/query diye pathay)
   const slug = req.headers["x-store-slug"] || req.query.store;
-  if (slug) return Store.findOne({ slug: String(slug).toLowerCase() });
+  if (slug) return Store.findOne({ slug: String(slug).toLowerCase(), deletedAt: null });
 
   // saas mode 2: login kora user er dokan (setup page e khola hoy, auto na)
   const userId = getTokenUserId(req);
-  if (userId) return Store.findOne({ owner: userId }).sort({ createdAt: 1 });
+  if (userId) return Store.findOne({ owner: userId, deletedAt: null }).sort({ createdAt: 1 });
 
   return null;
 }
