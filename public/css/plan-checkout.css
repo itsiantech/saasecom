@@ -140,6 +140,13 @@ h1, h2 { margin: 0; font-weight: 600; }
 .pc-sum-row { display: flex; justify-content: space-between; gap: 14px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
 .pc-sum-row span { color: var(--muted); }
 .pc-sum-row b { font-weight: 600; text-align: right; word-break: break-word; }
+.pc-sum-cycle select {
+  min-width: 0; max-width: 62%; padding: 7px 10px; border-radius: 8px; font-size: 13.5px;
+  background: var(--navy-950); border: 1px solid var(--line); color: var(--text);
+  font-family: inherit; outline: none; cursor: pointer;
+}
+.pc-sum-cycle select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.pc-sum-note { margin: 6px 0 0; font-size: 12px; color: var(--muted); }
 .pc-sum-total { display: flex; justify-content: space-between; align-items: baseline; padding: 16px 0 0; }
 .pc-sum-total span { color: var(--muted); font-size: 13px; letter-spacing: 0.06em; }
 .pc-sum-total b { font-size: 26px; color: var(--accent); }

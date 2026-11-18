@@ -14,6 +14,10 @@ const platformPaymentSchema = new mongoose.Schema(
     planName: { type: String, default: "" },
     planSlug: { type: String, default: "" },
     amount: { type: Number, required: true, min: 0 },
+    // billing term chosen at checkout — price = plan monthly × months
+    cycle: { type: String, default: "1m" },
+    months: { type: Number, default: 1 },
+    durationDays: { type: Number, default: 30 },
     method: { type: String, enum: ["bkash", "nagad", "bank", "qr"], required: true },
     methodLabel: { type: String, default: "" },
     senderNumber: { type: String, default: "", trim: true },

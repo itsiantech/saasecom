@@ -56,6 +56,7 @@ before(async () => {
   state.app.use("/api/billing", require("../routes/billing"));
   state.app.use("/api/admin", require("../routes/admin"));
   state.app.use("/api/stores", require("../routes/stores"));
+  state.app.use("/api/plans", require("../routes/plans"));
 }, { timeout: 180000 });
 
 after(async () => {
@@ -267,6 +268,52 @@ test("admin list filters by status and carries invoice links", async () => {
 
   const denied = await send("/api/admin/billing/payments", "get", state.owner);
   assert.equal(denied.status, 403);
+});
+
+test("the public plan list carries a price for every cycle", async () => {
+  const res = await request(state.app).get("/api/plans");
+  assert.equal(res.status, 200);
+  const pro = res.body.find((p) => p.slug === "pro");
+  assert.deepEqual(pro.cycles.map((c) => c.key), ["1m", "3m", "6m", "1y", "2y"]);
+  assert.equal(pro.cycles.find((c) => c.key === "1m").price, 990);
+  assert.equal(pro.cycles.find((c) => c.key === "1y").price, 11880);
+});
+
+test("a 3-month checkout is priced and dated by the chosen cycle", async () => {
+  const user = await User.create({ name: "Cycle", email: "cycle@bill.test", role: "customer" });
+  const made = await send("/api/billing/payments", "post", user, {
+    planSlug: "pro", cycle: "3m", method: "bkash", senderNumber: "01912345678", trxid: "TRX90001",
+    storeName: "Term Shop", storeSlug: "term-shop",
+  });
+  assert.equal(made.status, 201);
+  assert.equal(made.body.payment.amount, 2970);
+  assert.equal(made.body.payment.cycle, "3m");
+  assert.equal(made.body.payment.months, 3);
+  assert.equal(made.body.payment.durationDays, 90);
+  assert.ok(new Date(made.body.payment.nextDueDate) - Date.now() > 89 * DAY);
+
+  const invoice = await request(state.app).get(made.body.payment.invoiceUrl);
+  assert.equal(invoice.status, 200);
+  assert.match(invoice.text, /৩ মাস · 90 দিন/);
+
+  const approved = await send("/api/admin/billing/payments/" + made.body.payment.id + "/approve", "put", state.admin);
+  assert.equal(approved.status, 200);
+
+  const store = await Store.findOne({ slug: "term-shop" });
+  assert.ok(store);
+  const sub = await Subscription.findOne({ store: store._id });
+  assert.equal(sub.status, "active");
+  assert.ok(Math.abs(sub.endDate.getTime() - Date.now() - 90 * DAY) < 60 * 1000);
+});
+
+test("an unknown cycle is rejected before any payment is stored", async () => {
+  const before = await PlatformPayment.countDocuments({ user: state.other._id });
+  const res = await send("/api/billing/payments", "post", state.other, {
+    planSlug: "pro", cycle: "7m", method: "bkash", senderNumber: "01812345678", trxid: "TRX90002",
+    storeName: "Odd Shop", storeSlug: "odd-shop",
+  });
+  assert.equal(res.status, 400);
+  assert.equal(await PlatformPayment.countDocuments({ user: state.other._id }), before);
 });
 
 test("invoice numbers keep incrementing per year", async () => {

@@ -473,3 +473,14 @@ select.plan-select:focus { border-color: var(--gold); }
   .pay-search { flex: 1 1 100%; min-width: 0; }
   .toast { left: 20px; right: 20px; text-align: center; }
 }
+
+/* ---- plan billing cycles ---- */
+.cycle-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+.cycle-preview b { color: var(--gold); font-weight: 600; }

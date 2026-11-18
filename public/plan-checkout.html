@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/plan-checkout.css?v=1" />
+  <link rel="stylesheet" href="/css/plan-checkout.css?v=2" />
   <link rel="stylesheet" href="/css/shop-address.css?v=1" />
 </head>
 <body>
@@ -79,7 +79,8 @@
       <aside class="pc-card pc-summary">
         <h2>সারসংক্ষেপ</h2>
         <div class="pc-sum-row"><span>প্যাকেজ</span><b id="pcPlanName">—</b></div>
-        <div class="pc-sum-row"><span>মেয়াদ</span><b id="pcPlanDur">—</b></div>
+        <div class="pc-sum-row pc-sum-cycle"><span>মেয়াদ</span><select id="pcCycle" aria-label="বিলিং মেয়াদ"></select></div>
+        <p class="pc-sum-note" id="pcPlanDur"></p>
         <div class="pc-sum-row"><span>দোকান</span><b id="pcSumStore">—</b></div>
         <div class="pc-sum-row"><span>পরিশোধ</span><b id="pcSumMethod">—</b></div>
         <div class="pc-sum-total"><span>মোট</span><b id="pcTotal">৳ 0</b></div>
@@ -102,6 +103,6 @@
   <script src="/js/platform-brand.js?v=1"></script>
   <script src="/js/shop-address.js?v=1"></script>
   <script src="/js/shop-address-field.js?v=1"></script>
-  <script src="/js/plan-checkout.js?v=2"></script>
+  <script src="/js/plan-checkout.js?v=3"></script>
 </body>
 </html>

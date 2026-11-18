@@ -7,9 +7,63 @@ const planList = document.getElementById("planList");
 const form = document.getElementById("setupForm");
 const submitBtn = document.getElementById("submitBtn");
 const msg = document.getElementById("msg");
+const cycleField = document.getElementById("cycleField");
+const cycleSelect = document.getElementById("sCycle");
+const cycleTotal = document.getElementById("sCycleTotal");
 
 let selectedPlan = null;
 let selectedPlanData = null;
+let selectedCycle = "1m";
+
+// server sends the cycle list with each plan; this mirrors it for a stale cache
+const FALLBACK_CYCLES = [
+  { key: "1m", months: 1, days: 30, label: "১ মাস" },
+  { key: "3m", months: 3, days: 90, label: "৩ মাস" },
+  { key: "6m", months: 6, days: 180, label: "৬ মাস" },
+  { key: "1y", months: 12, days: 365, label: "১ বছর" },
+  { key: "2y", months: 24, days: 730, label: "২ বছর" },
+];
+
+function planCyclesFor(p) {
+  if (p && Array.isArray(p.cycles) && p.cycles.length) return p.cycles;
+  const monthly = Number((p && p.price) || 0);
+  return FALLBACK_CYCLES.map((c) => ({ ...c, price: monthly * c.months }));
+}
+
+function updateCycleTotal() {
+  const opts = planCyclesFor(selectedPlanData);
+  const c = opts.find((x) => x.key === selectedCycle) || null;
+  if (!c) {
+    cycleTotal.textContent = "";
+    return;
+  }
+  const trial = selectedPlanData && selectedPlanData.trialDays > 0 ? " + " + selectedPlanData.trialDays + " দিন ট্রায়াল" : "";
+  cycleTotal.textContent =
+    "মোট ৳ " + Number(c.price || 0).toLocaleString("en-IN") + " — " + c.days + " দিন" + trial;
+}
+
+function renderCycles() {
+  const paid = selectedPlanData && Number(selectedPlanData.price || 0) > 0;
+  cycleField.hidden = !paid;
+  if (!paid) {
+    cycleSelect.innerHTML = "";
+    cycleTotal.textContent = "";
+    selectedCycle = "1m";
+    return;
+  }
+  const opts = planCyclesFor(selectedPlanData);
+  if (!opts.some((c) => c.key === selectedCycle)) selectedCycle = "1m";
+  cycleSelect.innerHTML = opts
+    .map((c) => `<option value="${esc(c.key)}">${esc(c.label)} — ৳ ${Number(c.price || 0).toLocaleString("en-IN")}</option>`)
+    .join("");
+  cycleSelect.value = selectedCycle;
+  updateCycleTotal();
+}
+
+cycleSelect.addEventListener("change", () => {
+  selectedCycle = cycleSelect.value;
+  updateCycleTotal();
+});
 
 function showMsg(text, type) {
   msg.textContent = text;
@@ -117,6 +171,8 @@ function renderPlans(plans) {
       card.classList.add("active");
       selectedPlan = card.dataset.slug;
       selectedPlanData = plans.find((p) => p.slug === selectedPlan) || null;
+      selectedCycle = "1m";
+      renderCycles();
     });
   });
 
@@ -129,6 +185,7 @@ function renderPlans(plans) {
     initial.classList.add("active");
     selectedPlan = initial.dataset.slug;
     selectedPlanData = plans.find((p) => p.slug === selectedPlan) || null;
+    renderCycles();
   }
 }
 
@@ -162,6 +219,7 @@ form.addEventListener("submit", async (e) => {
   if (selectedPlanData && Number(selectedPlanData.price || 0) > 0) {
     location.href =
       "/plan-checkout.html?plan=" + encodeURIComponent(selectedPlan) +
+      "&cycle=" + encodeURIComponent(selectedCycle) +
       "&name=" + encodeURIComponent(name) +
       "&slug=" + encodeURIComponent(slug);
     return;

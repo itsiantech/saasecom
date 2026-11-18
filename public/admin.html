@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/css/style.css" />
-  <link rel="stylesheet" href="/css/admin.css?v=13" />
+  <link rel="stylesheet" href="/css/admin.css?v=14" />
   <script>
     (function () {
       try {
@@ -272,9 +272,10 @@
         <div class="field"><label for="fPlanName">নাম</label><input id="fPlanName" type="text" required placeholder="Pro" /></div>
         <div class="field"><label for="fPlanSlug">স্লাগ</label><input id="fPlanSlug" type="text" placeholder="pro" /></div>
         <div class="grid-2">
-          <div class="field"><label for="fPrice">মূল্য (৳)</label><input id="fPrice" type="number" min="0" placeholder="29" /></div>
-          <div class="field"><label for="fDuration">মেয়াদ (দিন)</label><input id="fDuration" type="number" min="0" placeholder="30" /></div>
+          <div class="field"><label for="fPrice">মাসিক মূল্য (৳)</label><input id="fPrice" type="number" min="0" placeholder="990" /></div>
+          <div class="field"><label for="fDuration">মাসিক মেয়াদ (দিন)</label><input id="fDuration" type="number" min="0" placeholder="30" /></div>
         </div>
+        <p class="cycle-preview" id="planCyclePreview"></p>
         <div class="grid-2">
           <div class="field"><label for="fTrial">ট্রায়াল (দিন)</label><input id="fTrial" type="number" min="0" placeholder="14" /></div>
           <div class="field"><label for="fOrder">ক্রম</label><input id="fOrder" type="number" placeholder="0" /></div>
@@ -407,6 +408,6 @@
   <div class="toast" id="toast"></div>
 
   <script src="/js/platform-brand.js?v=1"></script>
-  <script src="/js/admin.js?v=17"></script>
+  <script src="/js/admin.js?v=18"></script>
 </body>
 </html>

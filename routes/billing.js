@@ -6,6 +6,7 @@ const Plan = require("../models/Plan");
 const PlatformPayment = require("../models/PlatformPayment");
 const { auth } = require("../middleware/auth");
 const billing = require("../lib/platformBilling");
+const planCycles = require("../lib/planCycles");
 const { assertShopName } = require("../lib/shopAddress");
 const { buildPlatformInvoiceHtml } = require("../lib/platformInvoice");
 const landingBranding = require("../lib/landingBranding");
@@ -33,6 +34,9 @@ router.post("/payments", auth, async (req, res) => {
     if (Number(plan.price) <= 0) {
       return res.status(400).json({ message: "এই প্যাকেজের জন্য পেমেন্ট লাগে না — সরাসরি দোকান খুলুন" });
     }
+
+    const cycle = planCycles.cycleFor(body.cycle || planCycles.DEFAULT_CYCLE);
+    if (!cycle) return res.status(400).json({ message: "মেয়াদ ঠিকভাবে বাছুন" });
 
     const settings = await billing.loadSettings();
     const check = billing.validateSubmission({
@@ -93,13 +97,16 @@ router.post("/payments", auth, async (req, res) => {
       plan: plan._id,
       planName: plan.name,
       planSlug: plan.slug,
-      amount: Number(plan.price),
+      amount: planCycles.priceFor(plan, cycle),
+      cycle: cycle.key,
+      months: cycle.months,
+      durationDays: cycle.days,
       method: check.method,
       methodLabel: billing.METHOD_LABELS[check.method],
       senderNumber: check.senderNumber,
       trxid: check.trxid,
       trxKey: billing.trxKey(check.method, check.trxid),
-      nextDueDate: billing.dueDateAfter(new Date(), plan.durationDays),
+      nextDueDate: billing.dueDateAfter(new Date(), cycle.days),
     });
 
     res.status(201).json({ payment: billing.paymentView(payment) });

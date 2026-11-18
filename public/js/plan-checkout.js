@@ -76,6 +76,32 @@
   let selected = null;
   let addressField = null;
   let platformDomain = "";
+  let cycleKey = "1m";
+
+  // server sends the cycle list with each plan; this mirrors it for a stale cache
+  const FALLBACK_CYCLES = [
+    { key: "1m", months: 1, days: 30, label: "১ মাস" },
+    { key: "3m", months: 3, days: 90, label: "৩ মাস" },
+    { key: "6m", months: 6, days: 180, label: "৬ মাস" },
+    { key: "1y", months: 12, days: 365, label: "১ বছর" },
+    { key: "2y", months: 24, days: 730, label: "২ বছর" },
+  ];
+
+  function planCycles() {
+    if (plan && Array.isArray(plan.cycles) && plan.cycles.length) return plan.cycles;
+    const monthly = Number((plan && plan.price) || 0);
+    return FALLBACK_CYCLES.map((c) => ({ ...c, price: monthly * c.months }));
+  }
+
+  function currentCycle() {
+    const opts = planCycles();
+    return opts.find((c) => c.key === cycleKey) || opts[0];
+  }
+
+  function cyclePrice() {
+    const c = currentCycle();
+    return Number(c && c.price) || 0;
+  }
 
   function fullAddress(slug) {
     const shared = window.ShopAddress;
@@ -83,10 +109,26 @@
   }
 
   /* ------------------------------------------------------------- render */
+  function renderCycle() {
+    const opts = planCycles();
+    if (!opts.some((c) => c.key === cycleKey)) cycleKey = opts[0] ? opts[0].key : "1m";
+    const sel = $("pcCycle");
+    sel.innerHTML = opts
+      .map((c) => `<option value="${esc(c.key)}">${esc(c.label)} — ৳ ${num(c.price)}</option>`)
+      .join("");
+    sel.value = cycleKey;
+    sel.addEventListener("change", () => {
+      cycleKey = sel.value;
+      renderSummary();
+      if (selected) renderInstructions(selected);
+    });
+  }
+
   function renderSummary() {
+    const c = currentCycle();
     $("pcPlanName").textContent = plan.name;
-    $("pcPlanDur").textContent = Number(plan.durationDays || 30) + " দিন" + (plan.trialDays > 0 ? " + " + plan.trialDays + " দিন ট্রায়াল" : "");
-    $("pcTotal").textContent = "৳ " + num(plan.price);
+    $("pcPlanDur").textContent = c.days + " দিন" + (plan.trialDays > 0 ? " + " + plan.trialDays + " দিন ট্রায়াল" : "");
+    $("pcTotal").textContent = "৳ " + num(cyclePrice());
     const slug = store ? store.slug : addressField ? addressField.value() : "";
     $("pcSumStore").textContent = fullAddress(slug) || slug || "—";
     $("pcSumMethod").textContent = selected ? selected.label : "—";
@@ -139,7 +181,7 @@
         '<div class="pc-qr"><img src="' + esc(m.imageUrl) + '" alt="ভাষা QR" />' +
           "<div>" +
           (m.accountName ? copyRow("অ্যাকাউন্ট", m.accountName) : "") +
-          "<p>QR স্ক্যান করে ঠিক <b>৳ " + num(plan.price) + "</b> পাঠান, তারপর নিচে আপনার নম্বর ও TRXID দিন।</p>" +
+          "<p>QR স্ক্যান করে ঠিক <b>৳ " + num(cyclePrice()) + "</b> পাঠান, তারপর নিচে আপনার নম্বর ও TRXID দিন।</p>" +
           "</div></div>"
       );
     } else {
@@ -148,7 +190,7 @@
     }
 
     parts.push(
-      "<p><b>৳ " + num(plan.price) + "</b> পাঠান — " +
+      "<p><b>৳ " + num(cyclePrice()) + "</b> পাঠান — " +
         (m.id === "bank" ? "ট্রান্সফার" : "সেন্ড মানি") +
         " করে ট্রানজেকশন আইডি (TRXID) সংগ্রহ করুন।</p>"
     );
@@ -242,6 +284,10 @@
       return fatal("এই প্যাকেজটি ফ্রি — পেমেন্ট লাগবে না। /setup.html থেকে সরাসরি দোকান খুলুন।");
     }
 
+    const wantedCycle = String(qs.get("cycle") || "").toLowerCase();
+    cycleKey = planCycles().some((c) => c.key === wantedCycle) ? wantedCycle : "1m";
+    renderCycle();
+
     methods = methodData.methods || [];
 
     if (storeId) {
@@ -314,6 +360,7 @@
 
     const body = {
       planSlug: plan.slug,
+      cycle: cycleKey,
       method: selected.id,
       senderNumber: sender,
       trxid,

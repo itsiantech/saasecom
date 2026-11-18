@@ -244,7 +244,7 @@ function renderPlans() {
       return `
       <tr>
         <td><div class="p-name">${esc(p.name)}</div><div class="muted" style="font-size:12px;">${esc(p.slug)}</div></td>
-        <td style="color:var(--gold);font-weight:600;">৳ ${Number(p.price || 0)}</td>
+        <td style="color:var(--gold);font-weight:600;white-space:nowrap;">৳ ${Number(p.price || 0)}<span class="muted" style="font-weight:400;font-size:12px;"> /মাস</span></td>
         <td>${trial}</td>
         <td class="muted" style="font-size:12px;">${esc(limits)}</td>
         <td><span class="badge ${p.active ? "on" : "off"}">${p.active ? "সক্রিয়" : "নিষ্ক্রিয়"}</span></td>
@@ -267,6 +267,25 @@ function renderPlans() {
 const overlay = $("modalOverlay");
 let editingPlanId = null;
 
+const PLAN_CYCLE_PREVIEW = [
+  { label: "১ মাস", months: 1 },
+  { label: "৩ মাস", months: 3 },
+  { label: "৬ মাস", months: 6 },
+  { label: "১ বছর", months: 12 },
+  { label: "২ বছর", months: 24 },
+];
+
+function renderCyclePreview() {
+  const el = $("planCyclePreview");
+  if (!el) return;
+  const monthly = Number($("fPrice").value) || 0;
+  el.innerHTML =
+    "মেয়াদভিত্তিক মোট: " +
+    PLAN_CYCLE_PREVIEW.map(
+      (c) => `<span>${c.label} <b>৳ ${(monthly * c.months).toLocaleString("en-IN")}</b></span>`
+    ).join("");
+}
+
 function openPlanAdd() {
   editingPlanId = null;
   $("modalTitle").textContent = "নতুন প্ল্যান";
@@ -276,6 +295,7 @@ function openPlanAdd() {
   $("planMsg").textContent = "";
   const picker = $("planFeatures");
   if (picker && picker.setSelected) picker.setSelected(planDefaultKeys(null));
+  renderCyclePreview();
   overlay.classList.add("open");
   $("fPlanName").focus();
 }
@@ -300,6 +320,7 @@ function openPlanEdit(id) {
   if (picker && picker.setSelected) picker.setSelected(planDefaultKeys(p));
   $("fActive").checked = p.active !== false;
   $("planMsg").textContent = "";
+  renderCyclePreview();
   overlay.classList.add("open");
 }
 
@@ -309,6 +330,7 @@ function closePlanModal() {
 
 $("addPlanBtn").addEventListener("click", openPlanAdd);
 $("cancelPlanBtn").addEventListener("click", closePlanModal);
+$("fPrice").addEventListener("input", renderCyclePreview);
 overlay.addEventListener("click", (e) => { if (e.target === overlay) closePlanModal(); });
 
 $("planForm").addEventListener("submit", async (e) => {

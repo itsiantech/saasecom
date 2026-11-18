@@ -5,6 +5,7 @@ const { auth, requireSuperAdmin } = require("../middleware/auth");
 const { FEATURES } = require("../lib/features");
 const { syncPlanStores } = require("../lib/storeProvisioning");
 const { writeAudit } = require("../lib/audit");
+const planCycles = require("../lib/planCycles");
 
 function featuresFromInput(input, existing) {
   const out = {};
@@ -30,8 +31,8 @@ function dependencyError(features) {
 
 // public: active plan gulo (signup/setup page e dekhay)
 router.get("/", async (req, res) => {
-  const plans = await Plan.find({ active: true }).sort({ order: 1, price: 1 });
-  res.json(plans);
+  const plans = await Plan.find({ active: true }).sort({ order: 1, price: 1 }).lean();
+  res.json(plans.map((p) => ({ ...p, cycles: planCycles.optionsFor(p) })));
 });
 
 // super admin: notun plan
