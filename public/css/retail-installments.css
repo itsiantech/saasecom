@@ -1,0 +1,155 @@
+/* ==========================================================================
+   Admin — retail cash + EMI (settings, review queue, schedule, payments)
+   ========================================================================== */
+
+.rei-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  margin-left: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.inst-tab.active .rei-count {
+  background: var(--gold-soft);
+  color: var(--gold);
+}
+
+.rei-filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.rei-filters select,
+.rei-filters input {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--text);
+  font-size: 13px;
+  font-family: inherit;
+  min-width: 0;
+}
+
+.rei-filters select:focus,
+.rei-filters input:focus {
+  outline: none;
+  border-color: var(--gold);
+}
+
+.rei-filters input { min-width: 210px; }
+
+.rei-schedule {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 2px 0 4px;
+}
+
+.rei-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.rei-note {
+  margin: 8px 0 0;
+  padding: 8px 12px;
+  border-left: 2px solid var(--gold);
+  border-radius: 0 8px 8px 0;
+  background: rgba(214, 178, 94, 0.06);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.rei-docs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.rei-doc-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.rei-doc-row strong {
+  display: block;
+  font-size: 13px;
+  text-transform: capitalize;
+}
+
+.rei-doc-row .p-desc {
+  display: block;
+  margin-top: 2px;
+}
+
+.rei-filters input[type="date"] { min-width: 140px; }
+
+html[data-theme="light"] .rei-doc-row { background: rgba(40, 30, 10, 0.02); }
+
+.rei-pay-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.rei-pay-form .pf-field { margin: 0; }
+
+.rei-pay-form .pf-actions {
+  align-self: end;
+  margin: 0;
+}
+
+.rei-pay-form .pf-actions button { margin-top: 0; }
+
+#view-retail-emi .pf-grid-2 .pf-field { margin-bottom: 0; }
+#view-retail-emi td { vertical-align: top; }
+
+html[data-theme="light"] .rei-chip { background: rgba(40, 30, 10, 0.02); }
+html[data-theme="light"] .rei-pay-form { background: rgba(40, 30, 10, 0.02); }
+html[data-theme="light"] .rei-count { background: rgba(40, 30, 10, 0.06); }
+
+@media (max-width: 720px) {
+  .rei-filters { width: 100%; }
+  .rei-filters select,
+  .rei-filters input { flex: 1 1 140px; min-width: 0; }
+  .rei-pay-form { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 480px) {
+  .rei-pay-form { grid-template-columns: 1fr; }
+  .rei-filters input { min-width: 0; }
+  .rei-doc-row { flex-direction: column; align-items: flex-start; }
+}

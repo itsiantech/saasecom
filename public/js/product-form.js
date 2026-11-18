@@ -23,8 +23,20 @@
     variationData: {}, // { [term]: { image, regularPrice, salePrice, stock } }
     swatches: [], // { id, name, price, stock, images: [] }
     gallery: [], // product images; [0] is the storefront cover
+    specValues: {}, // { [specKey]: string | boolean-as-string | string[] }
     tiers: { __product__: [] }, // { [term|__product__]: [{ minQty, maxQty, price }] }
     tierTarget: "__product__",
+    emi: {
+      override: false,
+      allowed: "",
+      method: "",
+      annualRatePct: "",
+      markupPct: "",
+      downPaymentPercent: "",
+      serviceChargePercent: "",
+      months: "",
+      note: "",
+    },
   };
 
   /* ---------------- helpers ---------------- */
@@ -109,6 +121,7 @@
           }
         }
         markDirty();
+        renderSpecs();
       });
 
       label.appendChild(cb);
@@ -137,6 +150,122 @@
         if (n.children && n.children.length) walk(n.children, (prefix ? prefix + " > " : "") + (n.name || "Untitled"));
       });
     })(state.meta.categories || [], "");
+  }
+
+  /* ---------------- specifications (Spec Manager) ---------------- */
+  // Union of the specs that apply to the picked categories; a category-specific
+  // definition wins over a store-wide one with the same key.
+  function specDefinitions() {
+    const all = (state.meta && state.meta.specDefinitions) || [];
+    const selected = state.selectedCategories;
+    const byKey = new Map();
+    all.forEach((def) => {
+      if (def.category && !selected.has(String(def.category))) return;
+      const prev = byKey.get(def.key);
+      if (!prev || (prev.category === null && def.category)) byKey.set(def.key, def);
+    });
+    return [...byKey.values()].sort(
+      (a, b) =>
+        (Number(a.sortOrder) || 0) - (Number(b.sortOrder) || 0) ||
+        String(a.label).localeCompare(String(b.label))
+    );
+  }
+
+  function specFieldHtml(def) {
+    const key = esc(def.key);
+    const value = state.specValues[def.key];
+    const unit = def.unit ? ` <span class="pf-spec-unit">(${esc(def.unit)})</span>` : "";
+    const label = `${esc(def.label)}${unit}`;
+    let control = "";
+
+    if (def.type === "number") {
+      control = `<input type="number" step="any" data-spec-key="${key}" value="${esc(value == null ? "" : value)}" placeholder="0" />`;
+    } else if (def.type === "boolean") {
+      const current =
+        value === true || value === "true" ? "true" : value === false || value === "false" ? "false" : "";
+      control = `<select data-spec-key="${key}">
+        <option value="">—</option>
+        <option value="true" ${current === "true" ? "selected" : ""}>Yes</option>
+        <option value="false" ${current === "false" ? "selected" : ""}>No</option>
+      </select>`;
+    } else if (def.type === "enum") {
+      const current = value == null ? "" : String(value);
+      control = `<select data-spec-key="${key}">
+        <option value="">—</option>
+        ${(def.enumValues || [])
+          .map(
+            (v) =>
+              `<option value="${esc(v.value)}" ${current === String(v.value) ? "selected" : ""}>${esc(v.label || v.value)}</option>`
+          )
+          .join("")}
+      </select>`;
+    } else if (def.type === "multi-enum") {
+      const current = new Set((Array.isArray(value) ? value : []).map(String));
+      control = `<div class="pf-spec-multi">${(def.enumValues || [])
+        .map(
+          (v) => `<label><input type="checkbox" data-spec-key="${key}" data-spec-multi="1" value="${esc(v.value)}" ${
+            current.has(String(v.value)) ? "checked" : ""
+          } /> ${esc(v.label || v.value)}</label>`
+        )
+        .join("")}</div>`;
+    } else {
+      control = `<input type="text" data-spec-key="${key}" value="${esc(value == null ? "" : value)}" />`;
+    }
+
+    return `<div class="pf-field"><label>${label}</label>${control}</div>`;
+  }
+
+  function renderSpecs() {
+    const card = $("specsCard");
+    const wrap = $("pfSpecFields");
+    if (!card || !wrap) return;
+    const defs = specDefinitions();
+    if (!defs.length) {
+      card.hidden = true;
+      wrap.innerHTML = "";
+      return;
+    }
+    card.hidden = false;
+    wrap.innerHTML = defs.map(specFieldHtml).join("");
+    wrap.querySelectorAll("[data-spec-key]").forEach((field) => {
+      field.addEventListener("change", () => updateSpecValue(field));
+      if (field.tagName === "INPUT" && field.type !== "checkbox") {
+        field.addEventListener("input", () => updateSpecValue(field));
+      }
+    });
+  }
+
+  function updateSpecValue(field) {
+    const key = field.dataset.specKey;
+    if (!key) return;
+    if (field.dataset.specMulti) {
+      const set = new Set(Array.isArray(state.specValues[key]) ? state.specValues[key] : []);
+      if (field.checked) set.add(field.value);
+      else set.delete(field.value);
+      const list = [...set];
+      if (list.length) state.specValues[key] = list;
+      else delete state.specValues[key];
+    } else if (field.value === "") {
+      delete state.specValues[key];
+    } else {
+      state.specValues[key] = field.value;
+    }
+    markDirty();
+  }
+
+  // undefined = leave the product's stored specs as they are (no applicable
+  // definitions right now); an object = replace them with what the card shows.
+  function collectSpecs() {
+    const defs = specDefinitions();
+    if (!defs.length) return undefined;
+    const out = {};
+    defs.forEach((def) => {
+      const value = state.specValues[def.key];
+      if (value === undefined || value === null || value === "") return;
+      if (Array.isArray(value) && !value.length) return;
+      out[def.key] = value;
+    });
+    return out;
   }
 
   /* ---------------- tags ---------------- */
@@ -612,6 +741,94 @@
     $("swatchesCard").hidden = !s.productSwatchesEnabled;
   }
 
+  /* ---------------- retail EMI override (installments module) ---------------- */
+  function emiMeta() {
+    return (state.meta && state.meta.installment) || { enabled: false };
+  }
+
+  function emiEnabled() {
+    return emiMeta().enabled === true;
+  }
+
+  function setEmiState(raw) {
+    const src = raw || {};
+    state.emi = {
+      override: !!raw,
+      allowed: src.allowed === null || src.allowed === undefined ? "" : String(src.allowed),
+      method: src.method || "",
+      annualRatePct: src.annualRatePct == null ? "" : String(src.annualRatePct),
+      markupPct: src.markupPct == null ? "" : String(src.markupPct),
+      downPaymentPercent: src.downPaymentPercent == null ? "" : String(src.downPaymentPercent),
+      serviceChargePercent: src.serviceChargePercent == null ? "" : String(src.serviceChargePercent),
+      months: Array.isArray(src.months) && src.months.length ? src.months.join(", ") : "",
+      note: src.note || "",
+    };
+    renderEmi();
+  }
+
+  function renderEmi() {
+    const card = $("pfInstallmentCard");
+    if (!card) return;
+    const meta = emiMeta();
+    card.hidden = !emiEnabled();
+    if (!emiEnabled()) return;
+
+    $("pfEmiHint").textContent =
+      "Store default: " +
+      (meta.method || "flat_annual") +
+      " · " +
+      (Number(meta.annualRatePct) || 0) +
+      "% annual · min down payment " +
+      (Number(meta.minDownPaymentPercent) || 0) +
+      "% · " +
+      (meta.maxMonths || 60) +
+      " months max";
+
+    $("pfEmiOverride").checked = state.emi.override;
+    $("pfEmiFields").hidden = !state.emi.override;
+    $("pfEmiAllowed").value = state.emi.allowed;
+    $("pfEmiMethod").value = state.emi.method;
+    $("pfEmiRate").value = state.emi.annualRatePct;
+    $("pfEmiMarkup").value = state.emi.markupPct;
+    $("pfEmiDown").value = state.emi.downPaymentPercent;
+    $("pfEmiService").value = state.emi.serviceChargePercent;
+    $("pfEmiMonths").value = state.emi.months;
+    $("pfEmiNote").value = state.emi.note;
+  }
+
+  function readEmiState() {
+    state.emi = {
+      override: $("pfEmiOverride").checked,
+      allowed: $("pfEmiAllowed").value,
+      method: $("pfEmiMethod").value,
+      annualRatePct: $("pfEmiRate").value.trim(),
+      markupPct: $("pfEmiMarkup").value.trim(),
+      downPaymentPercent: $("pfEmiDown").value.trim(),
+      serviceChargePercent: $("pfEmiService").value.trim(),
+      months: $("pfEmiMonths").value.trim(),
+      note: $("pfEmiNote").value.trim(),
+    };
+  }
+
+  // undefined = leave stored rules alone (module off); null = clear to inherit.
+  function readEmiPayload() {
+    if (!emiEnabled()) return undefined;
+    if (!state.emi.override) return null;
+    return {
+      allowed: state.emi.allowed === "" ? null : state.emi.allowed === "true",
+      method: state.emi.method || null,
+      annualRatePct: state.emi.annualRatePct === "" ? null : Number(state.emi.annualRatePct),
+      markupPct: state.emi.markupPct === "" ? null : Number(state.emi.markupPct),
+      downPaymentPercent: state.emi.downPaymentPercent === "" ? null : Number(state.emi.downPaymentPercent),
+      serviceChargePercent: state.emi.serviceChargePercent === "" ? null : Number(state.emi.serviceChargePercent),
+      months: String(state.emi.months || "")
+        .split(/[,\s]+/)
+        .map((v) => Number(v))
+        .filter((n) => Number.isInteger(n) && n >= 2 && n <= 60),
+      note: state.emi.note,
+    };
+  }
+
   /* ---------------- inline category create ---------------- */
   async function createCategoryInline(e) {
     e.preventDefault();
@@ -635,6 +852,7 @@
       state.meta = meta;
       renderParentOptions();
       renderCategoryTree();
+      renderSpecs();
       state.selectedCategories.add(String(data._id));
       const uncatId = state.meta && state.meta.uncategorized ? String(state.meta.uncategorized._id) : "";
       if (uncatId && uncatId !== String(data._id)) state.selectedCategories.delete(uncatId);
@@ -690,6 +908,7 @@
       stock: Number($("pfStock").value) || 0,
       weightKg: Number($("pfWeight").value) || 0,
       ...(wholesaleMeta().enabled ? { tiers: readTierPayload() } : {}),
+      installment: readEmiPayload(),
       status,
       images: state.gallery,
       videoUrl: $("pfVideoUrl").value.trim(),
@@ -699,6 +918,7 @@
       tags: state.tags,
       attributes,
       swatches,
+      specs: collectSpecs(),
     };
   }
 
@@ -760,8 +980,10 @@
     state.variationData = {};
     state.swatches = [];
     state.gallery = [];
+    state.specValues = {};
     state.tiers = { __product__: [] };
     state.tierTarget = "__product__";
+    setEmiState(null);
 
     $("pfTitle").value = "";
     $("pfDesc").innerHTML = "";
@@ -791,6 +1013,7 @@
     renderGallery();
     renderVideoPreview();
     renderTiers();
+    renderSpecs();
   }
 
   async function loadProduct(id) {
@@ -818,6 +1041,8 @@
     if (uncatId && state.selectedCategories.size > 1) state.selectedCategories.delete(uncatId);
     const tagNames = new Map((state.meta.tags || []).map((t) => [String(t._id), t.name]));
     state.tags = (data.tags || []).map((t) => tagNames.get(String(t)) || String(t));
+    state.specValues = { ...(p.specs || {}) };
+    setEmiState(p.installment || null);
 
     const vars = data.variations || [];
     if (vars.length) {
@@ -871,6 +1096,7 @@
     renderGallery();
     renderVideoPreview();
     renderTiers();
+    renderSpecs();
   }
 
   /* ---------------- init ---------------- */
@@ -881,6 +1107,7 @@
     renderAttributeSelect();
     renderParentOptions();
     applySettings(meta.settings);
+    renderEmi();
     if (meta.uncategorized) state.selectedCategories.add(String(meta.uncategorized._id));
     renderCategoryTree();
     renderTags();
@@ -888,6 +1115,7 @@
     renderSwatches();
     renderGallery();
     renderTiers();
+    renderSpecs();
     state.ready = true;
   }
 
@@ -920,8 +1148,10 @@
         __attribute: state.attribute,
         __variation: state.variationData,
         __swatches: state.swatches,
+        __specs: state.specValues,
         __tiers: state.tiers,
         __tierTarget: state.tierTarget,
+        __emi: state.emi,
         __editId: state.editId || "",
       }),
       extraApply: (values) => {
@@ -932,8 +1162,10 @@
         state.attribute = values.__attribute || { name: "", terms: [] };
         state.variationData = values.__variation || {};
         state.swatches = Array.isArray(values.__swatches) ? values.__swatches : [];
+        state.specValues = values.__specs && typeof values.__specs === "object" ? values.__specs : {};
         state.tiers = values.__tiers || { __product__: [] };
         state.tierTarget = values.__tierTarget || "__product__";
+        if (values.__emi) state.emi = values.__emi;
         $("pfDesc").innerHTML = values.__desc || "";
         renderCategoryTree();
         renderTags();
@@ -943,6 +1175,8 @@
         renderGallery();
         renderTiers();
         renderVideoPreview();
+        renderSpecs();
+        renderEmi();
       },
     });
   }
@@ -988,6 +1222,15 @@
   $("pfVideoUrl").addEventListener("input", () => { renderVideoPreview(); markDirty(); });
   $("pfTopFeature").addEventListener("change", markDirty);
   $("pfHotDeal").addEventListener("change", markDirty);
+  $("pfEmiOverride").addEventListener("change", () => {
+    readEmiState();
+    $("pfEmiFields").hidden = !state.emi.override;
+    markDirty();
+  });
+  ["pfEmiAllowed", "pfEmiMethod", "pfEmiRate", "pfEmiMarkup", "pfEmiDown", "pfEmiService", "pfEmiMonths", "pfEmiNote"].forEach((id) => {
+    $(id).addEventListener("input", () => { readEmiState(); markDirty(); });
+    $(id).addEventListener("change", () => { readEmiState(); markDirty(); });
+  });
   $("pfTierTarget").addEventListener("change", () => {
     state.tierTarget = $("pfTierTarget").value || PRODUCT_TIER_KEY;
     renderTierRows();

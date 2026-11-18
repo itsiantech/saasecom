@@ -847,6 +847,7 @@ function renderDetail(o) {
             <div>
               <b>${esc(it.name)}</b>
               ${it.sku ? `<span>SKU: ${esc(it.sku)}</span>` : ""}
+              ${it.buildToken ? `<span style="color:#0e7490;font-weight:600;">PC Build · ${esc(it.buildToken)}</span>` : ""}
             </div>
           </div>
         </td>

@@ -62,6 +62,10 @@ function switchView(viewName) {
     if (window.productForm) window.productForm.open();
   } else if (viewName === "product-list") {
     if (window.productCatalog) window.productCatalog.open();
+  } else if (viewName === "spec-manager") {
+    if (window.specManagerPage) window.specManagerPage.open();
+  } else if (viewName === "builder") {
+    if (window.builderPage) window.builderPage.open();
   } else if (viewName === "orders") {
     if (window.orderCatalog) window.orderCatalog.open();
   } else if (viewName === "customers") {
@@ -74,6 +78,8 @@ function switchView(viewName) {
     if (window.settingsPage) window.settingsPage.open();
   } else if (viewName === "installment-orders") {
     if (window.installmentAdmin) window.installmentAdmin.open();
+  } else if (viewName === "retail-emi") {
+    if (window.retailEmiAdmin) window.retailEmiAdmin.open();
   } else if (viewName === "flash-sales") {
     if (window.flashSalesPage) window.flashSalesPage.open();
   } else if (viewName === "coupons") {
@@ -133,6 +139,8 @@ function switchView(viewName) {
 const VIEW_MODULES = {
   "product-list": "products",
   "add-product": "products",
+  "spec-manager": "productBuilder",
+  builder: "productBuilder",
   categories: "categories",
   brands: "brands",
   orders: "orders",
@@ -164,6 +172,7 @@ const VIEW_MODULES = {
   "accounts-export": "accounts",
   settings: "settings",
   "installment-orders": "partialPayment",
+  "retail-emi": "installments",
   "flash-sales": "flashSales",
   coupons: "coupons",
 };

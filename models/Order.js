@@ -61,6 +61,9 @@ const orderSchema = new mongoose.Schema(
       flashSale: { type: mongoose.Schema.Types.ObjectId, ref: "FlashSale", default: null },
       flashSaleTitle: { type: String, default: "" },
       flashPercent: { type: Number, default: 0, min: 0, max: 100 },
+      // set when the line was added from a saved product-builder build
+      build: { type: mongoose.Schema.Types.ObjectId, ref: "SavedBuild", default: null },
+      buildToken: { type: String, default: "" },
       quantity: { type: Number, required: true, min: 1 },
       price: { type: Number, required: true },
     }],

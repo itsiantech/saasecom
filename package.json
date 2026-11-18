@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node server.js",
     "test": "node --test",
-    "seed:pack": "node scripts/seed-pack.js"
+    "seed:pack": "node scripts/seed-pack.js",
+    "seed:builder": "node scripts/seed-builder-demo.js"
   },
   "keywords": [],
   "author": "",

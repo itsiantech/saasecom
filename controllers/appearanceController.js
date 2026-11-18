@@ -41,7 +41,13 @@ function themeFor(name) {
 function effective(name, overrides) {
   const theme = themeFor(name);
   const clean = sanitizeTokens(theme, overrides);
-  return { theme: theme.name, label: theme.label, tokens: mergeTokens(theme, clean), overrides: clean };
+  return {
+    theme: theme.name,
+    label: theme.label,
+    tokens: mergeTokens(theme, clean),
+    modules: theme.modules || [],
+    overrides: clean,
+  };
 }
 
 function sameBlock(a, b) {
@@ -193,6 +199,7 @@ async function publicAppearance(req, res, next) {
         theme: result.theme,
         label: result.label,
         tokens: result.tokens,
+        modules: result.modules,
         preview: Boolean(preview),
       },
     });

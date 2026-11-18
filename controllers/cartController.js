@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const Cart = require("../models/Cart");
 const Order = require("../models/Order");
+const SavedBuild = require("../models/SavedBuild");
 const Product = require("../models/Product");
 const ProductVariation = require("../models/ProductVariation");
 const ProductSwatch = require("../models/ProductSwatch");
@@ -390,6 +391,8 @@ async function getCart(req, res) {
     // ProductVariation stores the label in termName (swatches use name)
     { path: "items.variation", select: "termName attributeName image" },
     { path: "items.swatch", select: "name" },
+    // builder lines carry the saved build so the cart can link back to it
+    { path: "items.build", select: "token name" },
   ]);
   res.json({
     items: cart.items,
@@ -518,6 +521,55 @@ async function addItem(req, res) {
   });
   await cart.save();
   res.status(201).json({ items: cart.items });
+}
+
+/* ------------------------------------------------------------------ *
+ * Builder add-to-cart — lines already validated by the builder API.
+ * Same cart, same pricing rules; throws instead of partially saving.
+ * ------------------------------------------------------------------ */
+async function addBuilderLines(req, lines) {
+  const storeId = storeIdOf(req);
+  const flashSales = await loadLiveFlashSales(storeId);
+  const cart = await getOrCreateCart(req);
+
+  for (const line of lines || []) {
+    const product = line.product;
+    if (!product) continue;
+    const quantity = Math.max(1, Number(line.quantity) || 1);
+    const stock = Number(product.stock) || 0;
+    if (quantity > stock) {
+      throw Object.assign(new Error(`Stock e sudhu ${stock} piece ache`), { status: 400 });
+    }
+
+    const retailPrice = product.salePrice || product.regularPrice || product.price || 0;
+    let pricing;
+    try {
+      pricing = await quoteLine({
+        storeId,
+        userId: req.user && req.user.id,
+        item: { product: product._id, variation: null, quantity },
+        retailPrice,
+        product,
+        flashSales,
+      });
+    } catch (err) {
+      throw Object.assign(new Error(err.message), { status: err.status || 400 });
+    }
+
+    const item = {
+      product: product._id,
+      variation: null,
+      swatch: null,
+      image: (product.images && product.images[0]) || "",
+      quantity,
+      build: line.build || null,
+    };
+    applyPricing(item, pricing);
+    cart.items.push(item);
+  }
+
+  await cart.save();
+  return cart;
 }
 
 /* ------------------------------------------------------------------ *
@@ -880,6 +932,16 @@ async function createOrder(req, res) {
     couponReserved = true;
   }
 
+  // Builder lines keep their build reference + token snapshot on the order.
+  const buildIds = [...new Set(cart.items.map((item) => item.build).filter(Boolean).map(String))];
+  const buildTokens = new Map();
+  if (buildIds.length) {
+    const builds = await SavedBuild.find({ store: storeId, _id: { $in: buildIds } })
+      .select("token")
+      .lean();
+    for (const row of builds) buildTokens.set(String(row._id), row.token || "");
+  }
+
   const lineItems = pricedItems.map(({ item, pricing }) => ({
     product: item.product,
     variation: item.variation,
@@ -894,6 +956,8 @@ async function createOrder(req, res) {
     flashSale: pricing.flashSale || null,
     flashSaleTitle: pricing.flashSaleTitle || "",
     flashPercent: Number(pricing.flashPercent) || 0,
+    build: item.build || null,
+    buildToken: item.build ? buildTokens.get(String(item.build)) || "" : "",
     quantity: item.quantity,
     price: fromPaisa(pricing.unitPricePaisa * item.quantity),
   }));
@@ -1084,6 +1148,7 @@ module.exports = {
   refreshCartPricing,
   shippingQuote,
   addItem,
+  addBuilderLines,
   updateItem,
   removeItem,
   applyCoupon,

@@ -19,6 +19,8 @@ const cartItemSchema = new mongoose.Schema(
     flashSaleTitle: { type: String, default: "" },
     flashPercent: { type: Number, default: 0, min: 0, max: 100 },
     quantity: { type: Number, default: 1, min: 1 },
+    // set when the line came from a saved product-builder build
+    build: { type: mongoose.Schema.Types.ObjectId, ref: "SavedBuild", default: null },
   },
   { _id: true }
 );

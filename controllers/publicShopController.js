@@ -152,6 +152,7 @@ function publicOrderItem(item) {
     image: item.image || "",
     quantity: item.quantity,
     price: item.price,
+    buildToken: item.buildToken || "",
   };
 }
 

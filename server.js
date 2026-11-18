@@ -8,6 +8,8 @@ const Store = require("./models/Store");
 
 const app = express();
 app.use(cors());
+// NID uploads are base64 JSON; the default 100kb cap would reject them.
+app.use("/api/public/installments/documents", express.json({ limit: "6mb" }));
 // rawBody kept for HMAC-verified webhooks
 app.use(express.json({ verify: (req, _res, buf) => { req.rawBody = buf; } }));
 
@@ -63,12 +65,26 @@ app.use("/api/admin", require("./routes/admin"));
 app.use("/api/categories", require("./routes/categories"));
 app.use("/api/brands", require("./routes/brands"));
 app.use("/api/product-form", require("./routes/productForm"));
+// Isolated module: product builder specs must never stop the app from booting.
+try {
+  app.use("/api/specs", require("./routes/specs"));
+} catch (err) {
+  console.error("Specs module mount failed:", err.message);
+}
+// admin side of the product builder (templates, sandbox, saved builds)
+try {
+  app.use("/api/builder", require("./routes/builder"));
+} catch (err) {
+  console.error("Builder module mount failed:", err.message);
+}
 app.use("/api/settings", require("./routes/settings"));
 app.use("/api/appearance", require("./routes/appearance"));
 app.use("/api/cart", require("./routes/cart"));
 app.use("/api/international", require("./routes/international"));
 app.use("/api/wholesale", require("./routes/wholesale"));
 app.use("/api/installments", require("./routes/installments"));
+// retail cash + EMI back office (settings, review queue, schedule, payments)
+app.use("/api/retail-installments", require("./routes/retailInstallments"));
 app.use("/api/product-catalog", require("./routes/productCatalog"));
 app.use("/api/promotions", require("./routes/promotions"));
 app.use("/api/flash-sales", require("./routes/flashSales"));

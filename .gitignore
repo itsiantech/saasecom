@@ -5,3 +5,6 @@ uploads
 
 # local verification artifacts
 .preview/
+
+# private EMI document vault (encrypted NID scans)
+storage/private/

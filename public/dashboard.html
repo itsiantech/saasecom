@@ -15,6 +15,7 @@
   <link rel="stylesheet" href="/css/product-form.css" />
   <link rel="stylesheet" href="/css/settings-dashboard.css?v=7" />
   <link rel="stylesheet" href="/css/installments.css?v=1" />
+  <link rel="stylesheet" href="/css/retail-installments.css?v=1" />
   <link rel="stylesheet" href="/css/product-catalog.css?v=1" />
   <link rel="stylesheet" href="/css/order-catalog.css?v=2" />
   <link rel="stylesheet" href="/css/marketing.css?v=2" />
@@ -24,6 +25,8 @@
   <link rel="stylesheet" href="/css/reports.css?v=2" />
   <link rel="stylesheet" href="/css/inventory.css?v=1" />
   <link rel="stylesheet" href="/css/accounts.css?v=2" />
+  <link rel="stylesheet" href="/css/spec-manager.css?v=1" />
+  <link rel="stylesheet" href="/css/builder-manager.css?v=2" />
   <!-- Font Awesome Free (icon library) -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
   <script src="/js/style-settings.js?v=1"></script>
@@ -64,6 +67,14 @@
             <a href="#" class="nav-item" data-view="product-list">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
               Product list
+            </a>
+            <a href="#" class="nav-item" data-view="spec-manager" id="navSpecManager">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16M4 12h16M4 19h16"/><circle cx="7" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="17" cy="19" r="1.6"/></svg>
+              Spec Manager
+            </a>
+            <a href="#" class="nav-item" data-view="builder" id="navBuilder">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><path d="M16.5 13v7M13 16.5h7"/></svg>
+              PC Builder
             </a>
           </div>
         </div>
@@ -234,6 +245,10 @@
         <a href="#" class="nav-item" data-view="installment-orders">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 3h16a1 1 0 0 1 1 1v17l-3-2-2 2-2-2-2 2-2-2-3 2V4a1 1 0 0 1 1-1z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
           Installment orders
+        </a>
+        <a href="#" class="nav-item" data-view="retail-emi" id="navRetailEmi">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></svg>
+          Retail EMI
         </a>
         <a href="#" class="nav-item" data-view="flash-sales" id="navFlashSales">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z"/></svg>
@@ -731,7 +746,67 @@
               <p class="pf-note">Each term has one image. When a customer orders that term, the cart shows its image, price and quantity.</p>
             </div>
 
-            <!-- 4. Image swatches (Super Settings theke on/off) -->
+            <!-- 4. Specifications (Product builder — Spec Manager theke ashe) -->
+            <div class="pf-card" id="specsCard" hidden>
+              <div class="pf-card-head"><h3>Specifications <span class="hint">Pick the product categories to see fields</span></h3></div>
+              <p class="pf-note" style="margin-top:8px;">These fields come from the Spec Manager and power the storefront product builder. Empty fields are skipped.</p>
+              <div id="pfSpecFields" class="pf-spec-fields"></div>
+            </div>
+
+            <!-- 4b. Retail EMI override (installments module ON hole dekhabe) -->
+            <div class="pf-card" id="pfInstallmentCard" hidden>
+              <div class="pf-card-head"><h3>Retail EMI <span class="hint">Kisti / EMI for this product</span></h3></div>
+              <p class="pf-note" style="margin-top:8px;">Price stays the same — these rules only decide whether this product can be bought on EMI and how the monthly amount is calculated. Empty fields inherit the store (or category) rule.</p>
+              <label class="pf-check"><input type="checkbox" id="pfEmiOverride" /> <span>Use different EMI rules for this product</span></label>
+              <div id="pfEmiFields" hidden>
+                <div class="pf-grid-2">
+                  <div class="pf-field">
+                    <label for="pfEmiAllowed">EMI allowed</label>
+                    <select id="pfEmiAllowed">
+                      <option value="">Inherit</option>
+                      <option value="true">Yes — cash + EMI</option>
+                      <option value="false">No — cash only</option>
+                    </select>
+                  </div>
+                  <div class="pf-field">
+                    <label for="pfEmiMethod">Calculation method</label>
+                    <select id="pfEmiMethod">
+                      <option value="">Inherit</option>
+                      <option value="flat_annual">Flat annual rate</option>
+                      <option value="total_markup">Total markup</option>
+                      <option value="reducing">Reducing balance</option>
+                    </select>
+                  </div>
+                  <div class="pf-field">
+                    <label for="pfEmiRate">Annual rate %</label>
+                    <input id="pfEmiRate" type="number" min="0" step="0.01" placeholder="Inherit" />
+                  </div>
+                  <div class="pf-field">
+                    <label for="pfEmiMarkup">Total markup %</label>
+                    <input id="pfEmiMarkup" type="number" min="0" step="0.01" placeholder="Inherit" />
+                  </div>
+                  <div class="pf-field">
+                    <label for="pfEmiDown">Min down payment %</label>
+                    <input id="pfEmiDown" type="number" min="0" max="99" step="0.01" placeholder="Inherit" />
+                  </div>
+                  <div class="pf-field">
+                    <label for="pfEmiService">Service charge %</label>
+                    <input id="pfEmiService" type="number" min="0" step="0.01" placeholder="Inherit" />
+                  </div>
+                </div>
+                <div class="pf-field">
+                  <label for="pfEmiMonths">Allowed month plans</label>
+                  <input id="pfEmiMonths" type="text" placeholder="e.g. 3, 6, 12 — empty = every active plan" />
+                </div>
+                <div class="pf-field">
+                  <label for="pfEmiNote">Storefront note</label>
+                  <input id="pfEmiNote" type="text" maxlength="200" placeholder="e.g. EMI available on this product" />
+                </div>
+              </div>
+              <p class="pf-note" id="pfEmiHint"></p>
+            </div>
+
+            <!-- 5. Image swatches (Super Settings theke on/off) -->
             <div class="pf-card" id="swatchesCard">
               <div class="pf-card-head"><h3>Image swatches <span class="hint">Sell different looks under one product</span></h3></div>
               <p class="pf-note" style="margin-top:8px;">Each swatch has its own image, name, price and stock. Customers can pick one or several and order them together.</p>
@@ -740,7 +815,7 @@
               <p class="pf-note">Gallery: one swatch can hold more than one image. Use the first as the cart image.</p>
             </div>
 
-            <!-- 5. Wholesale quantity tiers (only while wholesale mode is ON) -->
+            <!-- 6. Wholesale quantity tiers (only while wholesale mode is ON) -->
             <div class="pf-card" id="pfTiersCard" hidden>
               <div class="pf-card-head"><h3>Wholesale quantity tiers <span class="hint">Quantity → unit price</span></h3></div>
               <p class="pf-note" style="margin-top:8px;">The first tier starts at your store MOQ. Each next tier starts automatically at the previous To qty + 1. Leave the last To qty empty for unlimited.</p>
@@ -2578,6 +2653,435 @@
         </section>
       </section><!-- /#view-installment-orders -->
 
+      <!-- ===================== RETAIL EMI VIEW ===================== -->
+      <section class="view" id="view-retail-emi" hidden>
+        <div class="topbar">
+          <div style="display:flex;align-items:center;gap:14px;">
+            <button class="menu-btn" data-menu aria-label="Menu">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+            <div>
+              <h2>Retail EMI</h2>
+              <p class="crumb">Cash + kisti — settings, applications, schedule &amp; payments</p>
+            </div>
+          </div>
+          <div class="pf-actions">
+            <button class="btn-ghost" id="reiRunBtn" type="button" style="margin-top:0;padding:10px 16px;">Run reminders</button>
+            <button class="btn-add" id="reiRefreshBtn" type="button">Refresh</button>
+          </div>
+        </div>
+
+        <div class="inst-tabs" role="tablist" aria-label="Retail EMI tabs">
+          <button type="button" class="inst-tab active" data-rei-tab="applications">Applications <span class="rei-count" id="reiTabApplications">0</span></button>
+          <button type="button" class="inst-tab" data-rei-tab="orders">Orders <span class="rei-count" id="reiTabOrders">0</span></button>
+          <button type="button" class="inst-tab" data-rei-tab="settings">Settings</button>
+          <button type="button" class="inst-tab" data-rei-tab="plans">Month plans</button>
+          <button type="button" class="inst-tab" data-rei-tab="reports">Reports</button>
+        </div>
+
+        <!-- Applications -->
+        <div id="reiApplicationsPanel">
+          <section class="stats">
+            <div class="stat"><p class="label">Pending review</p><p class="value gold" id="reiStatPending">0</p></div>
+            <div class="stat"><p class="label">Info requested</p><p class="value" id="reiStatInfo">0</p></div>
+            <div class="stat"><p class="label">Approved</p><p class="value" id="reiStatApproved">0</p></div>
+            <div class="stat"><p class="label">Rejected / expired</p><p class="value danger" id="reiStatClosed">0</p></div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h3>EMI applications</h3>
+                <p class="count" id="reiApplicationCount">0 applications</p>
+              </div>
+              <div class="rei-filters">
+                <select id="reiStatusFilter" aria-label="Filter applications by status">
+                  <option value="">All statuses</option>
+                  <option value="pending_review">Pending review</option>
+                  <option value="info_requested">Info requested</option>
+                  <option value="approved">Approved</option>
+                  <option value="rejected">Rejected</option>
+                  <option value="expired">Expired</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+                <input id="reiSearch" type="search" placeholder="Number, name or phone" aria-label="Search applications" />
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Application</th>
+                    <th>Applicant</th>
+                    <th>Product</th>
+                    <th>Plan</th>
+                    <th>Total payable</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="reiApplicationsBody">
+                  <tr><td colspan="7"><div class="empty">Loading…</div></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="panel" id="reiApplicationDetail" hidden>
+            <div class="panel-head">
+              <div>
+                <h3 id="reiApplicationTitle">Application</h3>
+                <p class="count">Applicant · quote breakdown · stock</p>
+              </div>
+              <button type="button" class="inst-btn" id="reiApplicationClose">Close</button>
+            </div>
+            <div id="reiApplicationBody" class="inst-detail-body"></div>
+          </section>
+        </div>
+
+        <!-- Orders -->
+        <div id="reiOrdersPanel" hidden>
+          <section class="stats">
+            <div class="stat"><p class="label">EMI orders</p><p class="value gold" id="reiStatOrders">0</p></div>
+            <div class="stat"><p class="label">Outstanding</p><p class="value danger" id="reiStatDue">৳ 0</p></div>
+            <div class="stat"><p class="label">Overdue installments</p><p class="value danger" id="reiStatOverdue">0</p></div>
+            <div class="stat"><p class="label">Pending payments</p><p class="value" id="reiStatPayments">0</p></div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h3>Converted EMI orders</h3>
+                <p class="count" id="reiOrderCount">0 orders</p>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Order</th>
+                    <th>Buyer</th>
+                    <th>Plan</th>
+                    <th>Amounts</th>
+                    <th>Status</th>
+                    <th>Next due</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="reiOrdersBody">
+                  <tr><td colspan="7"><div class="empty">Loading…</div></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="panel" id="reiOrderDetail" hidden>
+            <div class="panel-head">
+              <div>
+                <h3 id="reiOrderTitle">Order</h3>
+                <p class="count">Schedule · payments · manual entry</p>
+              </div>
+              <button type="button" class="inst-btn" id="reiOrderClose">Close</button>
+            </div>
+            <div id="reiOrderBody" class="inst-detail-body"></div>
+          </section>
+        </div>
+
+        <!-- Settings -->
+        <div id="reiSettingsPanel" hidden>
+          <div class="pf-card">
+            <div class="pf-card-head"><h3>Retail EMI settings</h3><span class="hint">Store-wide defaults</span></div>
+            <label class="pf-check"><input type="checkbox" id="reiEnabled" /> <span>EMI চালু করুন (storefront e kisti option dekhabe)</span></label>
+
+            <h4 class="settings-subhead">Rate &amp; calculation</h4>
+            <div class="pf-grid-2">
+              <div class="pf-field">
+                <label for="reiMethod">Calculation method</label>
+                <select id="reiMethod">
+                  <option value="flat_annual">Flat annual rate</option>
+                  <option value="total_markup">Total markup</option>
+                  <option value="reducing">Reducing balance</option>
+                </select>
+              </div>
+              <div class="pf-field">
+                <label for="reiRate">Annual rate %</label>
+                <input id="reiRate" type="number" min="0" step="0.01" />
+              </div>
+              <div class="pf-field">
+                <label for="reiMarkup">Total markup %</label>
+                <input id="reiMarkup" type="number" min="0" step="0.01" />
+              </div>
+              <div class="pf-field">
+                <label for="reiMaxRate">Max allowed rate %</label>
+                <input id="reiMaxRate" type="number" min="0" step="0.01" />
+              </div>
+              <div class="pf-field">
+                <label for="reiServicePercent">Service charge %</label>
+                <input id="reiServicePercent" type="number" min="0" step="0.01" />
+              </div>
+              <div class="pf-field">
+                <label for="reiServiceFlat">Service charge flat (৳)</label>
+                <input id="reiServiceFlat" type="number" min="0" step="0.01" />
+              </div>
+              <div class="pf-field">
+                <label for="reiMinDown">Minimum down payment %</label>
+                <input id="reiMinDown" type="number" min="0" max="99" step="0.01" />
+              </div>
+              <div class="pf-field">
+                <label for="reiMaxMonths">Max months</label>
+                <input id="reiMaxMonths" type="number" min="2" max="60" />
+              </div>
+            </div>
+            <label class="pf-check"><input type="checkbox" id="reiCashSale" /> <span>Sale price is the cash price (regular price is the EMI base)</span></label>
+
+            <h4 class="settings-subhead">Applicant requirements</h4>
+            <label class="pf-check"><input type="checkbox" id="reiReqNid" /> <span>NID required</span></label>
+            <label class="pf-check"><input type="checkbox" id="reiReqAddress" /> <span>Address required</span></label>
+            <label class="pf-check"><input type="checkbox" id="reiReqGuarantor" /> <span>Guarantor required</span></label>
+            <label class="pf-check"><input type="checkbox" id="reiReqDocuments" /> <span>Documents required before an application can be submitted</span></label>
+            <div class="pf-field">
+              <label for="reiDocTypes">Document types to collect (comma separated)</label>
+              <input id="reiDocTypes" placeholder="nid_front, nid_back" />
+            </div>
+            <div class="pf-field">
+              <label for="reiApplicantNote">Applicant note</label>
+              <input id="reiApplicantNote" maxlength="300" placeholder="Shown under the application form" />
+            </div>
+
+            <h4 class="settings-subhead">Documents &amp; retention</h4>
+            <p class="pf-note">Scans are stored encrypted outside the public site. Pending uploads older than 24 hours and closed-application scans older than the retention window are deleted by the daily job and by the button below.</p>
+            <div class="pf-grid-2">
+              <div class="pf-field">
+                <label for="reiDocRetention">Keep scans after an application closes (days, 0 = forever)</label>
+                <input id="reiDocRetention" type="number" min="0" max="3650" />
+              </div>
+            </div>
+            <div class="pf-row">
+              <button class="pf-btn-sm" id="reiPurgeDocs" type="button">Purge old documents now</button>
+            </div>
+
+            <h4 class="settings-subhead">Review</h4>
+            <label class="pf-check"><input type="checkbox" id="reiApprovalRequired" /> <span>Manual approval required</span></label>
+            <div class="pf-field">
+              <label for="reiAutoReject">Auto-expire applications after (days, 0 = off)</label>
+              <input id="reiAutoReject" type="number" min="0" max="30" />
+            </div>
+
+            <h4 class="settings-subhead">Late fee &amp; reminders</h4>
+            <div class="pf-grid-2">
+              <div class="pf-field">
+                <label for="reiLateType">Late fee type</label>
+                <select id="reiLateType">
+                  <option value="flat">Flat amount</option>
+                  <option value="percent">Percent of installment</option>
+                </select>
+              </div>
+              <div class="pf-field">
+                <label for="reiLateAmount">Flat late fee (৳)</label>
+                <input id="reiLateAmount" type="number" min="0" step="0.01" />
+              </div>
+              <div class="pf-field">
+                <label for="reiLatePercent">Late fee %</label>
+                <input id="reiLatePercent" type="number" min="0" max="100" step="0.01" />
+              </div>
+              <div class="pf-field">
+                <label for="reiLateGrace">Grace days</label>
+                <input id="reiLateGrace" type="number" min="0" max="60" />
+              </div>
+            </div>
+            <div class="pf-field">
+              <label for="reiReminderDays">Reminder days before due (comma separated, e.g. 3, 1)</label>
+              <input id="reiReminderDays" placeholder="3, 1" />
+            </div>
+
+            <h4 class="settings-subhead">Card EMI note</h4>
+            <label class="pf-check"><input type="checkbox" id="reiCardEnabled" /> <span>Show card EMI note on the product page</span></label>
+            <div class="pf-field">
+              <label for="reiCardNote">Card EMI note</label>
+              <input id="reiCardNote" maxlength="300" placeholder="e.g. Card EMI available at partner banks" />
+            </div>
+
+            <h4 class="settings-subhead">Terms</h4>
+            <div class="pf-field">
+              <label for="reiTerms">Terms shown on the application form</label>
+              <textarea id="reiTerms" rows="4"></textarea>
+            </div>
+
+            <h4 class="settings-subhead">Category rules</h4>
+            <p class="pf-note">A category rule overrides the store default for every product in that category. Product-level rules (Add Product → Retail EMI) win over category rules.</p>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Category</th><th>Allowed</th><th>Method</th><th>Annual %</th><th>Markup %</th><th>Service %</th><th></th></tr></thead>
+                <tbody id="reiCategoryRules"></tbody>
+              </table>
+            </div>
+            <div class="pf-row">
+              <button class="pf-btn-sm" id="reiAddCategoryRule" type="button">+ Add category rule</button>
+            </div>
+
+            <div class="pf-actions" style="margin-top:18px;">
+              <button class="btn-add" id="reiSaveSettings" type="button">Save settings</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Month plans -->
+        <div id="reiPlansPanel" hidden>
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h3>Month plans</h3>
+                <p class="count" id="reiOfferCount">0 plans</p>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Plan</th><th>Months</th><th>Min down %</th><th>Method</th><th>Annual %</th><th>Markup %</th><th>Min price</th><th>Active</th><th>Action</th></tr></thead>
+                <tbody id="reiOffersBody"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <div class="pf-card">
+            <div class="pf-card-head"><h3 id="reiOfferFormTitle">Add plan</h3><span class="hint">Leave a rate empty to inherit settings</span></div>
+            <div class="pf-grid-2">
+              <div class="pf-field">
+                <label for="reiOfferName">Plan name</label>
+                <input id="reiOfferName" maxlength="80" placeholder="e.g. ১২ মাস" />
+              </div>
+              <div class="pf-field">
+                <label for="reiOfferMonths">Months</label>
+                <input id="reiOfferMonths" type="number" min="2" max="60" />
+              </div>
+              <div class="pf-field">
+                <label for="reiOfferDown">Min down payment %</label>
+                <input id="reiOfferDown" type="number" min="0" max="99" step="0.01" />
+              </div>
+              <div class="pf-field">
+                <label for="reiOfferMethod">Method</label>
+                <select id="reiOfferMethod">
+                  <option value="">Inherit</option>
+                  <option value="flat_annual">Flat annual rate</option>
+                  <option value="total_markup">Total markup</option>
+                  <option value="reducing">Reducing balance</option>
+                </select>
+              </div>
+              <div class="pf-field">
+                <label for="reiOfferRate">Annual rate %</label>
+                <input id="reiOfferRate" type="number" min="0" step="0.01" placeholder="Inherit" />
+              </div>
+              <div class="pf-field">
+                <label for="reiOfferMarkup">Markup %</label>
+                <input id="reiOfferMarkup" type="number" min="0" step="0.01" placeholder="Inherit" />
+              </div>
+              <div class="pf-field">
+                <label for="reiOfferMinPrice">Minimum product price (৳)</label>
+                <input id="reiOfferMinPrice" type="number" min="0" step="0.01" />
+              </div>
+              <div class="pf-field">
+                <label for="reiOfferSort">Sort order</label>
+                <input id="reiOfferSort" type="number" step="1" />
+              </div>
+            </div>
+            <label class="pf-check"><input type="checkbox" id="reiOfferActive" checked /> <span>Active</span></label>
+            <div class="pf-actions" style="margin-top:14px;">
+              <button class="btn-ghost" id="reiOfferCancelEdit" type="button" style="margin-top:0;padding:10px 16px;" hidden>Cancel edit</button>
+              <button class="btn-add" id="reiOfferSave" type="button">Save plan</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Reports -->
+        <div id="reiReportsPanel" hidden>
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h3>Retail EMI reports</h3>
+                <p class="count" id="reiReportPeriodNote">—</p>
+              </div>
+              <div class="rei-filters">
+                <select id="reiReportPreset" aria-label="Report period">
+                  <option value="this_month">This month</option>
+                  <option value="last_month">Last month</option>
+                  <option value="last_7_days">Last 7 days</option>
+                  <option value="yearly">This year</option>
+                  <option value="custom">Custom range</option>
+                </select>
+                <input id="reiReportFrom" type="date" aria-label="From date" hidden />
+                <input id="reiReportTo" type="date" aria-label="To date" hidden />
+                <button type="button" class="inst-btn" id="reiReportApply">Apply</button>
+                <button type="button" class="inst-btn ok" id="reiReportExport">Export Excel</button>
+              </div>
+            </div>
+            <p class="pf-note" id="reiReportGenerated"></p>
+          </section>
+
+          <section class="stats">
+            <div class="stat"><p class="label">Applications</p><p class="value" id="reiRepAppTotal">0</p></div>
+            <div class="stat"><p class="label">Approval rate</p><p class="value gold" id="reiRepApprovalRate">0%</p></div>
+            <div class="stat"><p class="label">Avg ticket</p><p class="value" id="reiRepAvgTicket">৳ 0</p></div>
+            <div class="stat"><p class="label">Collectible (period)</p><p class="value" id="reiRepCollected">৳ 0</p></div>
+          </section>
+          <section class="stats">
+            <div class="stat"><p class="label">Open EMI orders</p><p class="value" id="reiRepOrders">0</p></div>
+            <div class="stat"><p class="label">Outstanding</p><p class="value danger" id="reiRepOutstanding">৳ 0</p></div>
+            <div class="stat"><p class="label">Overdue installments</p><p class="value danger" id="reiRepOverdue">0</p></div>
+            <div class="stat"><p class="label">Earnings (profit + service)</p><p class="value gold" id="reiRepEarnings">৳ 0</p></div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h3>Receivables aging</h3>
+                <p class="count">Open installments by days past due</p>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Bucket</th><th>Installments</th><th>Amount</th></tr></thead>
+                <tbody id="reiReportAging"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h3>Collections in period</h3>
+                <p class="count" id="reiReportCollectionsCount">0 payments</p>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Month</th><th>Payments</th><th>Amount</th></tr></thead>
+                <tbody id="reiReportMonths"></tbody>
+              </table>
+            </div>
+            <div class="table-wrap" style="margin-top:14px;">
+              <table>
+                <thead><tr><th>Method</th><th>Payments</th><th>Amount</th></tr></thead>
+                <tbody id="reiReportMethods"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h3>Most overdue</h3>
+                <p class="count">Top 8 open installments</p>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Order</th><th>Customer</th><th>Installment</th><th>Due date</th><th>Days late</th><th>Outstanding</th></tr></thead>
+                <tbody id="reiReportOverdue"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      </section><!-- /#view-retail-emi -->
+
       <!-- ===================== FLASH SALES VIEW ===================== -->
       <section class="view" id="view-flash-sales" hidden>
         <div class="topbar">
@@ -3230,6 +3734,48 @@
         <div id="acctExportRoot"></div>
       </section><!-- /#view-accounts-export -->
 
+      <!-- ===================== SPEC MANAGER ===================== -->
+      <section class="view" id="view-spec-manager" hidden>
+        <div class="topbar">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <button class="menu-btn" data-menu aria-label="Menu">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+            <div>
+              <h1>Spec Manager</h1>
+              <p class="crumb">Product builder · specs per category</p>
+            </div>
+          </div>
+          <div class="pf-actions">
+            <button class="btn-ghost" id="specImportBtn" type="button" style="margin-top:0;padding:10px 16px;">Import CSV</button>
+            <button class="btn-ghost" id="specExportBtn" type="button" style="margin-top:0;padding:10px 16px;">Export CSV</button>
+            <button class="btn-add" id="specAddBtn" type="button">+ New spec</button>
+            <input type="file" id="specImportFile" accept=".csv,text/csv" hidden />
+          </div>
+        </div>
+        <div id="specManagerRoot"></div>
+      </section><!-- /#view-spec-manager -->
+
+      <!-- ===================== PRODUCT BUILDER ===================== -->
+      <section class="view" id="view-builder" hidden>
+        <div class="topbar">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <button class="menu-btn" data-menu aria-label="Menu">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+            <div>
+              <h1>Product Builder</h1>
+              <p class="crumb">Templates · slots · compatibility rules</p>
+            </div>
+          </div>
+          <div class="pf-actions">
+            <button class="btn-ghost" id="builderStarterBtn" type="button" style="margin-top:0;padding:10px 16px;">PC Builder starter</button>
+            <button class="btn-add" id="builderNewBtn" type="button">+ New template</button>
+          </div>
+        </div>
+        <div id="builderRoot"></div>
+      </section><!-- /#view-builder -->
+
       <!-- ===================== FOOTER ===================== -->
       <footer class="dash-footer">
         <div class="footer-left">
@@ -3508,13 +4054,14 @@
 
   <script src="/js/store-hint.js?v=1"></script>
   <script src="/js/api-session.js?v=1"></script>
-  <script src="/js/dashboard.js?v=15"></script>
+  <script src="/js/dashboard.js?v=17"></script>
   <script src="/js/form-guard.js?v=2"></script>
   <script src="/js/categories.js"></script>
   <script src="/js/brands.js"></script>
-  <script src="/js/product-form.js"></script>
+  <script src="/js/product-form.js?v=1"></script>
   <script src="/js/settings-dashboard.js?v=17"></script>
   <script src="/js/installments-admin.js?v=1"></script>
+  <script src="/js/retail-installments-admin.js?v=1"></script>
   <script src="/js/orders.js?v=3"></script>
   <script src="/js/product-catalog.js?v=1"></script>
   <script src="/js/marketing.js?v=3"></script>
@@ -3524,6 +4071,8 @@
   <script src="/js/reports.js?v=2"></script>
   <script src="/js/inventory.js?v=1"></script>
   <script src="/js/accounts.js?v=2"></script>
+  <script src="/js/spec-manager.js?v=1"></script>
+  <script src="/js/builder-manager.js?v=1"></script>
   <script src="/js/sidebar-scroll.js?v=1"></script>
 </body>
 </html>

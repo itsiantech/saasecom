@@ -59,6 +59,7 @@ function shapeOrderDetail(order, opts = {}) {
       unitPrice: Number(it.unitPrice) || 0,
       quantity: Number(it.quantity) || 0,
       total: lineTotal(it),
+      ...(it.buildToken ? { buildToken: it.buildToken } : {}),
     };
   });
   const itemsTotal = round2(items.reduce((sum, it) => sum + it.total, 0));

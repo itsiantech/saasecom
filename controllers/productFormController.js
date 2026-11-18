@@ -11,13 +11,22 @@ const ProductCategory = require("../models/ProductCategory");
 const Category = require("../models/Category");
 const Brand = require("../models/Brand");
 const Settings = require("../models/Settings");
+const SpecDefinition = require("../models/SpecDefinition");
+const InstallmentOffer = require("../models/InstallmentOffer");
 const { getStoreId } = require("../lib/tenantContext");
 const { sanitizeRichText } = require("../lib/richText");
 const { scopedKey, isScopedKey, unscopeKey, keysForStore } = require("../lib/settingsScope");
 const { slugify, uniqueSlug, buildTree } = require("../lib/categoryHelpers");
+const { sanitizeProductSpecs } = require("../lib/specs");
 const { normalizeTiers, clearTierCache } = require("../services/tierPricing");
 const { writeAudit } = require("../lib/audit");
 const { getWholesaleSettings } = require("../lib/wholesaleSettings");
+const { featuresForStore } = require("../lib/features");
+const {
+  getInstallmentSettings,
+  sanitizeProductPolicy,
+  METHODS: INSTALLMENT_METHODS,
+} = require("../lib/installmentSettings");
 
 function storeIdOf(req) {
   if (req.store && req.store._id) return req.store._id;
@@ -105,6 +114,12 @@ async function meta(req, res) {
   const uncategorized = await ensureUncategorized(storeId);
   const settings = await getSettings(storeId);
   const wholesale = await getWholesaleSettings(storeId);
+  const specDefs = await SpecDefinition.find({ store: storeId, active: { $ne: false } })
+    .sort({ category: 1, sortOrder: 1, label: 1 })
+    .lean();
+  const catNames = new Map(cats.map((c) => [String(c._id), c.name]));
+
+  const installment = await installmentMeta(req, storeId);
 
   res.json({
     attributes: attributeList,
@@ -117,8 +132,48 @@ async function meta(req, res) {
       badgeText: wholesale.badgeText,
       moq: wholesale.moq,
     },
+    installment,
     uncategorized: { _id: uncategorized._id, name: uncategorized.name, slug: uncategorized.slug },
+    specDefinitions: specDefs.map((d) => ({
+      _id: d._id,
+      category: d.category ? String(d.category) : null,
+      categoryName: d.category ? catNames.get(String(d.category)) || "" : "",
+      key: d.key,
+      label: d.label,
+      labelBn: d.labelBn || "",
+      type: d.type,
+      unit: d.unit || "",
+      enumValues: d.enumValues || [],
+      filterable: d.filterable !== false,
+      showInList: d.showInList === true,
+      sortOrder: d.sortOrder || 0,
+    })),
   });
+}
+
+// Retail EMI defaults for the product override card; off hides the card.
+async function installmentMeta(req, storeId) {
+  if (!req.store) return { enabled: false };
+  const access = await featuresForStore(req.store);
+  if (!access.features.installments) return { enabled: false };
+  const [settings, offers] = await Promise.all([
+    getInstallmentSettings(storeId),
+    InstallmentOffer.find({ store: storeId, isActive: true }).select("months").sort({ months: 1 }).lean(),
+  ]);
+  return {
+    enabled: settings.enabled === true,
+    enabledInSettings: settings.enabled === true,
+    methods: INSTALLMENT_METHODS,
+    method: settings.method,
+    annualRatePct: settings.annualRatePct,
+    markupPct: settings.markupPct,
+    maxAnnualRatePct: settings.maxAnnualRatePct,
+    serviceChargePercent: settings.serviceChargePercent,
+    serviceChargeFlatPaisa: settings.serviceChargeFlatPaisa,
+    minDownPaymentPercent: settings.minDownPaymentPercent,
+    maxMonths: settings.maxMonths,
+    months: Array.from(new Set((offers || []).map((row) => Number(row.months)).filter((m) => m >= 2))).sort((a, b) => a - b),
+  };
 }
 
 /* ------------------------------------------------------------------ *
@@ -213,10 +268,19 @@ async function buildProduct(storeId, payload, existing) {
   data.name = data.title;
   data.price = data.regularPrice;
 
+  // undefined means "leave existing specs alone"; the form always sends a map
+  if (payload.specs !== undefined) {
+    data.specs = await sanitizeProductSpecs(storeId, payload.categories || [], payload.specs);
+  }
+
   const product = existing || new Product({ store: storeId });
   Object.keys(data).forEach((k) => {
     if (data[k] !== undefined) product.set(k, data[k]);
   });
+  // undefined = leave the stored override alone; null/blank = back to inherit
+  if (payload.installment !== undefined) {
+    product.set("installment", sanitizeProductPolicy(payload.installment) || undefined);
+  }
   if (!product.slug) {
     product.slug = await uniqueSlug(Product, slugify(product.title), storeId, product._id || null, "product");
   }

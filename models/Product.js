@@ -77,6 +77,22 @@ const internationalConfigSchema = new mongoose.Schema(
   { _id: false }
 );
 
+// ---- Retail EMI overrides (absent on products that inherit store settings) ----
+const installmentPolicySchema = new mongoose.Schema(
+  {
+    allowed: { type: Boolean, default: null }, // null = inherit category/store
+    method: { type: String, default: null },
+    annualRatePct: { type: Number, default: null, min: 0 },
+    markupPct: { type: Number, default: null, min: 0 },
+    months: { type: [Number], default: undefined }, // restrict to these plan lengths
+    downPaymentPercent: { type: Number, default: null, min: 0, max: 99 },
+    serviceChargePercent: { type: Number, default: null, min: 0 },
+    serviceChargeFlatPaisa: { type: Number, default: null, min: 0 },
+    note: { type: String, default: "", trim: true, maxlength: 200 },
+  },
+  { _id: false }
+);
+
 const productSchema = new mongoose.Schema(
   {
     // ---- core (kept for backward compatibility with the old product routes) ----
@@ -113,6 +129,12 @@ const productSchema = new mongoose.Schema(
 
     // ---- International Import Mode (default undefined so normal products stay untouched) ----
     internationalConfig: { type: internationalConfigSchema, default: undefined },
+
+    // ---- Retail EMI override (default undefined = inherit store/category) ----
+    installment: { type: installmentPolicySchema, default: undefined },
+
+    // ---- Product builder specs (key -> typed value; definitions live in SpecDefinition) ----
+    specs: { type: mongoose.Schema.Types.Mixed, default: undefined },
 
     // ---- Product catalog (list/detail pages) ----
     productType: { type: String, enum: ["physical", "digital"], default: "physical" },

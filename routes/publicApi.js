@@ -72,4 +72,10 @@ router.get("/orders/:number", auth, shop.getMyOrder);
 router.get("/wishlist", auth, shop.getWishlist);
 router.post("/wishlist", auth, shop.toggleWishlist);
 
+// product builder (plan feature productBuilder); 404s when the store has it off
+router.use("/builder", require("./publicBuilder"));
+
+// retail cash + EMI offers (plan feature installments); 404s when off
+router.use("/installments", require("./publicInstallments"));
+
 module.exports = router;

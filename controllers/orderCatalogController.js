@@ -129,6 +129,7 @@ async function list(req, res, next) {
           quantity: it.quantity || 0,
           unitPrice: it.unitPrice || it.price || 0,
           linePrice: it.price || ((it.unitPrice || 0) * (it.quantity || 0)),
+          buildToken: it.buildToken || "",
         };
       });
       const badge = paymentBadge(o.paymentStatus);
