@@ -9,8 +9,8 @@
   --line: rgba(150, 190, 235, 0.18);
   --text: #eaf2fb;
   --muted: #9cb4d0;
-  --accent: #4f8dff;
-  --accent-soft: rgba(79, 141, 255, 0.14);
+  --accent: #00cfc8;
+  --accent-soft: rgba(0, 207, 200, 0.14);
   --ok: #48d39f;
   --warn: #f0b34d;
   --danger: #f08a76;
@@ -25,7 +25,7 @@ body {
   margin: 0;
   min-height: 100vh;
   background:
-    radial-gradient(900px 460px at 100% -10%, rgba(79, 141, 255, 0.14), transparent 60%),
+    radial-gradient(900px 460px at 100% -10%, rgba(0, 207, 200, 0.14), transparent 60%),
     var(--navy-900);
   color: var(--text);
   font-family: "Hind Siliguri", "Noto Sans Bengali", "Segoe UI", system-ui, sans-serif;
@@ -73,7 +73,7 @@ h1, h2 { margin: 0; font-weight: 600; }
 .pc-step-title span {
   width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center;
   font-size: 12px; font-weight: 700; color: var(--accent);
-  background: var(--accent-soft); border: 1px solid rgba(79, 141, 255, 0.4);
+  background: var(--accent-soft); border: 1px solid rgba(0, 207, 200, 0.4);
   font-family: "Inter", system-ui, sans-serif;
 }
 
@@ -96,8 +96,8 @@ h1, h2 { margin: 0; font-weight: 600; }
   background: var(--navy-950); border: 1px solid var(--line); color: var(--text);
   cursor: pointer; transition: border-color 0.2s, background 0.2s, transform 0.15s;
 }
-.pc-method:hover { border-color: rgba(79, 141, 255, 0.5); transform: translateY(-1px); }
-.pc-method.on { border-color: var(--accent); background: var(--accent-soft); box-shadow: 0 0 0 3px rgba(79, 141, 255, 0.12); }
+.pc-method:hover { border-color: rgba(0, 207, 200, 0.5); transform: translateY(-1px); }
+.pc-method.on { border-color: var(--accent); background: var(--accent-soft); box-shadow: 0 0 0 3px rgba(0, 207, 200, 0.12); }
 .pc-method b { display: block; font-size: 15px; font-weight: 600; }
 .pc-method small { display: block; color: var(--muted); font-size: 12.5px; margin-top: 3px; }
 
@@ -109,8 +109,8 @@ h1, h2 { margin: 0; font-weight: 600; }
 .pc-instr .pc-copy-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 6px 0 10px; }
 .pc-instr code {
   font-family: ui-monospace, Consolas, monospace; font-size: 15px; letter-spacing: 0.04em;
-  background: rgba(79, 141, 255, 0.12); border: 1px solid rgba(79, 141, 255, 0.3);
-  padding: 4px 10px; border-radius: 8px; color: #cfe2ff;
+  background: rgba(0, 207, 200, 0.12); border: 1px solid rgba(0, 207, 200, 0.3);
+  padding: 4px 10px; border-radius: 8px; color: #c8f7f5;
 }
 .pc-copy {
   background: none; border: 1px solid var(--line); color: var(--muted); border-radius: 8px;
@@ -126,11 +126,11 @@ h1, h2 { margin: 0; font-weight: 600; }
 .pc-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   margin-top: 18px; padding: 13px 26px; border: none; border-radius: 999px;
-  background: linear-gradient(135deg, var(--accent), #2f6bd6);
+  background: linear-gradient(135deg, var(--accent), #00a39d);
   color: #04101f; font-size: 15px; font-weight: 700; font-family: inherit; cursor: pointer;
   transition: transform 0.15s, box-shadow 0.2s;
 }
-.pc-btn:hover { transform: translateY(-1px); box-shadow: 0 12px 26px rgba(79, 141, 255, 0.28); }
+.pc-btn:hover { transform: translateY(-1px); box-shadow: 0 12px 26px rgba(0, 207, 200, 0.28); }
 .pc-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
 .pc-btn.ghost { background: none; border: 1px solid var(--line); color: var(--text); }
 
