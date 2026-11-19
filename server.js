@@ -183,3 +183,8 @@ mongoose.connection.once("open", () => startInstallmentScheduler());
 // Nightly report reconciliation (02:30 Asia/Dhaka, last 3 completed days).
 const { startReportScheduler } = require("./services/reportScheduler");
 mongoose.connection.once("open", () => startReportScheduler());
+
+// SaaS billing reminders (09:00 Asia/Dhaka) — enqueues only; REDIS_URL na
+// thakle queue chara inline pathay. Standalone worker: npm run worker.
+const { startBillingCron } = require("./src/jobs/billingCron");
+mongoose.connection.once("open", () => startBillingCron());

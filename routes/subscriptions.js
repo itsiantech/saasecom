@@ -91,6 +91,7 @@ router.post("/resume", auth, requireAdmin, async (req, res) => {
     subscription.autoRenew = true;
     subscription.startDate = new Date();
     subscription.endDate = new Date(Date.now() + plan.durationDays * 24 * 60 * 60 * 1000);
+    subscription.nextBillingDate = subscription.endDate;
 
     await subscription.save();
 
