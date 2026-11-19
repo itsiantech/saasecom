@@ -8,7 +8,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/css/style.css" />
-  <link rel="stylesheet" href="/css/dashboard.css?v=16" />
+  <link rel="stylesheet" href="/css/dashboard.css?v=17" />
+  <link rel="stylesheet" href="/css/overview.css?v=1" />
   <link rel="stylesheet" href="/css/sidebar-scroll.css?v=1" />
   <link rel="stylesheet" href="/css/style-settings.css?v=1" />
   <link rel="stylesheet" href="/css/categories.css" />
@@ -283,12 +284,23 @@
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
           </button>
           <div>
-            <h2>Dashboard</h2>
-            <p class="crumb">Overview / Inventory</p>
+            <h2>Dashboard Overview</h2>
+            <p class="crumb">Overview</p>
           </div>
         </div>
         <div class="top-right">
           <div class="top-actions">
+            <div class="ov-period" id="ovPeriod" role="group" aria-label="Report period">
+              <button type="button" class="active" data-period="today">Today</button>
+              <button type="button" data-period="7d">7 Days</button>
+              <button type="button" data-period="30d">30 Days</button>
+              <button type="button" data-period="custom">Custom</button>
+              <div class="ov-custom" id="ovCustom" hidden>
+                <label>From <input type="date" id="ovFrom" /></label>
+                <label>To <input type="date" id="ovTo" /></label>
+                <button type="button" id="ovApply">Apply</button>
+              </div>
+            </div>
             <a class="btn-site" id="siteViewBtn" href="/" target="_blank" rel="noopener" hidden>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg>
               <span class="btn-label">ওয়েবসাইট দেখুন</span>
@@ -329,26 +341,93 @@
         <a class="btn-add" href="/setup.html">দোকান খুলুন</a>
       </section>
 
-      <section class="stats">
-        <div class="stat">
-          <p class="label">মোট প্রোডাক্ট</p>
-          <p class="value gold" id="stTotal">0</p>
+      <section class="ov" id="ovRoot" aria-busy="true">
+        <div class="ov-kpis">
+          <article class="ov-card ov-kpi">
+            <p class="ov-kpi-label">Total Sales</p>
+            <p class="ov-kpi-value" id="ovTotalSales">৳0</p>
+            <p class="ov-kpi-delta" id="ovTotalSalesDelta"></p>
+          </article>
+          <article class="ov-card ov-kpi">
+            <p class="ov-kpi-label">Total Orders</p>
+            <p class="ov-kpi-value" id="ovTotalOrders">0</p>
+            <p class="ov-kpi-delta" id="ovTotalOrdersDelta"></p>
+          </article>
+          <article class="ov-card ov-kpi">
+            <p class="ov-kpi-label">Pending Orders</p>
+            <p class="ov-kpi-value" id="ovPendingOrders">0</p>
+            <p class="ov-kpi-delta" id="ovPendingOrdersDelta"></p>
+          </article>
+          <article class="ov-card ov-kpi">
+            <p class="ov-kpi-label">Net Profit</p>
+            <p class="ov-kpi-value" id="ovNetProfit">৳0</p>
+            <p class="ov-kpi-delta" id="ovNetProfitDelta"></p>
+          </article>
+          <article class="ov-card ov-kpi">
+            <p class="ov-kpi-label">New Customers</p>
+            <p class="ov-kpi-value" id="ovNewCustomers">0</p>
+            <p class="ov-kpi-delta" id="ovNewCustomersDelta"></p>
+          </article>
+          <article class="ov-card ov-kpi">
+            <p class="ov-kpi-label">Avg. Order Value</p>
+            <p class="ov-kpi-value" id="ovAvgOrder">৳0</p>
+            <p class="ov-kpi-delta" id="ovAvgOrderDelta"></p>
+          </article>
         </div>
-        <div class="stat">
-          <p class="label">মোট স্টক (ইউনিট)</p>
-          <p class="value" id="stUnits">0</p>
+
+        <div class="ov-row ov-row-main">
+          <article class="ov-card">
+            <div class="ov-card-head">
+              <h3>Sales Trend</h3>
+              <div class="ov-legend">
+                <span class="ov-dot retail"></span>Retail
+                <span class="ov-dot wholesale"></span>Wholesale
+              </div>
+            </div>
+            <div class="ov-chart" id="ovTrendChart"></div>
+            <div class="ov-chart-x" id="ovTrendX"></div>
+          </article>
+          <article class="ov-card">
+            <h3 class="ov-card-title">Order Status</h3>
+            <div class="ov-list" id="ovStatus"></div>
+            <div class="ov-list-row ov-guest"><span>Guest vs Registered</span><b id="ovGuestSplit">0% / 0%</b></div>
+          </article>
         </div>
-        <div class="stat">
-          <p class="label">স্টকের মূল্য</p>
-          <p class="value gold" id="stValue">৳ 0</p>
+
+        <div class="ov-row ov-row-two">
+          <article class="ov-card">
+            <h3 class="ov-card-title">Latest Orders</h3>
+            <div class="ov-table" id="ovLatestOrders"></div>
+          </article>
+          <article class="ov-card">
+            <h3 class="ov-card-title">Alerts</h3>
+            <div class="ov-list" id="ovAlerts"></div>
+          </article>
         </div>
-        <div class="stat">
-          <p class="label">স্টক শেষ</p>
-          <p class="value danger" id="stOut">0</p>
+
+        <div class="ov-row ov-row-four">
+          <article class="ov-card">
+            <h3 class="ov-card-title">Courier &amp; Delivery</h3>
+            <div class="ov-list" id="ovCourier"></div>
+          </article>
+          <article class="ov-card">
+            <h3 class="ov-card-title">Finance</h3>
+            <div class="ov-list" id="ovFinance"></div>
+          </article>
+          <article class="ov-card">
+            <h3 class="ov-card-title">Top Products</h3>
+            <div class="ov-list" id="ovTopProducts"></div>
+            <div class="ov-flash">
+              <p class="ov-flash-time" id="ovFlashTime">No active flash sale</p>
+              <div class="ov-flash-bar" id="ovFlashBarWrap"><span id="ovFlashBar"></span></div>
+            </div>
+          </article>
+          <article class="ov-card">
+            <h3 class="ov-card-title">Marketing</h3>
+            <div class="ov-list" id="ovMarketing"></div>
+          </article>
         </div>
       </section>
-
-      <a class="btn-ghost products-link" href="#" id="viewAllProducts">সব প্রোডাক্ট দেখুন →</a>
       </section><!-- /#view-products -->
 
       <!-- ===================== CATEGORIES VIEW ===================== -->
@@ -4055,7 +4134,8 @@
   <script src="/js/store-hint.js?v=1"></script>
   <script src="/js/api-session.js?v=1"></script>
   <script src="/js/platform-brand.js?v=1"></script>
-  <script src="/js/dashboard.js?v=18"></script>
+  <script src="/js/dashboard.js?v=19"></script>
+  <script src="/js/overview.js?v=1"></script>
   <script src="/js/form-guard.js?v=2"></script>
   <script src="/js/categories.js"></script>
   <script src="/js/brands.js"></script>

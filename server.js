@@ -59,6 +59,12 @@ try {
 } catch (err) {
   console.error("Accounts module mount failed:", err.message);
 }
+// Isolated module: dashboard overview aggregate.
+try {
+  app.use("/api/admin/overview", require("./routes/overview"));
+} catch (err) {
+  console.error("Overview module mount failed:", err.message);
+}
 app.use("/api/staff", require("./routes/staff"));
 app.use("/api/plans", require("./routes/plans"));
 app.use("/api/admin", require("./routes/admin"));

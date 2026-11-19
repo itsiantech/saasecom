@@ -56,6 +56,7 @@ function switchView(viewName) {
   // Load data for the view
   if (viewName === "products") {
     loadProducts();
+    if (window.overviewPage) window.overviewPage.open();
   } else if (viewName === "categories") {
     // Categories are loaded by categories.js
   } else if (viewName === "add-product") {
@@ -431,15 +432,21 @@ async function loadProducts() {
 }
 
 function renderStats() {
+  const totalEl = document.getElementById("stTotal");
+  const unitsEl = document.getElementById("stUnits");
+  const valueEl = document.getElementById("stValue");
+  const outEl = document.getElementById("stOut");
+  if (!totalEl || !unitsEl || !valueEl || !outEl) return;
+
   const total = products.length;
   const units = products.reduce((s, p) => s + (p.stock || 0), 0);
   const value = products.reduce((s, p) => s + (p.price || 0) * (p.stock || 0), 0);
   const out = products.filter((p) => !p.stock || p.stock <= 0).length;
 
-  document.getElementById("stTotal").textContent = total;
-  document.getElementById("stUnits").textContent = units.toLocaleString("en-IN");
-  document.getElementById("stValue").textContent = money(value);
-  document.getElementById("stOut").textContent = out;
+  totalEl.textContent = total;
+  unitsEl.textContent = units.toLocaleString("en-IN");
+  valueEl.textContent = money(value);
+  outEl.textContent = out;
 }
 
 function esc(s) {
@@ -482,10 +489,13 @@ function closeModal() {
 
 // "Add Product" dashboard-er vitorei view switch kore (alada page na)
 document.getElementById("addBtn").addEventListener("click", () => { switchView("add-product"); });
-document.getElementById("viewAllProducts").addEventListener("click", (e) => {
-  e.preventDefault();
-  switchView("product-list");
-});
+const viewAllProducts = document.getElementById("viewAllProducts");
+if (viewAllProducts) {
+  viewAllProducts.addEventListener("click", (e) => {
+    e.preventDefault();
+    switchView("product-list");
+  });
+}
 document.getElementById("cancelBtn").addEventListener("click", closeModal);
 overlay.addEventListener("click", (e) => {
   if (e.target === overlay) closeModal();
