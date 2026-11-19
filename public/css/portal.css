@@ -46,10 +46,10 @@ button { font-family: inherit; }
   border-bottom: 1px solid var(--line);
 }
 
-.pt-header-in { display: flex; align-items: center; gap: 20px; height: 68px; }
+.pt-header-in { display: flex; align-items: center; gap: 20px; height: 76px; }
 
 .pt-brand { font-size: 21px; font-weight: 700; letter-spacing: 0.14em; }
-.pt-brand.has-logo img { display: block; height: 30px; max-width: 180px; }
+.pt-brand.has-logo img { display: block; height: 60px; width: auto; max-width: 240px; object-fit: contain; }
 .pt-dot { color: var(--accent); }
 
 .pt-nav { display: flex; gap: 20px; margin-left: 8px; font-size: 14.5px; color: var(--muted); }

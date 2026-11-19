@@ -40,11 +40,11 @@ h1, h2 { margin: 0; font-weight: 600; }
 
 /* header */
 .pc-head { border-bottom: 1px solid var(--line); background: rgba(7, 26, 48, 0.85); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 10; }
-.pc-head-in { display: flex; align-items: center; justify-content: space-between; gap: 16px; height: 66px; }
+.pc-head-in { display: flex; align-items: center; justify-content: space-between; gap: 16px; height: 76px; }
 .pc-brand { font-size: 21px; font-weight: 700; letter-spacing: 0.16em; }
 .pc-brand span { color: var(--accent); }
 .pc-brand .pc-name { color: inherit; }
-.pc-brand.has-logo img { display: block; height: 28px; max-width: 150px; }
+.pc-brand.has-logo img { display: block; height: 60px; width: auto; max-width: 240px; object-fit: contain; }
 .pc-head-right { display: flex; align-items: center; gap: 16px; font-size: 14px; }
 .pc-who { color: var(--muted); max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pc-link { background: none; border: none; padding: 0; color: var(--muted); font-size: 14px; font-family: inherit; cursor: pointer; }
