@@ -1,0 +1,58 @@
+# Custom shop domain vhost — copy per domain, e.g. ongkurbd.com.
+#   Replace ongkurbd.com everywhere, then:
+#     certbot --nginx -d ongkurbd.com -d www.ongkurbd.com
+#   The store must have this domain verified (Store Settings → Shop address).
+#   Storefront (Next :3000) on /, store panel + admin APIs (Express :5000)
+#   on the paths below; Host is kept so the backend resolves the shop.
+
+server {
+    listen 80;
+    server_name ongkurbd.com www.ongkurbd.com;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    server_name ongkurbd.com www.ongkurbd.com;
+
+    ssl_certificate /etc/letsencrypt/live/ongkurbd.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/ongkurbd.com/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+    client_max_body_size 12m;
+
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+
+    # white-label admin login + store panel
+    location = /admin.html     { proxy_pass http://127.0.0.1:5000; }
+    location = /dashboard.html { proxy_pass http://127.0.0.1:5000; }
+    location = /settings.html  { proxy_pass http://127.0.0.1:5000; }
+    location = /portal.html    { proxy_pass http://127.0.0.1:5000; }
+    location = /login.html     { proxy_pass http://127.0.0.1:5000; }
+    location = /account.html   { proxy_pass http://127.0.0.1:5000; }
+    location ^~ /css/          { proxy_pass http://127.0.0.1:5000; }
+    location ^~ /js/           { proxy_pass http://127.0.0.1:5000; }
+    location ^~ /uploads/      { proxy_pass http://127.0.0.1:5000; }
+
+    # storefront bridge (guest cart cookie + tenant hint live on Next)
+    location = /api/cart       { proxy_pass http://127.0.0.1:3000; }
+    location ^~ /api/cart/     { proxy_pass http://127.0.0.1:3000; }
+    # tenant login needs the real Host, so it skips the Next bridge
+    location = /api/public/tenant-meta { proxy_pass http://127.0.0.1:5000; }
+    location ^~ /api/public/   { proxy_pass http://127.0.0.1:3000; }
+
+    # admin APIs and auth go straight to the backend
+    location ^~ /api/ { proxy_pass http://127.0.0.1:5000; }
+
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+}

@@ -11,6 +11,7 @@
 
   const TOKEN_KEY = "luxe_token";
   const STORE_KEY = "luxe_store_slug";
+  const TENANT_KEY = "luxe_tenant";
   const RE_LOGIN_ID = "apiSessionRelogin";
 
   let refreshPromise = null;
@@ -38,6 +39,49 @@
     } catch {
       /* private mode */
     }
+  }
+
+  // white-label session: httpOnly cookie (browser sends it automatically) plus
+  // this non-secret marker so the panel does not expect a bearer token
+  function isTenant() {
+    try {
+      return localStorage.getItem(TENANT_KEY) === "1";
+    } catch {
+      return false;
+    }
+  }
+
+  function cookieValue(name) {
+    const rows = String(document.cookie || "").split(";");
+    for (const row of rows) {
+      const at = row.indexOf("=");
+      if (at < 0) continue;
+      if (row.slice(0, at).trim() === name) return decodeURIComponent(row.slice(at + 1).trim());
+    }
+    return "";
+  }
+
+  function safeMethod(method) {
+    const verb = String(method || "GET").toUpperCase();
+    return verb === "GET" || verb === "HEAD" || verb === "OPTIONS";
+  }
+
+  async function tenantLogout() {
+    if (!isTenant()) return false;
+    try {
+      await fetch("/api/auth/tenant-logout", {
+        method: "POST",
+        headers: { "x-csrf-token": cookieValue("tnt_csrf") },
+      });
+    } catch {
+      /* cookie will expire anyway */
+    }
+    try {
+      localStorage.removeItem(TENANT_KEY);
+    } catch {
+      /* private mode */
+    }
+    return true;
   }
 
   function decode(token) {
@@ -74,6 +118,11 @@
     }
     const token = getToken();
     if (token && !hasHeader(headers, "Authorization")) headers.Authorization = "Bearer " + token;
+    // cookie session cannot use a bearer header, so state-changing calls carry
+    // the double-submit CSRF token instead
+    if (!token && isTenant() && !safeMethod(opts.method) && !hasHeader(headers, "x-csrf-token")) {
+      headers["x-csrf-token"] = cookieValue("tnt_csrf");
+    }
     return headers;
   }
 
@@ -242,6 +291,14 @@
     let res = await rawFetch(url, options);
     if (res.status !== 401) return finish(res);
 
+    if (isTenant()) {
+      // cookie session ended (or a different store) — the tenant login page
+      // is the only correct entry point; the platform re-login modal must
+      // never appear here
+      location.href = "/admin.html";
+      return cancelled();
+    }
+
     if (await refresh()) {
       res = await rawFetch(url, options);
       if (res.status !== 401) return finish(res);
@@ -296,5 +353,7 @@
     token: getToken,
     clear: clear,
     decode: decode,
+    isTenant: isTenant,
+    tenantLogout: tenantLogout,
   };
 })();

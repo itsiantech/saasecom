@@ -33,22 +33,22 @@ Reload nginx from the renewal hook (`--deploy-hook "systemctl reload nginx"`).
 
 Custom domains are not covered by the wildcard. When a store verifies its
 domain, issue a per-domain cert and serve it with the same routing as a shop
-subdomain (copy `amarbazaar-shops.conf`, replace `server_name` and the cert
-paths):
-
-```nginx
-server {
-    listen 443 ssl;
-    server_name dokan.example.com;
-    ssl_certificate     /etc/letsencrypt/live/dokan.example.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/dokan.example.com/privkey.pem;
-    # …same locations as amarbazaar-shops.conf
-}
-```
+subdomain (copy `deploy/nginx/amarbazaar-custom-domain.conf.example`, replace
+`ongkurbd.com` and the cert paths):
 
 ```bash
-certbot certonly --nginx -d dokan.example.com   # then reload nginx
+sudo cp deploy/nginx/amarbazaar-custom-domain.conf.example /etc/nginx/sites-available/ongkurbd.com.conf
+sudo nano /etc/nginx/sites-available/ongkurbd.com.conf   # replace ongkurbd.com
+sudo ln -sf /etc/nginx/sites-available/ongkurbd.com.conf /etc/nginx/sites-enabled/
+sudo certbot --nginx -d ongkurbd.com -d www.ongkurbd.com
+sudo nginx -t && sudo systemctl reload nginx
 ```
+
+The white-label admin login of every shop (subdomain or custom domain) is
+`https://<shop-host>/admin.html`. It only opens when the store's plan feature
+**White-label admin** is granted (superadmin → Stores → Access), and it signs
+the owner in with a host-only httpOnly cookie — the platform login, portal and
+customer flows are unchanged.
 
 ## 3. Nginx
 
@@ -58,6 +58,8 @@ Configs live in `deploy/nginx/`:
 - `amarbazaar-shops.conf` — `*.amarbazaar.bd`: storefront (Next `:3000`) on `/`,
   store panel pages/assets and admin APIs on the Express backend (`:5000`).
   `X-Forwarded-Host` is set so the app sees the shop host.
+- `amarbazaar-custom-domain.conf.example` — the same routing for one verified
+  custom domain (copy per domain, see TLS above).
 
 ```bash
 sudo cp deploy/nginx/amarbazaar.conf deploy/nginx/amarbazaar-shops.conf /etc/nginx/sites-available/
@@ -65,10 +67,12 @@ sudo ln -sf /etc/nginx/sites-available/amarbazaar*.conf /etc/nginx/sites-enabled
 sudo nginx -t && sudo systemctl reload nginx
 ```
 
-Keep `/dashboard.html`, `/settings.html`, `/portal.html`, `/login.html`,
-`/account.html`, `/css/`, `/js/`, `/uploads/` and `/api/` on the backend so the
-Host header still resolves the shop for the panel. `/api/cart/*` and
-`/api/public/*` stay on Next because it owns the httpOnly `cart_sid` cookie.
+Keep `/admin.html`, `/dashboard.html`, `/settings.html`, `/portal.html`,
+`/login.html`, `/account.html`, `/css/`, `/js/`, `/uploads/` and `/api/` on the
+backend so the Host header still resolves the shop for the panel. `/api/cart/*`
+and `/api/public/*` stay on Next because it owns the httpOnly `cart_sid`
+cookie — except `/api/public/tenant-meta`, which the backend must answer itself
+because it needs the real `Host` header.
 
 ## 4. Environment
 

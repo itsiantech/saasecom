@@ -10,6 +10,8 @@ const { hostKind } = require("../lib/hostKind");
 const { requestOtp, verifyOtp } = require("../lib/otp");
 const { rateLimit } = require("../lib/rateLimit");
 const { passwordIssue } = require("../lib/passwordPolicy");
+const { featuresForStore } = require("../lib/features");
+const { tenantStoreFor, issueTenantSession, clearTenantSession } = require("../lib/tenantAdmin");
 
 const MAX_FAILED_LOGINS = 5;
 const LOCK_MS = 15 * 60 * 1000;
@@ -32,6 +34,15 @@ const loginLimit = rateLimit({
   max: 10,
   keyPrefix: "auth-login",
   keyOf: identifierOf,
+});
+
+// white-label login: host + identifier, so one store's lockout never
+// follows the owner to another domain
+const tenantLoginLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  keyPrefix: "auth-tenant-login",
+  keyOf: (req) => String(req.hostname || "") + "|" + identifierOf(req),
 });
 
 const registerLimit = rateLimit({
@@ -222,6 +233,45 @@ router.post("/platform-login", ipBurstLimit, loginLimit, async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
+});
+
+// white-label tenant login — store owner only, resolved strictly from Host.
+// Ownership is the real authority (same rule as requireAdmin): a self-serve
+// owner who registered after the first account still carries role "customer".
+// Every failure is the same generic 401: another store's owner, a customer
+// or the superadmin must not learn that the account exists here.
+router.post("/tenant-login", ipBurstLimit, tenantLoginLimit, async (req, res) => {
+  try {
+    const store = await tenantStoreFor(req);
+    if (!store) return res.status(404).json({ message: "এই ঠিকানায় কোনো দোকান নেই" });
+
+    const access = await featuresForStore(store);
+    if (!access.features.whiteLabelAdmin) {
+      return res.status(403).json({ code: "feature_locked", message: "এই সুবিধাটি আপনার প্যাকেজে নেই" });
+    }
+
+    const result = await credentialsUser(req.body || {});
+    if (!result.user) {
+      if (result.lockedUntil) return res.status(429).json({ message: lockedMessage(result.lockedUntil) });
+      return res.status(401).json({ message: "লগইন তথ্য সঠিক নয়" });
+    }
+
+    const user = result.user;
+    const isOwner =
+      user.role !== "superadmin" && store.owner && String(store.owner) === String(user._id);
+    if (!isOwner) return res.status(401).json({ message: "লগইন তথ্য সঠিক নয়" });
+
+    issueTenantSession(req, res, user, store);
+    res.set("Cache-Control", "no-store");
+    res.json({ ok: true, user: publicUser(user), suspended: store.status === "suspended" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+router.post("/tenant-logout", (req, res) => {
+  clearTenantSession(res);
+  res.json({ ok: true });
 });
 
 // google login — frontend theke ID token ashe, verify kore login/register

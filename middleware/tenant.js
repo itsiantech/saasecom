@@ -7,6 +7,7 @@ const User = require("../models/User");
 const { tenantStorage } = require("../lib/tenantContext");
 const { resolveHostStore } = require("../lib/hostStore");
 const { fromDomainHeader } = require("./publicStore");
+const { tenantTokenOf } = require("../lib/tenantAdmin");
 
 // store chara kaj cholbe e api gulote (signup/setup/billing er somoy)
 const STORELESS_OK = ["/api/auth", "/api/plans", "/api/settings", "/api/admin", "/api/stores", "/api/billing"];
@@ -32,12 +33,15 @@ async function saasEnabled() {
 
 function getTokenUserId(req) {
   const header = req.headers.authorization || "";
-  if (!header.startsWith("Bearer ")) return null;
-  try {
-    return jwt.verify(header.slice(7), process.env.JWT_SECRET, { algorithms: ["HS256"] }).id;
-  } catch {
-    return null;
+  if (header.startsWith("Bearer ")) {
+    try {
+      return jwt.verify(header.slice(7), process.env.JWT_SECRET, { algorithms: ["HS256"] }).id;
+    } catch {
+      return null;
+    }
   }
+  const tenant = tenantTokenOf(req);
+  return tenant ? tenant.id : null;
 }
 
 async function randomSlug() {
@@ -49,8 +53,13 @@ async function randomSlug() {
 }
 
 async function resolveStore(req, saas) {
-  // single mode: sob request ek e dokane jay (standalone bikrir jonno)
+  // single mode: sob request ek e dokane jay (standalone bikrir jonno).
+  // A known shop host still wins: the white-label panel opens on that host and
+  // its host-only cookie is bound to the store the host resolves to, so the
+  // later scope/ownership checks must see the same store.
   if (!saas) {
+    const hostStore = await resolveHostStore(req);
+    if (hostStore) return hostStore;
     let store = await Store.findOne({ deletedAt: null }).sort({ createdAt: 1 });
     if (!store) {
       const ownerId = getTokenUserId(req);

@@ -86,6 +86,13 @@
   }
 
   async function load() {
+    // white-label tenant session — the panel is the store's own, so platform
+    // branding must never paint over its logo/title/copyright
+    try {
+      if (localStorage.getItem("luxe_tenant") === "1") return;
+    } catch {
+      /* private mode */
+    }
     try {
       const res = await fetch("/api/public/branding", { cache: "no-store" });
       if (!res.ok) return;

@@ -99,8 +99,21 @@ app.use("/api/hero-slides", require("./routes/heroSlides"));
 // ---- tenant host (amar-dokan.platform.com ba dokan.com) — ekhane storefront ar store panel cholbe
 const { resolveHostStore } = require("./lib/hostStore");
 const { storefrontUrl } = require("./lib/storefrontUrl");
-// platform-only pages must not open on a shop host; shop pages are allowed there
+const { featuresForStore } = require("./lib/features");
+const { hostKind } = require("./lib/hostKind");
+
+// white-label login is the only page a shop host may serve from the panel
 const PLATFORM_ONLY_PAGES = new Set(["/admin.html", "/admin-login.html", "/index.html", "/setup.html", "/plan-checkout.html"]);
+
+function sendTenantAdmin(res) {
+  res.setHeader("Cache-Control", "no-store");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader(
+    "Content-Security-Policy",
+    "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+  );
+  res.sendFile(path.join(__dirname, "public", "tenant-admin.html"));
+}
 
 // store er frontend = Next.js themed site (Store Settings → Appearance er published theme)
 async function toStorefront(res, req, store) {
@@ -118,6 +131,15 @@ app.use(async (req, res, next) => {
   try {
     const store = await resolveHostStore(req);
     if (!store) return next();
+    if (req.path === "/admin.html") {
+      // additive entry point: shop owners get their own login here; the
+      // platform superadmin panel stays on api.<platform>/admin.html
+      const access = await featuresForStore(store);
+      if (!access.features.whiteLabelAdmin) {
+        return res.status(404).send("এই ঠিকানায় অ্যাডমিন প্যানেল নেই");
+      }
+      return sendTenantAdmin(res);
+    }
     if (PLATFORM_ONLY_PAGES.has(req.path)) return res.status(404).send("এই ঠিকানায় প্ল্যাটফর্ম পেজ নেই — দোকান ম্যানেজ করতে ড্যাশবোর্ড ব্যবহার করুন।");
     if (req.path === "/") {
       if (await toStorefront(res, req, store)) return;
@@ -145,6 +167,23 @@ app.use("/uploads", (_req, res, next) => {
     "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox"
   );
   next();
+});
+
+// the tenant login template is only served through /admin.html on a shop host
+app.get("/tenant-admin.html", (_req, res) => {
+  res.status(404).send("Not found");
+});
+
+// an unresolved shop host (typo subdomain, unverified custom domain) must not
+// fall through to the platform superadmin panel
+app.get("/admin.html", async (req, res, next) => {
+  try {
+    const kind = await hostKind(req);
+    if (kind === "store" || kind === "unknown") return res.status(404).send("Not found");
+    next();
+  } catch (err) {
+    next(err);
+  }
 });
 
 app.use(express.static("public"));

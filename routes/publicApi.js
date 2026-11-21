@@ -8,6 +8,7 @@ const appearance = require("../controllers/appearanceController");
 const landingBranding = require("../lib/landingBranding");
 const landingContent = require("../lib/landingContent");
 const { renamedAddress } = require("../lib/shopAddress");
+const tenantAdmin = require("../lib/tenantAdmin");
 const { auth, optionalAuth } = require("../middleware/auth");
 
 /* ------------------------------------------------------------------ *
@@ -49,6 +50,23 @@ router.get("/address-redirect", async (req, res) => {
     res.json({ redirect: await renamedAddress(host) });
   } catch {
     res.json({ redirect: null });
+  }
+});
+
+// tenant admin login page data — host only, and it must answer while the
+// store is suspended so the owner still sees the notice and the login form.
+router.get("/tenant-meta", async (req, res) => {
+  try {
+    res.set("Cache-Control", "no-store");
+    const store = await tenantAdmin.tenantStoreFor(req);
+    if (!store) return res.status(404).json({ message: "Ei thikanay kono dokan nei" });
+    const meta = await tenantAdmin.tenantMeta(store);
+    if (!meta.whiteLabelAdmin) {
+      return res.status(403).json({ code: "feature_locked", message: "এই সুবিধাটি আপনার প্যাকেজে নেই" });
+    }
+    res.json(meta);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 });
 

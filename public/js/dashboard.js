@@ -1,7 +1,25 @@
 const TOKEN_KEY = "luxe_token";
 const token = localStorage.getItem(TOKEN_KEY);
+// white-label login keeps the session in a host-only httpOnly cookie and
+// only marks the browser here, so the panel must not bounce to /login.html
+const tenantSession = (() => {
+  try {
+    return localStorage.getItem("luxe_tenant") === "1";
+  } catch {
+    return false;
+  }
+})();
 
-if (!token) location.href = "/login.html";
+if (!token && !tenantSession) location.href = "/login.html";
+
+if (tenantSession) {
+  // scrub the platform footer before /api/settings/site answers
+  const copy = document.getElementById("siteFooterCopyright");
+  if (copy) {
+    copy.removeAttribute("data-pb-copyright");
+    copy.textContent = "© " + new Date().getFullYear();
+  }
+}
 
 // ApiSession: silent refresh + re-login modal. It never navigates away, so an
 // open form survives an expired session (see api-session.js).
@@ -326,11 +344,17 @@ async function billingLockActive() {
   }
 }
 
-document.getElementById("blLockLogout").addEventListener("click", () => {
+document.getElementById("blLockLogout").addEventListener("click", async () => {
   try {
     localStorage.removeItem(TOKEN_KEY);
   } catch {
     /* private mode */
+  }
+  if (window.ApiSession && window.ApiSession.tenantLogout) {
+    if (await window.ApiSession.tenantLogout()) {
+      location.href = "/admin.html";
+      return;
+    }
   }
   location.href = "/login.html";
 });
@@ -397,6 +421,11 @@ async function loadSiteSettings() {
     if (copyright && d.footerCopyright) {
       copyright.removeAttribute("data-pb-copyright"); // store text wins
       copyright.textContent = d.footerCopyright;
+    } else if (copyright && tenantSession) {
+      // no platform copyright may show on a white-label panel
+      copyright.removeAttribute("data-pb-copyright");
+      copyright.textContent =
+        "© " + new Date().getFullYear() + " " + (d.siteTitleResolved || "Store") + " — all rights reserved.";
     }
 
     const footerLogo = document.getElementById("footerLogo");
@@ -687,8 +716,19 @@ window.addEventListener("settings:saved", (e) => {
   }
 });
 
-document.getElementById("logoutBtn").addEventListener("click", () => {
+document.getElementById("logoutBtn").addEventListener("click", async () => {
   if (window.FormGuard) window.FormGuard.clearAllLocal();
+  if (window.ApiSession && window.ApiSession.tenantLogout) {
+    const wasTenant = await window.ApiSession.tenantLogout();
+    if (wasTenant) {
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem("luxe_store_slug");
+      localStorage.removeItem("luxe_store_id");
+      localStorage.removeItem("luxe_user_id");
+      location.href = "/admin.html";
+      return;
+    }
+  }
   if (window.ApiSession) window.ApiSession.clear();
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem("luxe_store_slug");

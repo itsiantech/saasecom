@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title data-ta-title>Admin Login</title>
+  <link rel="icon" href="data:," />
+  <style>
+    :root {
+      --ta-accent: #0f766e;
+      --ta-accent-dark: #115e59;
+      --ta-bg: #f4f6f8;
+      --ta-surface: #ffffff;
+      --ta-ink: #18212b;
+      --ta-muted: #64748b;
+      --ta-line: #e2e8f0;
+      --ta-font: "Noto Sans Bengali", "Segoe UI", Roboto, Arial, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+      background: var(--ta-bg);
+      color: var(--ta-ink);
+      font-family: var(--ta-font);
+    }
+    .ta-card {
+      width: 100%;
+      max-width: 400px;
+      background: var(--ta-surface);
+      border: 1px solid var(--ta-line);
+      border-radius: 14px;
+      box-shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
+      overflow: hidden;
+    }
+    .ta-strip { height: 5px; background: var(--ta-accent); }
+    .ta-body { padding: 28px 26px 24px; }
+    .ta-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-height: 44px;
+      margin-bottom: 6px;
+    }
+    .ta-brand img { max-height: 44px; max-width: 160px; display: block; }
+    .ta-mark {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      background: var(--ta-accent);
+      color: #fff;
+      font-weight: 700;
+      font-size: 20px;
+    }
+    .ta-name { font-size: 19px; font-weight: 700; line-height: 1.25; }
+    .ta-sub { margin: 4px 0 18px; color: var(--ta-muted); font-size: 14px; }
+    .ta-notice {
+      margin: 0 0 16px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      line-height: 1.5;
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      color: #9a3412;
+    }
+    .ta-notice[hidden] { display: none; }
+    .ta-field { margin-bottom: 14px; }
+    .ta-field label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+    .ta-field input {
+      width: 100%;
+      padding: 11px 12px;
+      border: 1px solid var(--ta-line);
+      border-radius: 9px;
+      font-size: 15px;
+      font-family: inherit;
+      color: var(--ta-ink);
+      background: #fff;
+    }
+    .ta-field input:focus {
+      outline: none;
+      border-color: var(--ta-accent);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--ta-accent) 18%, transparent);
+    }
+    .ta-submit {
+      width: 100%;
+      margin-top: 4px;
+      padding: 12px;
+      border: 0;
+      border-radius: 9px;
+      background: var(--ta-accent);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+    }
+    .ta-submit:hover { background: var(--ta-accent-dark); }
+    .ta-submit:disabled { opacity: .65; cursor: default; }
+    .ta-msg {
+      min-height: 20px;
+      margin: 12px 0 0;
+      font-size: 13px;
+      color: #b91c1c;
+      line-height: 1.45;
+    }
+    .ta-foot {
+      margin-top: 18px;
+      padding-top: 14px;
+      border-top: 1px solid var(--ta-line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 12px;
+      color: var(--ta-muted);
+    }
+    .ta-lang {
+      border: 1px solid var(--ta-line);
+      background: #fff;
+      color: var(--ta-muted);
+      border-radius: 999px;
+      padding: 5px 12px;
+      font-size: 12px;
+      font-family: inherit;
+      cursor: pointer;
+    }
+    .ta-lang:hover { color: var(--ta-ink); border-color: var(--ta-accent); }
+    .ta-hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <main class="ta-card">
+    <div class="ta-strip"></div>
+    <div class="ta-body">
+      <div class="ta-brand">
+        <img id="taLogo" alt="" hidden />
+        <span id="taMark" class="ta-mark" hidden></span>
+        <span id="taName" class="ta-name">&nbsp;</span>
+      </div>
+      <p class="ta-sub" data-bn="দোকান পরিচালনা করতে লগইন করুন" data-en="Sign in to manage your store">
+        দোকান পরিচালনা করতে লগইন করুন
+      </p>
+
+      <p id="taNotice" class="ta-notice" hidden></p>
+
+      <form id="taForm" novalidate>
+        <div class="ta-field">
+          <label for="taIdentifier" data-bn="ইমেইল বা ফোন" data-en="Email or phone">ইমেইল বা ফোন</label>
+          <input id="taIdentifier" type="text" autocomplete="username" required />
+        </div>
+        <div class="ta-field">
+          <label for="taPassword" data-bn="পাসওয়ার্ড" data-en="Password">পাসওয়ার্ড</label>
+          <input id="taPassword" type="password" autocomplete="current-password" required />
+        </div>
+        <button id="taSubmit" class="ta-submit" type="submit" data-bn="লগইন করুন" data-en="Sign in">লগইন করুন</button>
+      </form>
+
+      <p id="taMsg" class="ta-msg" role="alert"></p>
+
+      <div class="ta-foot">
+        <span id="taFootName"></span>
+        <button id="taLang" class="ta-lang" type="button">English</button>
+      </div>
+    </div>
+  </main>
+  <script src="/js/tenant-admin.js?v=1"></script>
+</body>
+</html>
