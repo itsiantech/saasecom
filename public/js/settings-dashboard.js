@@ -588,6 +588,240 @@
   });
 
   /* ------------------------------------------------------------------ *
+   * Courier API (Pathao / Steadfast)
+   * ------------------------------------------------------------------ */
+  const COURIER_TOGGLES = {
+    courierEnabled: "courier_enabled",
+    courierPathaoEnabled: "courier_pathao_enabled",
+    courierSteadfastEnabled: "courier_steadfast_enabled",
+  };
+  const COURIER_FIELDS = {
+    courierWeight: "courier_weight",
+    courierSenderName: "courier_sender_name",
+    courierSenderPhone: "courier_sender_phone",
+    courierPathaoStoreId: "courier_pathao_store_id",
+    courierPathaoClientId: "courier_pathao_client_id",
+    courierPathaoClientSecret: "courier_pathao_client_secret",
+    courierPathaoUsername: "courier_pathao_username",
+    courierPathaoPassword: "courier_pathao_password",
+    courierSteadfastApiKey: "courier_steadfast_api_key",
+    courierSteadfastSecretKey: "courier_steadfast_secret_key",
+  };
+  const COURIER_SELECTS = {
+    courierDefault: "courier_default",
+    courierCodMode: "courier_cod_mode",
+    courierPathaoEnv: "courier_pathao_env",
+  };
+
+  function applyCourierEnabled() {
+    const on = String(state.settings.courier_enabled) === "true";
+    const badge = document.querySelector("[data-courier-off]");
+    if (badge) badge.hidden = on;
+    const status = $("courierStatus");
+    if (status) {
+      status.textContent = on
+        ? "Courier API ON — order list er Send button diye order courier e book korte parben."
+        : "Courier API OFF — order list er Send button diye kono courier e order pathabe na.";
+    }
+    document
+      .querySelectorAll(
+        '#view-settings .settings-pane[data-pane="courier-api"] input:not(#courierEnabled), ' +
+          '#view-settings .settings-pane[data-pane="courier-api"] select, ' +
+          '#view-settings .settings-pane[data-pane="courier-api"] button.pf-btn-sm'
+      )
+      .forEach((el) => {
+        el.disabled = !on;
+      });
+  }
+
+  function courierSelectValue(selectId, value) {
+    const sel = $(selectId);
+    if (!sel) return;
+    if (value && !Array.from(sel.options).some((opt) => opt.value === String(value))) {
+      const opt = document.createElement("option");
+      opt.value = String(value);
+      opt.textContent = "#" + value;
+      sel.appendChild(opt);
+    }
+    sel.value = value == null ? "" : String(value);
+  }
+
+  function fillCityOptions(cities, selected) {
+    const sel = $("courierPathaoCityId");
+    if (!sel) return;
+    sel.innerHTML =
+      '<option value="">Not set</option>' +
+      cities.map((c) => `<option value="${esc(c.id)}">${esc(c.name)} (${esc(c.id)})</option>`).join("");
+    courierSelectValue("courierPathaoCityId", selected);
+  }
+
+  function fillZoneOptions(zones, selected) {
+    const sel = $("courierPathaoZoneId");
+    if (!sel) return;
+    sel.innerHTML =
+      '<option value="">Not set</option>' +
+      zones.map((z) => `<option value="${esc(z.id)}">${esc(z.name)} (${esc(z.id)})</option>`).join("");
+    courierSelectValue("courierPathaoZoneId", selected);
+  }
+
+  Object.entries(COURIER_TOGGLES).forEach(([id, key]) => {
+    const el = $(id);
+    if (!el) return;
+    el.addEventListener("change", () => {
+      state.settings[key] = el.checked ? "true" : "false";
+      if (key === "courier_enabled") applyCourierEnabled();
+      markDirty();
+    });
+  });
+  Object.entries(COURIER_FIELDS).forEach(([id, key]) => {
+    const el = $(id);
+    if (!el) return;
+    el.addEventListener("input", () => {
+      state.settings[key] = el.value;
+      markDirty();
+    });
+  });
+  Object.entries(COURIER_SELECTS).forEach(([id, key]) => {
+    const el = $(id);
+    if (!el) return;
+    el.addEventListener("change", () => {
+      state.settings[key] = el.value;
+      markDirty();
+    });
+  });
+  if ($("courierPathaoCityId")) {
+    $("courierPathaoCityId").addEventListener("change", () => {
+      state.settings.courier_pathao_city_id = $("courierPathaoCityId").value;
+      state.settings.courier_pathao_zone_id = "";
+      fillZoneOptions([], "");
+      markDirty();
+      loadPathaoZones($("courierPathaoCityId").value);
+    });
+  }
+  if ($("courierPathaoZoneId")) {
+    $("courierPathaoZoneId").addEventListener("change", () => {
+      state.settings.courier_pathao_zone_id = $("courierPathaoZoneId").value;
+      markDirty();
+    });
+  }
+
+  document.querySelectorAll("#view-settings .cur-tab").forEach((tab) => {
+    tab.addEventListener("click", () => {
+      document
+        .querySelectorAll("#view-settings .cur-tab")
+        .forEach((t) => t.classList.toggle("active", t === tab));
+      document
+        .querySelectorAll("#view-settings .cur-panel")
+        .forEach((p) => p.classList.toggle("active", p.dataset.curPanel === tab.dataset.curTab));
+    });
+  });
+
+  function courierConfig(provider) {
+    const keys =
+      provider === "pathao"
+        ? [
+            "courier_pathao_env",
+            "courier_pathao_store_id",
+            "courier_pathao_client_id",
+            "courier_pathao_client_secret",
+            "courier_pathao_username",
+            "courier_pathao_password",
+            "courier_pathao_city_id",
+            "courier_pathao_zone_id",
+          ]
+        : ["courier_steadfast_api_key", "courier_steadfast_secret_key"];
+    const out = {};
+    keys.forEach((key) => {
+      out[key] = state.settings[key] == null ? "" : state.settings[key];
+    });
+    return out;
+  }
+
+  async function runCourierTest(provider, resultEl, btn) {
+    if (!btn) return;
+    const label = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = "Testing…";
+    if (resultEl) {
+      resultEl.textContent = "";
+      resultEl.className = "sst-result";
+    }
+    try {
+      const res = await api("/api/settings/couriers/test-connection", {
+        method: "POST",
+        body: JSON.stringify({ provider, config: courierConfig(provider) }),
+      });
+      if (!res) return;
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok && !data.message) throw new Error("Request fail hoyeche");
+      if (resultEl) {
+        resultEl.textContent = data.message || (data.ok ? "OK" : "Fail");
+        resultEl.className = "sst-result " + (data.ok ? "is-ok" : "is-err");
+      }
+    } catch (e) {
+      if (resultEl) {
+        resultEl.textContent = e.message;
+        resultEl.className = "sst-result is-err";
+      }
+    } finally {
+      btn.disabled = false;
+      btn.textContent = label;
+    }
+  }
+
+  async function loadPathaoZones(cityId) {
+    if (!cityId) return;
+    try {
+      const res = await api("/api/settings/couriers/pathao/zones?cityId=" + encodeURIComponent(cityId));
+      if (!res) return;
+      const data = await res.json().catch(() => ({}));
+      if (data.ok) fillZoneOptions(data.zones || [], state.settings.courier_pathao_zone_id || "");
+    } catch {
+      /* silent — city load already reported errors */
+    }
+  }
+
+  if ($("courierPathaoLoadBtn")) {
+    $("courierPathaoLoadBtn").addEventListener("click", async () => {
+      const btn = $("courierPathaoLoadBtn");
+      const resultEl = $("courierPathaoResult");
+      const label = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = "Loading…";
+      try {
+        const res = await api("/api/settings/couriers/pathao/cities");
+        if (!res) return;
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.ok) throw new Error(data.message || "City list pai ni");
+        fillCityOptions(data.cities || [], state.settings.courier_pathao_city_id || "");
+        if (resultEl) {
+          resultEl.textContent = `${(data.cities || []).length} cities loaded`;
+          resultEl.className = "sst-result is-ok";
+        }
+        if (state.settings.courier_pathao_city_id) {
+          await loadPathaoZones(state.settings.courier_pathao_city_id);
+        }
+      } catch (e) {
+        if (resultEl) {
+          resultEl.textContent = e.message;
+          resultEl.className = "sst-result is-err";
+        }
+      } finally {
+        btn.disabled = false;
+        btn.textContent = label;
+      }
+    });
+  }
+
+  [
+    { provider: "pathao", btn: "courierPathaoTestBtn", result: "courierPathaoResult" },
+    { provider: "steadfast", btn: "courierSteadfastTestBtn", result: "courierSteadfastResult" },
+  ].forEach((row) => {
+    const btn = $(row.btn);
+    if (btn) btn.addEventListener("click", () => runCourierTest(row.provider, $(row.result), btn));
+  });
+
+  /* ------------------------------------------------------------------ *
    * Home page category sections
    * ------------------------------------------------------------------ */
   const HOME_MODE_LABELS = { slider: "Slider", drag: "Drag", grid: "Grid" };
@@ -3979,6 +4213,24 @@
     applyTrackingEnabled();
   }
 
+  function renderCourier() {
+    Object.entries(COURIER_TOGGLES).forEach(([id, key]) => {
+      const el = $(id);
+      if (el) el.checked = String(state.settings[key]) === "true";
+    });
+    Object.entries(COURIER_FIELDS).forEach(([id, key]) => {
+      const el = $(id);
+      if (el) el.value = state.settings[key] == null ? "" : state.settings[key];
+    });
+    Object.entries(COURIER_SELECTS).forEach(([id, key]) => {
+      const el = $(id);
+      if (el) el.value = state.settings[key] == null ? "" : String(state.settings[key]);
+    });
+    courierSelectValue("courierPathaoCityId", state.settings.courier_pathao_city_id || "");
+    courierSelectValue("courierPathaoZoneId", state.settings.courier_pathao_zone_id || "");
+    applyCourierEnabled();
+  }
+
   const ACCESS_PANES = [
     { pane: "wholesale", key: "wholesale" },
     { pane: "partial", key: "partialPayment" },
@@ -4111,6 +4363,7 @@
     applyFlashSalesUi();
     renderGoogleSeo();
     renderTracking();
+    renderCourier();
 
     Object.keys(TOGGLE_ID).forEach((key) => applyEnabled(key));
     Object.keys(PAY_TOGGLE).forEach((key) => applyPayEnabled(key));

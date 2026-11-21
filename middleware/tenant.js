@@ -3,12 +3,25 @@ const { randomBytes } = require("crypto");
 const Store = require("../models/Store");
 const Plan = require("../models/Plan");
 const Settings = require("../models/Settings");
+const User = require("../models/User");
 const { tenantStorage } = require("../lib/tenantContext");
 const { resolveHostStore } = require("../lib/hostStore");
 const { fromDomainHeader } = require("./publicStore");
 
 // store chara kaj cholbe e api gulote (signup/setup/billing er somoy)
 const STORELESS_OK = ["/api/auth", "/api/plans", "/api/settings", "/api/admin", "/api/stores", "/api/billing"];
+
+// banned shop e owner er jonno ei path gulo khula — login, payment submit,
+// plan info. Read-only store lookups stay open so the portal can render its
+// "pay now" card; anything that edits the shop is locked.
+const SUSPENDED_OK = ["/api/auth", "/api/billing", "/api/plans", "/api/admin"];
+const SUSPENDED_READS = ["/api/subscriptions/current", "/api/stores/current", "/api/stores/mine", "/api/stores/domain-config"];
+
+function allowedWhileSuspended(req) {
+  if (SUSPENDED_OK.some((prefix) => req.path.startsWith(prefix))) return true;
+  if (req.method === "GET" && SUSPENDED_READS.some((prefix) => req.path.startsWith(prefix))) return true;
+  return false;
+}
 
 async function saasEnabled() {
   if (process.env.APP_MODE === "single") return false;
@@ -69,6 +82,17 @@ async function resolveStore(req, saas) {
   return null;
 }
 
+// Payment ban → storefront already 403s (publicStore/shop host); this locks
+// the owner's admin side too. Superadmins keep full access.
+async function blockedBySuspension(req, store) {
+  if (store.status !== "suspended") return false;
+  if (allowedWhileSuspended(req)) return false;
+  const userId = getTokenUserId(req);
+  if (!userId) return true;
+  const user = await User.findById(userId).select("role");
+  return !user || user.role !== "superadmin";
+}
+
 module.exports = async function tenant(req, res, next) {
   // static file er jonno tenant lagbe na
   if (req.method === "GET" && !req.path.startsWith("/api")) return next();
@@ -80,6 +104,12 @@ module.exports = async function tenant(req, res, next) {
       const ok = STORELESS_OK.some((p) => req.path.startsWith(p));
       if (ok) return next();
       return res.status(400).json({ message: "Prothome ekta store khulun (/setup.html)" });
+    }
+    if (await blockedBySuspension(req, store)) {
+      return res.status(403).json({
+        message: "পেমেন্ট বাকির কারণে দোকানটি বন্ধ আছে — পেমেন্ট করলে আবার চালু হবে",
+        code: "STORE_SUSPENDED",
+      });
     }
     req.store = store;
     tenantStorage.run({ storeId: store._id }, () => next());

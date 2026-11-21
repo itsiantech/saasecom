@@ -24,7 +24,14 @@ function escapeRegex(value) {
 
 function findStore(slug) {
   if (!slug) return null;
-  return Store.findOne({ slug: String(slug).toLowerCase() }).select("name slug");
+  return Store.findOne({ slug: String(slug).toLowerCase() }).select("name slug status");
+}
+
+// banned shop → storefront data bhi bondho (Next site direct API theke pore)
+function storeOff(res, store) {
+  if (store.status !== "suspended") return false;
+  res.status(403).json({ message: "Ei dokan ta ekhon bondho ache", code: "STORE_SUSPENDED" });
+  return true;
 }
 
 async function loadSettings(storeId) {
@@ -63,6 +70,7 @@ async function getStorefront(req, res, next) {
   try {
     const store = await findStore(req.params.slug);
     if (!store) return res.status(404).json({ message: "Store pawa jayni" });
+    if (storeOff(res, store)) return;
     const [international, site, faviconDoc] = await Promise.all([
       loadSettings(store._id),
       SiteSetting.findOne({ store: store._id }).lean(),
@@ -93,6 +101,7 @@ async function listHeroSlides(req, res, next) {
   try {
     const store = await findStore(req.params.slug);
     if (!store) return res.status(404).json({ message: "Store pawa jayni" });
+    if (storeOff(res, store)) return;
     const rows = await HeroSlide.find({ store: store._id }).lean();
     res.json({ slides: sortForPublic(rows).map(publicSlide), ...(await readSliderSettings(store._id)) });
   } catch (err) {
@@ -104,6 +113,7 @@ async function listProducts(req, res, next) {
   try {
     const store = await findStore(req.params.slug);
     if (!store) return res.status(404).json({ message: "Store pawa jayni" });
+    if (storeOff(res, store)) return;
 
     const page = Math.max(1, parseInt(req.query.page, 10) || 1);
     const limit = Math.min(60, Math.max(1, parseInt(req.query.limit, 10) || 24));
@@ -166,6 +176,7 @@ async function getProduct(req, res, next) {
   try {
     const store = await findStore(req.params.slug);
     if (!store) return res.status(404).json({ message: "Store pawa jayni" });
+    if (storeOff(res, store)) return;
 
     const key = String(req.params.product || "").trim();
     if (!key) return res.status(404).json({ message: "Product pawa jayni" });

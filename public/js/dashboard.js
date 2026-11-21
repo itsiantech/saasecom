@@ -285,6 +285,56 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") closeUserMenu();
 });
 
+/* ---- payment deadline ban — owner panel lock ---- */
+const bnLongDate = (value) => {
+  const d = value ? new Date(value) : null;
+  if (!d || Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString("bn-BD", { day: "numeric", month: "long", year: "numeric" });
+};
+
+async function billingLockActive() {
+  try {
+    const res = await api("/api/subscriptions/current");
+    if (!res || !res.ok) return false;
+    const sub = await res.json();
+    const storeSuspended = Boolean(sub.store && sub.store.status === "suspended");
+    if (sub.status !== "suspended" && !storeSuspended) return false;
+
+    const plan = sub.plan || {};
+    const amount = Number(plan.price) || 0;
+    const reason = sub.suspendReason || "";
+    document.getElementById("blLockStore").textContent = (sub.store && sub.store.name) || "আপনার দোকান";
+    document.getElementById("blLockAmount").textContent = amount > 0 ? money(amount) : "—";
+    document.getElementById("blLockDue").textContent = bnLongDate(sub.nextBillingDate || sub.endDate);
+    document.getElementById("blLockText").textContent =
+      reason === "manual"
+        ? "সুপার অ্যাডমিন আপনার দোকানটি সাময়িকভাবে বন্ধ করেছেন। পেমেন্ট সম্পন্ন করলে আবার চালু হয়ে যাবে।"
+        : "পেমেন্ট বাকির কারণে আপনার দোকান ও অ্যাডমিন অ্যাক্সেস বন্ধ আছে। পেমেন্ট করলে সাথে সাথে আবার চালু হবে।";
+    document.getElementById("blLockNote").textContent = sub.billingSuspendedAt
+      ? "বন্ধ হয়েছে " + bnLongDate(sub.billingSuspendedAt) + " থেকে — পেমেন্ট যাচাই হওয়ার পরেই সব আবার চালু হবে।"
+      : "";
+    const pay = document.getElementById("blLockPay");
+    const base = "/plan-checkout.html";
+    pay.href = plan.slug
+      ? base + "?plan=" + encodeURIComponent(plan.slug) + "&store=" + encodeURIComponent(String((sub.store && sub.store._id) || ""))
+      : base;
+    document.getElementById("billingLock").hidden = false;
+    document.body.classList.add("is-locked");
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+document.getElementById("blLockLogout").addEventListener("click", () => {
+  try {
+    localStorage.removeItem(TOKEN_KEY);
+  } catch {
+    /* private mode */
+  }
+  location.href = "/login.html";
+});
+
 /* ---- session ---- */
 let me = null;
 (async function init() {
@@ -300,6 +350,7 @@ let me = null;
   document.getElementById("uName").textContent = me.name;
   document.getElementById("uEmail").textContent = me.email;
   document.getElementById("avatar").textContent = (me.name || "A")[0].toUpperCase();
+  if (me.role !== "superadmin" && (await billingLockActive())) return;
   loadStoreInfo();
   loadSiteSettings();
   loadPromotionStatus();

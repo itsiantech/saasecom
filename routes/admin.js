@@ -2,6 +2,7 @@ const express = require("express");
 const path = require("path");
 const router = express.Router();
 const Store = require("../models/Store");
+const Subscription = require("../models/Subscription");
 const Plan = require("../models/Plan");
 const User = require("../models/User");
 const Product = require("../models/Product");
@@ -11,6 +12,7 @@ const { auth, requireSuperAdmin } = require("../middleware/auth");
 const { makeImageUpload, singleImage, finalizeImage } = require("../middleware/upload");
 const { normalizeTheme, parseTheme } = require("../lib/adminTheme");
 const { getBranding, saveBranding } = require("../lib/landingBranding");
+const landingContent = require("../lib/landingContent");
 const { normalizeDomain, platformDomain, platformTarget } = require("../lib/hostStore");
 const { getReservedSlugs, saveReservedSlugs, getSlugCooldownDays, DEFAULT_COOLDOWN_DAYS } = require("../lib/shopAddress");
 const sharedShopAddress = require("../public/js/shop-address");
@@ -21,6 +23,37 @@ const { syncFeatureEntitlements, createStoreWithSubscription } = require("../lib
 const { assertShopName } = require("../lib/shopAddress");
 const { writeAudit } = require("../lib/audit");
 const { purgeStoreData } = require("../lib/storePurge");
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function graceForSub(sub, policy) {
+  const raw = sub && sub.graceDaysOverride;
+  const custom = raw !== null && raw !== undefined && Number.isFinite(Number(raw));
+  const days = custom ? Number(raw) : Number(policy && policy.defaultGraceDays);
+  return Math.max(0, Math.min(90, Math.round(Number.isFinite(days) ? days : 7)));
+}
+
+// Store list + modals read this — due date, grace, and the day the ban lands.
+function storeBillingView(sub, policy) {
+  if (!sub) return null;
+  const due = sub.nextBillingDate || sub.endDate || null;
+  const grace = graceForSub(sub, policy);
+  return {
+    status: sub.status,
+    dueDate: due,
+    graceDays: grace,
+    graceIsOverride: sub.graceDaysOverride !== null && sub.graceDaysOverride !== undefined,
+    banDate: due ? new Date(new Date(due).getTime() + grace * DAY_MS) : null,
+    suspendedAt: sub.billingSuspendedAt || null,
+    suspendReason: sub.suspendReason || "",
+  };
+}
+
+function parseBillingDate(value) {
+  if (value === "" || value === null) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? undefined : date;
+}
 
 // platform stats (trashed shops stay out of the live count)
 router.get("/stats", auth, requireSuperAdmin, async (req, res) => {
@@ -52,10 +85,16 @@ router.get("/stores", auth, requireSuperAdmin, async (req, res) => {
     .sort(trashed ? { deletedAt: -1 } : { createdAt: -1 })
     .populate("owner", "name email")
     .populate("plan");
+  const policy = await billing.loadSettings();
+  const subs = trashed
+    ? []
+    : await Subscription.find({ store: { $in: stores.map((s) => s._id) } }).lean();
+  const byStore = new Map(subs.map((sub) => [String(sub.store), sub]));
   const rows = await Promise.all(
     stores.map(async (store) => {
       const row = store.toObject();
       row.access = await featuresForStore(store, store.plan);
+      if (!trashed) row.billing = storeBillingView(byStore.get(String(store._id)), policy);
       return row;
     })
   );
@@ -152,6 +191,141 @@ router.put("/stores/:id/plan", auth, requireSuperAdmin, async (req, res) => {
       newValue: { plan: String(plan._id), slug: plan.slug },
     });
     res.json({ ...store.toObject(), access });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// payment terms per store: due date + grace override (ban date = due + grace)
+router.put("/stores/:id/billing", auth, requireSuperAdmin, async (req, res) => {
+  try {
+    const store = await Store.findById(req.params.id);
+    if (!store) return res.status(404).json({ message: "Store pawa jayni" });
+    if (store.deletedAt) return res.status(409).json({ message: "ট্র্যাশে থাকা দোকানের বিলিং বদলানো যাবে না" });
+    const sub = await Subscription.findOne({ store: store._id });
+    if (!sub) return res.status(404).json({ message: "Subscription pawa jayni" });
+
+    const policy = await billing.loadSettings();
+    const before = storeBillingView(sub.toObject(), policy);
+    const body = req.body || {};
+
+    if ("dueDate" in body) {
+      const due = parseBillingDate(body.dueDate);
+      if (due === undefined) return res.status(400).json({ message: "সঠিক পেমেন্ট তারিখ দিন" });
+      sub.nextBillingDate = due;
+    }
+
+    if ("graceDays" in body) {
+      if (body.graceDays === "" || body.graceDays === null) {
+        sub.graceDaysOverride = null;
+      } else {
+        const days = Number(body.graceDays);
+        if (!Number.isInteger(days) || days < 0 || days > 90) {
+          return res.status(400).json({ message: "Grace দিন ০-৯০ এর মধ্যে দিন" });
+        }
+        sub.graceDaysOverride = days;
+      }
+    }
+
+    await sub.save();
+    await writeAudit({
+      store: store._id,
+      user: req.user.id,
+      action: "store.billing.update",
+      entity: "Subscription",
+      entityId: sub._id,
+      oldValue: { dueDate: before && before.dueDate, graceDays: before && before.graceDays },
+      newValue: {
+        dueDate: sub.nextBillingDate,
+        graceDays: graceForSub(sub.toObject(), policy),
+        note: String(body.note || "").trim().slice(0, 300),
+      },
+    });
+    res.json({ billing: storeBillingView(sub.toObject(), policy), message: "পেমেন্টের তারিখ সেভ হয়েছে" });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// manual ban — payment er jonno account bondho (storefront + owner admin)
+router.post("/stores/:id/ban", auth, requireSuperAdmin, async (req, res) => {
+  try {
+    const store = await Store.findById(req.params.id);
+    if (!store) return res.status(404).json({ message: "Store pawa jayni" });
+    if (store.deletedAt) return res.status(409).json({ message: "ট্র্যাশে থাকা দোকান ব্যান করা যাবে না" });
+    const sub = await Subscription.findOne({ store: store._id });
+    if (!sub) return res.status(404).json({ message: "Subscription pawa jayni" });
+
+    const now = new Date();
+    sub.status = "suspended";
+    sub.billingSuspendedAt = sub.billingSuspendedAt || now;
+    sub.suspendReason = "manual";
+    sub.suspendedBy = req.user.id;
+    await sub.save();
+    if (store.status !== "suspended") {
+      store.status = "suspended";
+      await store.save();
+    }
+
+    await writeAudit({
+      store: store._id,
+      user: req.user.id,
+      action: "store.billing.ban",
+      entity: "Subscription",
+      entityId: sub._id,
+      oldValue: { status: "active" },
+      newValue: {
+        status: "suspended",
+        reason: "manual",
+        note: String((req.body && req.body.note) || "").trim().slice(0, 300),
+      },
+    });
+
+    const policy = await billing.loadSettings();
+    res.json({
+      billing: storeBillingView(sub.toObject(), policy),
+      store: { _id: store._id, status: store.status },
+      message: "দোকান ব্যান করা হয়েছে",
+    });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+router.post("/stores/:id/unban", auth, requireSuperAdmin, async (req, res) => {
+  try {
+    const store = await Store.findById(req.params.id);
+    if (!store) return res.status(404).json({ message: "Store pawa jayni" });
+    const sub = await Subscription.findOne({ store: store._id });
+    if (!sub) return res.status(404).json({ message: "Subscription pawa jayni" });
+
+    const previous = { status: sub.status, reason: sub.suspendReason || "" };
+    sub.status = "active";
+    sub.billingSuspendedAt = null;
+    sub.suspendReason = "";
+    sub.suspendedBy = null;
+    await sub.save();
+    if (store.status === "suspended") {
+      store.status = "active";
+      await store.save();
+    }
+
+    await writeAudit({
+      store: store._id,
+      user: req.user.id,
+      action: "store.billing.unban",
+      entity: "Subscription",
+      entityId: sub._id,
+      oldValue: previous,
+      newValue: { status: "active", reason: "" },
+    });
+
+    const policy = await billing.loadSettings();
+    res.json({
+      billing: storeBillingView(sub.toObject(), policy),
+      store: { _id: store._id, status: store.status },
+      message: "দোকান আবার চালু হয়েছে",
+    });
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
@@ -398,6 +572,41 @@ for (const field of ["logo", "favicon"]) {
     }
   });
 }
+
+/* --------------------------------------------- landing page content */
+
+const LANDING_DIR = path.join(__dirname, "..", "public", "uploads", "landing");
+const landingAsset = makeImageUpload({ maxBytes: 8 * 1024 * 1024 });
+
+router.get("/settings/landing/content", auth, requireSuperAdmin, async (req, res) => {
+  try {
+    res.json({ content: await landingContent.getContent() });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+router.put("/settings/landing/content", auth, requireSuperAdmin, async (req, res) => {
+  try {
+    const patch = (req.body && req.body.content) || req.body || {};
+    res.json({ content: await landingContent.saveContent(patch) });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// one uploader for design screenshots and custom-section images
+router.post(
+  "/settings/landing/asset",
+  auth,
+  requireSuperAdmin,
+  singleImage(landingAsset, "image"),
+  finalizeImage({ dir: LANDING_DIR }),
+  async (req, res) => {
+    if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+    res.json({ url: "/uploads/landing/" + req.file.filename });
+  }
+);
 
 /* ------------------------------------------------------------ billing */
 

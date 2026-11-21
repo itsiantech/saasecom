@@ -407,7 +407,7 @@ function renderStoreChrome() {
   $("addStoreBtn").style.display = trashed ? "none" : "";
   $("storeHead").innerHTML = trashed
     ? "<tr><th>দোকান</th><th>মালিক</th><th>ট্র্যাশ হয়েছে</th><th>অ্যাকশন</th></tr>"
-    : "<tr><th>দোকান</th><th>মালিক</th><th>বর্তমান প্ল্যান</th><th>প্ল্যান বদলান</th></tr>";
+    : "<tr><th>দোকান</th><th>মালিক</th><th>বর্তমান প্ল্যান</th><th>পেমেন্ট</th><th>প্ল্যান বদলান</th></tr>";
 }
 
 async function loadStores() {
@@ -421,11 +421,20 @@ async function loadStores() {
   }
 }
 
+function bnShortDate(value) {
+  if (!value) return "—";
+  return new Date(value).toLocaleDateString("bn-BD", { day: "numeric", month: "short", year: "numeric" });
+}
+
+function storeIsBanned(s) {
+  return Boolean(s && (s.status === "suspended" || (s.billing && s.billing.status === "suspended")));
+}
+
 function renderStores() {
   const tbody = $("storeBody");
   if (!stores.length) {
     const msg = storeView === "trashed" ? "ট্র্যাশ খালি" : "কোনো দোকান নেই";
-    tbody.innerHTML = '<tr><td colspan="4"><div class="empty">' + msg + "</div></td></tr>";
+    tbody.innerHTML = '<tr><td colspan="' + (storeView === "trashed" ? 4 : 5) + '"><div class="empty">' + msg + "</div></td></tr>";
     return;
   }
 
@@ -462,14 +471,39 @@ function renderStores() {
       const mods = s.access && s.access.features
         ? Object.values(s.access.features).filter(Boolean).length
         : 0;
+      const bl = s.billing || null;
+      const banned = storeIsBanned(s);
+      const overdue = !banned && bl && bl.banDate && new Date(bl.banDate).getTime() < Date.now();
+      const payBadge = !bl
+        ? '<span class="badge off">—</span>'
+        : banned
+        ? '<span class="badge ban">ব্যানড</span>'
+        : overdue
+        ? '<span class="badge due">ডেডলাইন পার</span>'
+        : '<span class="badge on">স্বাভাবিক</span>';
+      const dueText = bl && bl.dueDate ? "ডিউ " + bnShortDate(bl.dueDate) : "ডিউ ঠিক হয়নি";
+      const banText = bl && bl.banDate ? "ব্যান " + bnShortDate(bl.banDate) : "";
       return `
       <tr>
         <td>${shop}</td>
         <td class="muted" style="font-size:12px;">${esc(owner)}</td>
         <td>${planLabel ? '<span class="badge on">' + esc(planLabel) + "</span>" : '<span class="badge off">—</span>'}
           <div class="muted" style="font-size:11px;margin-top:4px;">${mods} মডিউল</div></td>
+        <td>${payBadge}
+          <div class="muted" style="font-size:11px;margin-top:4px;">${esc(dueText)}</div>
+          ${banText ? '<div class="muted" style="font-size:11px;">' + esc(banText) + "</div>" : ""}</td>
         <td>
           <div class="row-actions">
+            <button class="icon-btn edit" title="পেমেন্ট ডেডলাইন ও ব্যান" onclick="openStoreBilling('${s._id}')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg>
+            </button>
+            ${banned
+              ? `<button class="icon-btn edit" title="আনব্যান করুন" onclick="unbanStore('${s._id}')">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></svg>
+                </button>`
+              : `<button class="icon-btn del" title="ব্যান করুন" onclick="banStore('${s._id}')">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+                </button>`}
             <select class="plan-select" data-store="${s._id}">${opts}</select>
             <button class="icon-btn edit" title="বদলান" onclick="changeStorePlan('${s._id}')">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
@@ -611,6 +645,176 @@ async function changeStorePlan(storeId) {
     toast(e.message, "err");
   }
 }
+
+/* ---------- per-store payment deadline / ban ---------- */
+let billingPolicy = { autoBan: false, defaultGraceDays: 7 };
+const billingOverlay = $("billingOverlay");
+let billingStoreId = null;
+
+function toDateInput(value) {
+  if (!value) return "";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "";
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return d.getFullYear() + "-" + m + "-" + day;
+}
+
+function graceOrDefault(raw) {
+  if (raw !== "" && raw !== null && raw !== undefined && Number.isFinite(Number(raw))) {
+    return Math.max(0, Math.min(90, Math.round(Number(raw))));
+  }
+  const fallback = Number(billingPolicy.defaultGraceDays);
+  return Number.isFinite(fallback) ? fallback : 7;
+}
+
+function updateBanPreview() {
+  const el = $("blBanDate");
+  if (!el) return;
+  const dueInput = $("blDueDate").value;
+  if (!dueInput) {
+    el.textContent = "ডিউ তারিখ দিন — তখনই গ্রেসসহ ব্যানের দিন হিসাব হবে।";
+    el.className = "bl-ban-date";
+    return;
+  }
+  const due = new Date(dueInput + "T00:00:00");
+  const grace = graceOrDefault($("blGraceDays").value.trim());
+  const ban = new Date(due.getTime() + grace * 86400000);
+  const isDefault = $("blGraceDays").value.trim() === "";
+  el.textContent = "ডেডলাইন: " + bnShortDate(ban) + " — এই দিন পার হলে ব্যান হবে" + (isDefault ? " (প্ল্যাটফর্ম ডিফল্ট " + grace + " দিন)" : "");
+  el.className = "bl-ban-date" + (ban.getTime() < Date.now() ? " hot" : "");
+}
+
+function openStoreBilling(id) {
+  const s = stores.find((row) => row._id === id);
+  if (!s) return;
+  billingStoreId = id;
+  const bl = s.billing || {};
+  const banned = storeIsBanned(s);
+  $("blStoreName").textContent = s.name + " (/" + s.slug + ")";
+  const reason =
+    bl.suspendReason === "manual"
+      ? "সুপার অ্যাডমিনের ব্যান"
+      : bl.suspendReason === "payment"
+      ? "ডেডলাইন পার হওয়ায় অটো ব্যান"
+      : "ব্যানড";
+  $("blStatusLine").textContent = banned
+    ? "অবস্থা: " + reason + (bl.suspendedAt ? " — " + bnShortDate(bl.suspendedAt) : "")
+    : "অবস্থা: " +
+      (!s.billing
+        ? "সাবস্ক্রিপশন নেই"
+        : bl.status === "past_due"
+        ? "বকেয়া (past due)"
+        : bl.status === "trial"
+        ? "ট্রায়াল"
+        : "সক্রিয়");
+  $("blDueDate").value = toDateInput(bl.dueDate);
+  $("blGraceDays").value = bl.graceIsOverride ? bl.graceDays : "";
+  $("blGraceDays").placeholder = "ডিফল্ট " + graceOrDefault(null) + " দিন";
+  $("blNote").value = "";
+  $("blMsg").textContent = "";
+  $("blMsg").className = "msg";
+  $("blBanBtn").textContent = banned ? "আনব্যান করুন" : "এখনই ব্যান করুন";
+  $("blBanBtn").dataset.mode = banned ? "unban" : "ban";
+  updateBanPreview();
+  billingOverlay.classList.add("open");
+}
+
+function closeStoreBilling() {
+  billingOverlay.classList.remove("open");
+  billingStoreId = null;
+}
+
+function syncStoreBilling(id, data) {
+  const s = stores.find((row) => row._id === id);
+  if (!s) return;
+  if (data && data.billing) s.billing = data.billing;
+  if (data && data.store && data.store.status) s.status = data.store.status;
+  else if (data && data.billing && data.billing.status === "suspended") s.status = "suspended";
+  else if (data && data.billing && data.billing.status === "active") s.status = "active";
+  renderStores();
+}
+
+async function banStore(id) {
+  if (!confirm("এই দোকান ব্যান করবেন? দোকানফ্রন্ট ও মালিকের অ্যাডমিন বন্ধ হয়ে যাবে।")) return;
+  try {
+    const data = await api("/api/admin/stores/" + id + "/ban", { method: "POST", body: JSON.stringify({}) });
+    syncStoreBilling(id, data);
+    toast(data.message || "দোকান ব্যান করা হয়েছে", "ok");
+  } catch (e) {
+    toast(e.message, "err");
+  }
+}
+
+async function unbanStore(id) {
+  if (!confirm("দোকানটি আবার চালু করবেন? দোকানফ্রন্ট ও অ্যাডমিন আবার কাজ করবে।")) return;
+  try {
+    const data = await api("/api/admin/stores/" + id + "/unban", { method: "POST", body: JSON.stringify({}) });
+    syncStoreBilling(id, data);
+    toast(data.message || "দোকান আবার চালু হয়েছে", "ok");
+  } catch (e) {
+    toast(e.message, "err");
+  }
+}
+
+$("blDueDate").addEventListener("change", updateBanPreview);
+$("blGraceDays").addEventListener("input", updateBanPreview);
+$("blCancelBtn").addEventListener("click", closeStoreBilling);
+billingOverlay.addEventListener("click", (e) => {
+  if (e.target === billingOverlay) closeStoreBilling();
+});
+
+$("blSaveBtn").addEventListener("click", async () => {
+  if (!billingStoreId) return;
+  const btn = $("blSaveBtn");
+  const graceRaw = $("blGraceDays").value.trim();
+  btn.disabled = true;
+  try {
+    const data = await api("/api/admin/stores/" + billingStoreId + "/billing", {
+      method: "PUT",
+      body: JSON.stringify({
+        dueDate: $("blDueDate").value || null,
+        graceDays: graceRaw === "" ? null : Number(graceRaw),
+        note: $("blNote").value.trim(),
+      }),
+    });
+    syncStoreBilling(billingStoreId, data);
+    toast(data.message || "পেমেন্টের তারিখ সেভ হয়েছে", "ok");
+    closeStoreBilling();
+  } catch (e) {
+    $("blMsg").textContent = e.message;
+    $("blMsg").className = "msg err";
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+$("blBanBtn").addEventListener("click", async () => {
+  if (!billingStoreId) return;
+  const id = billingStoreId;
+  if ($("blBanBtn").dataset.mode === "unban") {
+    await unbanStore(id);
+    closeStoreBilling();
+    return;
+  }
+  if (!confirm("এই দোকান এখনই ব্যান করবেন? দোকানফ্রন্ট ও মালিকের অ্যাডমিন বন্ধ হয়ে যাবে।")) return;
+  const btn = $("blBanBtn");
+  btn.disabled = true;
+  try {
+    const data = await api("/api/admin/stores/" + id + "/ban", {
+      method: "POST",
+      body: JSON.stringify({ note: $("blNote").value.trim() }),
+    });
+    syncStoreBilling(id, data);
+    toast(data.message || "দোকান ব্যান করা হয়েছে", "ok");
+    closeStoreBilling();
+  } catch (e) {
+    $("blMsg").textContent = e.message;
+    $("blMsg").className = "msg err";
+  } finally {
+    btn.disabled = false;
+  }
+});
 
 /* ---------- new store (superadmin) ---------- */
 const storeOverlay = $("storeOverlay");
@@ -1598,6 +1802,13 @@ function billingApiCard(api) {
 
 function renderBilling(settings) {
   $("bManualOn").checked = settings.manualEnabled !== false;
+  const grace = Number(settings.defaultGraceDays);
+  billingPolicy = {
+    autoBan: settings.autoBan === true,
+    defaultGraceDays: Number.isFinite(grace) ? Math.min(90, Math.max(0, Math.round(grace))) : 7,
+  };
+  $("bAutoBan").checked = billingPolicy.autoBan;
+  $("bGraceDays").value = billingPolicy.defaultGraceDays;
   $("billingGrid").innerHTML =
     BILLING_CARDS.map((m) => billingCard(m, settings[m.id] || {})).join("") + billingApiCard(settings.api || {});
   const file = $("bmQrFile");
@@ -1605,8 +1816,12 @@ function renderBilling(settings) {
 }
 
 function collectBilling() {
+  const graceRaw = $("bGraceDays").value.trim();
+  const grace = graceRaw === "" ? 7 : Number(graceRaw);
   const out = {
     manualEnabled: $("bManualOn").checked,
+    autoBan: $("bAutoBan").checked,
+    defaultGraceDays: Number.isFinite(grace) ? Math.min(90, Math.max(0, Math.round(grace))) : 7,
     api: {
       enabled: Boolean(document.querySelector('[data-method="api"]').checked),
       sandbox: document.querySelector('[data-api="sandbox"]').value !== "0",

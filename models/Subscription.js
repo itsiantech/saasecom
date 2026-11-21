@@ -21,6 +21,11 @@ const subscriptionSchema = new mongoose.Schema(
     // set when the billing cron auto-suspends the store, so an approved
     // payment can lift exactly that suspension again
     billingSuspendedAt: { type: Date, default: null },
+    // per-store grace after the due date; null = platform default
+    graceDaysOverride: { type: Number, default: null, min: 0, max: 90 },
+    // "" = not suspended, "payment" = deadline passed, "manual" = super admin
+    suspendReason: { type: String, enum: ["", "payment", "manual"], default: "" },
+    suspendedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
     autoRenew: { type: Boolean, default: true },
     lastPaymentAt: { type: Date, default: null },
     cancelledAt: { type: Date, default: null },

@@ -8,17 +8,17 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/css/style.css" />
-  <link rel="stylesheet" href="/css/dashboard.css?v=17" />
+  <link rel="stylesheet" href="/css/dashboard.css?v=18" />
   <link rel="stylesheet" href="/css/overview.css?v=1" />
   <link rel="stylesheet" href="/css/sidebar-scroll.css?v=1" />
   <link rel="stylesheet" href="/css/style-settings.css?v=1" />
   <link rel="stylesheet" href="/css/categories.css" />
   <link rel="stylesheet" href="/css/product-form.css" />
-  <link rel="stylesheet" href="/css/settings-dashboard.css?v=7" />
+  <link rel="stylesheet" href="/css/settings-dashboard.css?v=8" />
   <link rel="stylesheet" href="/css/installments.css?v=1" />
   <link rel="stylesheet" href="/css/retail-installments.css?v=1" />
   <link rel="stylesheet" href="/css/product-catalog.css?v=1" />
-  <link rel="stylesheet" href="/css/order-catalog.css?v=2" />
+  <link rel="stylesheet" href="/css/order-catalog.css?v=3" />
   <link rel="stylesheet" href="/css/marketing.css?v=2" />
   <link rel="stylesheet" href="/css/hero-slider.css?v=3" />
   <link rel="stylesheet" href="/css/customers.css?v=1" />
@@ -1042,6 +1042,8 @@
             <button class="settings-menu-item" data-pane="google-seo" type="button">Google SEO <span class="off-badge" data-seo-off hidden>Off</span></button>
             <div class="settings-menu-group" data-group="tracking">Tracking</div>
             <button class="settings-menu-item" data-pane="server-tracking" type="button">Server side tracking <span class="off-badge" data-tracking-off hidden>Off</span></button>
+            <div class="settings-menu-group">Courier</div>
+            <button class="settings-menu-item" data-pane="courier-api" type="button">Courier API <span class="off-badge" data-courier-off hidden>Off</span></button>
             <div class="settings-menu-group">Notifications</div>
             <button class="settings-menu-item" data-pane="email" type="button">Email settings</button>
             <button class="settings-menu-item" data-pane="invoice" type="button">Invoice settings</button>
@@ -2319,6 +2321,174 @@
                       <li>Credentials diye <strong>Save changes</strong> korun, tarpor <strong>Test Connection</strong> ar <strong>Send Test Event</strong> diye verify korun.</li>
                       <li>Meta/TikTok/GA4/GAds sab shathe ek sathe on rakha jabe — ekta fail korle baki gulo te kono effect porbe na.</li>
                       <li>Token / secret encrypted save hoy; API theke shudhu <code>••••last4</code> fire ashe.</li>
+                    </ol>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- ===== COURIER API (Pathao / Steadfast) ===== -->
+            <section class="settings-pane" data-pane="courier-api">
+              <div class="pf-card">
+                <div class="pf-card-head">
+                  <h3>Courier API</h3>
+                  <label class="pf-switch" title="Enable / disable"><input type="checkbox" id="courierEnabled" aria-label="Enable courier API" /><span class="slider"></span></label>
+                </div>
+                <div class="settings-body">
+                  <p class="pf-note" id="courierStatus">Courier API OFF — order list er Send button diye kono courier e order pathabe na.</p>
+                  <p class="pf-note">Pathao / Steadfast er credential encrypted (AES-256-GCM) save hoy — save korar por full secret ar dekhano hoy na. Order list er <strong>Send</strong> button diye ek click e order courier e book hobe; consignment ID ar tracking code order e save thakbe. Purono secret thakle field e •••• dekhabe; notun value dile replace hobe.</p>
+                  <div class="pf-grid-2">
+                    <div class="pf-field">
+                      <label for="courierDefault">Default courier</label>
+                      <select id="courierDefault">
+                        <option value="pathao">Pathao</option>
+                        <option value="steadfast">Steadfast</option>
+                      </select>
+                    </div>
+                    <div class="pf-field">
+                      <label for="courierWeight">Parcel weight (kg)</label>
+                      <input id="courierWeight" type="number" min="0.1" step="0.1" placeholder="0.5" />
+                    </div>
+                  </div>
+                  <div class="pf-grid-2">
+                    <div class="pf-field">
+                      <label for="courierCodMode">COD amount</label>
+                      <select id="courierCodMode">
+                        <option value="due">Order total − paid amount</option>
+                        <option value="total">Full order total</option>
+                        <option value="none">No COD (prepaid)</option>
+                      </select>
+                    </div>
+                    <div class="pf-field">
+                      <label for="courierSenderPhone">Sender phone</label>
+                      <input id="courierSenderPhone" inputmode="tel" placeholder="017XXXXXXXX" autocomplete="off" />
+                    </div>
+                  </div>
+                  <div class="pf-field">
+                    <label for="courierSenderName">Sender name <span class="hint">— khali thakle store name</span></label>
+                    <input id="courierSenderName" placeholder="Store name" />
+                  </div>
+                </div>
+              </div>
+
+              <div class="cur-tabs" role="tablist">
+                <button type="button" class="cur-tab active" data-cur-tab="pathao">Pathao</button>
+                <button type="button" class="cur-tab" data-cur-tab="steadfast">Steadfast</button>
+                <button type="button" class="cur-tab" data-cur-tab="guide">Setup Guide</button>
+              </div>
+
+              <!-- Pathao -->
+              <div class="cur-panel active" data-cur-panel="pathao">
+                <div class="pf-card">
+                  <div class="pf-card-head">
+                    <h3>Pathao</h3>
+                    <label class="pf-switch" title="Enable / disable"><input type="checkbox" id="courierPathaoEnabled" aria-label="Enable Pathao" /><span class="slider"></span></label>
+                  </div>
+                  <div class="settings-body">
+                    <div class="pf-grid-2">
+                      <div class="pf-field">
+                        <label for="courierPathaoEnv">Environment</label>
+                        <select id="courierPathaoEnv">
+                          <option value="live">Live</option>
+                          <option value="sandbox">Sandbox</option>
+                        </select>
+                      </div>
+                      <div class="pf-field">
+                        <label for="courierPathaoStoreId">Merchant Store ID</label>
+                        <input id="courierPathaoStoreId" inputmode="numeric" placeholder="12345" spellcheck="false" autocomplete="off" />
+                      </div>
+                    </div>
+                    <div class="pf-grid-2">
+                      <div class="pf-field">
+                        <label for="courierPathaoClientId">Client ID</label>
+                        <input id="courierPathaoClientId" placeholder="Client ID" spellcheck="false" autocomplete="off" />
+                      </div>
+                      <div class="pf-field">
+                        <label for="courierPathaoClientSecret">Client Secret</label>
+                        <input id="courierPathaoClientSecret" placeholder="••••" spellcheck="false" autocomplete="off" />
+                      </div>
+                    </div>
+                    <div class="pf-grid-2">
+                      <div class="pf-field">
+                        <label for="courierPathaoUsername">Username</label>
+                        <input id="courierPathaoUsername" placeholder="Merchant username" autocomplete="off" />
+                      </div>
+                      <div class="pf-field">
+                        <label for="courierPathaoPassword">Password</label>
+                        <input id="courierPathaoPassword" type="password" placeholder="••••" autocomplete="new-password" />
+                      </div>
+                    </div>
+                    <div class="pf-grid-2">
+                      <div class="pf-field">
+                        <label for="courierPathaoCityId">Default city</label>
+                        <select id="courierPathaoCityId"><option value="">Not set</option></select>
+                      </div>
+                      <div class="pf-field">
+                        <label for="courierPathaoZoneId">Default zone</label>
+                        <select id="courierPathaoZoneId"><option value="">Not set</option></select>
+                      </div>
+                    </div>
+                    <p class="pf-note">Order er district/thana diye city ar zone auto-match hoy. Bangla address ba kono match na hole ei default city/zone use hobe. Credentials <strong>Save changes</strong> korar por <strong>Load cities</strong> chapun.</p>
+                    <div class="sst-actions">
+                      <button class="pf-btn-sm" type="button" id="courierPathaoLoadBtn">Load cities</button>
+                      <button class="pf-btn-sm" type="button" id="courierPathaoTestBtn">Test Connection</button>
+                      <span class="sst-result" id="courierPathaoResult"></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Steadfast -->
+              <div class="cur-panel" data-cur-panel="steadfast">
+                <div class="pf-card">
+                  <div class="pf-card-head">
+                    <h3>Steadfast</h3>
+                    <label class="pf-switch" title="Enable / disable"><input type="checkbox" id="courierSteadfastEnabled" aria-label="Enable Steadfast" /><span class="slider"></span></label>
+                  </div>
+                  <div class="settings-body">
+                    <div class="pf-field">
+                      <label for="courierSteadfastApiKey">API Key</label>
+                      <input id="courierSteadfastApiKey" placeholder="••••" spellcheck="false" autocomplete="off" />
+                    </div>
+                    <div class="pf-field">
+                      <label for="courierSteadfastSecretKey">Secret Key</label>
+                      <input id="courierSteadfastSecretKey" placeholder="••••" spellcheck="false" autocomplete="off" />
+                      <p class="pf-note">Steadfast portal → Settings → API theke API Key ar Secret Key copy korun.</p>
+                    </div>
+                    <div class="sst-actions">
+                      <button class="pf-btn-sm" type="button" id="courierSteadfastTestBtn">Test Connection</button>
+                      <span class="sst-result" id="courierSteadfastResult"></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Setup guide -->
+              <div class="cur-panel" data-cur-panel="guide">
+                <div class="pf-card">
+                  <div class="pf-card-head"><h3>Setup Guide (বাংলা)</h3></div>
+                  <div class="settings-body sst-guide">
+                    <p class="pf-note">Courier API on korle order list er প্রতিটি order er পাশে <strong>Send</strong> icon আসবে। Send চাপলে confirm popup-এ courier বেছে order টি সরাসরি courier এর API তে book হবে — consignment ID + tracking code order-এ save থাকবে, আর সেখানে অর্ডারের status আগের মতোই থাকবে (আলাদা করে বদলাতে হবে না)।</p>
+
+                    <h4 class="settings-subhead">1. Pathao</h4>
+                    <ol>
+                      <li>merchant.pathao.com → Settings → API / Developer theke <strong>Client ID</strong>, <strong>Client Secret</strong>, <strong>Merchant Store ID</strong> নিন।</li>
+                      <li>Pathao merchant account এর <strong>Username</strong> ar <strong>Password</strong> দিন (token issue korte lage)।</li>
+                      <li><strong>Save changes</strong> → <strong>Test Connection</strong> → <strong>Load cities</strong> চেপে default city/zone সেট করুন (order-এর district/thana মিললে ওটাই ব্যবহার হবে)।</li>
+                    </ol>
+
+                    <h4 class="settings-subhead">2. Steadfast</h4>
+                    <ol>
+                      <li>portal.packzy.com → Settings → API থেকে <strong>API Key</strong> ar <strong>Secret Key</strong> copy করুন।</li>
+                      <li>Duitai Steadfast tab e দিয়ে Save → Test Connection চাপুন। balance দেখালে credential ঠিক আছে।</li>
+                    </ol>
+
+                    <h4 class="settings-subhead">3. Common</h4>
+                    <ol>
+                      <li>Master switch ON + যেই courier ব্যবহার করবেন তার switch ON।</li>
+                      <li>দুইটা courier enabled থাকলে order list-এর Send popup-এ courier switch করা যাবে; confirm না করলে default courier-ই ব্যবহার হবে।</li>
+                      <li>Parcel weight settings default (0.5 kg) থেকে যাবে — দরকার হলে বদলে নিন। COD amount mode দিয়ে ঠিক করুন কত টাকা collect হবে।</li>
+                      <li>Secret গুলো encrypted save হয়; API থেকে শুধু <code>••••last4</code> ফেরত আসে।</li>
                     </ol>
                   </div>
                 </div>
@@ -4129,21 +4299,38 @@
     </div>
   </div>
 
+  <!-- payment deadline ban — owner panel lock -->
+  <div class="billing-lock" id="billingLock" hidden>
+    <div class="bl-card" role="dialog" aria-modal="true" aria-labelledby="blLockTitle">
+      <div class="bl-mark" id="blLockMark">L</div>
+      <h2 id="blLockTitle">দোকানটি সাময়িক বন্ধ আছে</h2>
+      <p class="bl-sub" id="blLockText">পেমেন্ট বাকির কারণে আপনার দোকান ও অ্যাডমিন অ্যাক্সেস বন্ধ আছে। পেমেন্ট করলে সাথে সাথে আবার চালু হবে।</p>
+      <div class="bl-facts">
+        <div><span>দোকান</span><b id="blLockStore">—</b></div>
+        <div><span>বকেয়া</span><b id="blLockAmount">—</b></div>
+        <div><span>ডিউ তারিখ</span><b id="blLockDue">—</b></div>
+      </div>
+      <p class="bl-note" id="blLockNote"></p>
+      <a class="bl-pay" id="blLockPay" href="/plan-checkout.html">পেমেন্ট করে চালু করুন</a>
+      <button class="bl-out" id="blLockLogout" type="button">লগ আউট</button>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
 
   <script src="/js/store-hint.js?v=1"></script>
   <script src="/js/api-session.js?v=1"></script>
   <script src="/js/platform-brand.js?v=1"></script>
-  <script src="/js/dashboard.js?v=19"></script>
+  <script src="/js/dashboard.js?v=20"></script>
   <script src="/js/overview.js?v=1"></script>
   <script src="/js/form-guard.js?v=2"></script>
   <script src="/js/categories.js"></script>
   <script src="/js/brands.js"></script>
   <script src="/js/product-form.js?v=1"></script>
-  <script src="/js/settings-dashboard.js?v=17"></script>
+  <script src="/js/settings-dashboard.js?v=18"></script>
   <script src="/js/installments-admin.js?v=1"></script>
   <script src="/js/retail-installments-admin.js?v=1"></script>
-  <script src="/js/orders.js?v=3"></script>
+  <script src="/js/orders.js?v=4"></script>
   <script src="/js/product-catalog.js?v=1"></script>
   <script src="/js/marketing.js?v=3"></script>
   <script src="/js/hero-slider.js?v=3"></script>

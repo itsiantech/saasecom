@@ -98,6 +98,12 @@ const orderSchema = new mongoose.Schema(
     stockRestored: { type: Boolean, default: false },
     // courier tracking (order list page + international shipments)
     courierName: { type: String, default: "" },
+    // automatic courier booking (Pathao / Steadfast API)
+    courierProvider: { type: String, enum: ["", "pathao", "steadfast"], default: "" },
+    courierConsignmentId: { type: String, default: "" },
+    courierTrackingCode: { type: String, default: "" },
+    courierStatus: { type: String, default: "" },
+    courierSentAt: { type: Date, default: null },
     status: {
       type: String,
       // legacy: confirmed | shipped | delivered ; new set: processing | on_the_way |

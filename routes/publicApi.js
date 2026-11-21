@@ -6,6 +6,7 @@ const shop = require("../controllers/publicShopController");
 const settings = require("../controllers/settingsController");
 const appearance = require("../controllers/appearanceController");
 const landingBranding = require("../lib/landingBranding");
+const landingContent = require("../lib/landingContent");
 const { renamedAddress } = require("../lib/shopAddress");
 const { auth, optionalAuth } = require("../middleware/auth");
 
@@ -23,6 +24,16 @@ router.get("/branding", async (_req, res) => {
   try {
     res.set("Cache-Control", "no-store");
     res.json({ branding: await landingBranding.getBranding() });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// landing page content (text, images, section visibility) edited by the owner
+router.get("/landing", async (_req, res) => {
+  try {
+    res.set("Cache-Control", "no-store");
+    res.json({ content: await landingContent.getContent() });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

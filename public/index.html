@@ -1,125 +1,1940 @@
 <!DOCTYPE html>
 <html lang="bn">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="নিজের অনলাইন দোকান খুলুন মিনিটে। প্যাকেজ বেছে নিন, দোকানের নাম দিন, আর আপনার নিজের ঠিকানায় দোকান চালু করুন।" />
-  <title>LUXE — নিজের অনলাইন দোকান, মিনিটে</title>
-  <link rel="stylesheet" href="/css/landing.css?v=5" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="description" content="আপনার দোকান, আপনার নিজের ঠিকানায়। প্যাকেজ বেছে নিন, দোকানের নাম লিখুন — প্রোডাক্ট, অর্ডার, কাস্টমার, রিপোর্ট সব এক জায়গায়।" />
+<title>Amar Bazaar — আপনার নিজের ঠিকানায় অনলাইন দোকান</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 34 34'%3E%3Crect width='34' height='34' rx='10' fill='%2300cfc4'/%3E%3Cpath d='M11.5 13.5h11l-1.2 9.2a2 2 0 0 1-2 1.8h-4.6a2 2 0 0 1-2-1.8z' fill='none' stroke='%23032226' stroke-width='2' stroke-linejoin='round'/%3E%3Cpath d='M13 13.5a4 4 0 0 1 8 0' fill='none' stroke='%23032226' stroke-width='2'/%3E%3C/svg%3E" />
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;700&family=Space+Grotesk:wght@500;700&display=swap');
+
+/* ===== tokens ===== */
+:root{
+  --bg:#050d1b;
+  --navy:#0a1f3d;
+  --navy2:#0d2a50;
+  --teal:#00cfc4;
+  --mint:#5eead4;
+  --orange:#ff7a1a;
+  --text:#9fb3cc;
+  --line:rgba(255,255,255,.09);
+  --white:#fff;
+}
+
+/* ===== base ===== */
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Hind Siliguri',system-ui,-apple-system,sans-serif;
+  font-size:16px;
+  line-height:1.65;
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,h4{color:#fff;margin:0;line-height:1.25}
+p{margin:0}
+img{max-width:100%;display:block}
+a{color:inherit}
+section{scroll-margin-top:84px}
+.wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+.sec{padding:90px 0;position:relative}
+.eyebrow{
+  display:inline-block;
+  font-family:'Space Grotesk',sans-serif;
+  font-size:12px;
+  font-weight:500;
+  letter-spacing:.2em;
+  text-transform:uppercase;
+  color:var(--teal);
+  margin-bottom:16px;
+}
+.ac{
+  background:linear-gradient(90deg,#00cfc4,#5eead4);
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
+}
+.sec-head{max-width:660px;margin:0 auto;text-align:center}
+.sec-head h2{font-size:clamp(28px,4.4vw,42px);font-weight:700}
+.sec-head p{margin-top:14px;font-size:16.5px;color:var(--text)}
+.muted{color:rgba(159,179,204,.8)}
+
+/* ===== buttons ===== */
+.btn{
+  position:relative;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  padding:13px 26px;
+  border:0;
+  border-radius:999px;
+  font-family:'Hind Siliguri',sans-serif;
+  font-weight:700;
+  font-size:15px;
+  color:#fff !important;
+  text-decoration:none;
+  white-space:nowrap;
+  cursor:pointer;
+  overflow:hidden;
+  transition:transform .3s ease, box-shadow .3s ease, background .3s ease, border-color .3s ease;
+}
+.btn:link,.btn:visited,.btn:hover,.btn:focus,.btn:active{color:#fff !important}
+.bp{
+  background:linear-gradient(135deg,#00b3a9,#007f7e);
+  text-shadow:0 1px 2px rgba(0,0,0,.35);
+  box-shadow:0 8px 30px rgba(0,207,196,.3);
+}
+.bp::after{
+  content:"";
+  position:absolute;
+  top:-60%;
+  left:-70%;
+  width:38%;
+  height:220%;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.5),transparent);
+  transform:rotate(18deg);
+  animation:shine 3.5s ease-in-out infinite;
+}
+.bp:hover{transform:translateY(-3px);box-shadow:0 16px 44px rgba(0,207,196,.48)}
+.bg{
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.14);
+  color:#fff;
+}
+.bg:hover{
+  transform:translateY(-3px);
+  border-color:rgba(0,207,196,.55);
+  background:rgba(0,207,196,.08);
+}
+.full{width:100%}
+@keyframes shine{
+  0%{left:-70%}
+  45%{left:150%}
+  100%{left:150%}
+}
+
+/* ===== navbar ===== */
+.nav{
+  position:sticky;
+  top:0;
+  z-index:50;
+  height:68px;
+  background:rgba(5,13,27,.75);
+  -webkit-backdrop-filter:blur(14px);
+  backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--line);
+}
+.nav-in{
+  height:68px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:20px;
+}
+.logo{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  text-decoration:none;
+  flex:0 0 auto;
+}
+.logo svg{display:block}
+.logo-txt{
+  font-family:'Space Grotesk',sans-serif;
+  font-weight:700;
+  font-size:23px;
+  color:#fff;
+  letter-spacing:-.01em;
+  line-height:1;
+}
+.logo-txt b{color:var(--orange);font-weight:700}
+.nav-links{display:flex;align-items:center;gap:28px;margin-left:auto}
+.nav-links a{
+  color:rgba(213,226,242,.85);
+  text-decoration:none;
+  font-size:15px;
+  transition:color .25s;
+}
+.nav-links a:hover{color:var(--mint)}
+.nav .btn{padding:11px 22px;font-size:14.5px}
+.nav-act{display:flex;align-items:center;gap:10px}
+.nav-login{white-space:nowrap}
+
+/* ===== cms-driven bits ===== */
+[hidden]{display:none!important}
+.logo.has-logo .logo-txt{display:none}
+.logo-img{height:34px;width:auto;display:block}
+.xsec-in{max-width:780px;margin:0 auto;text-align:center}
+.xsec .sec-head{margin-bottom:26px}
+.xsec-img{margin:0 auto 26px;border-radius:18px;border:1px solid var(--line);max-height:560px;object-fit:cover;width:100%}
+.xsec p{white-space:pre-line}
+.xsec .btn{margin-top:22px}
+
+/* ===== hero ===== */
+.hero{
+  position:relative;
+  padding:86px 0 104px;
+  overflow:hidden;
+}
+.hero::before{
+  content:"";
+  position:absolute;
+  inset:-30% -10%;
+  background:
+    radial-gradient(620px 400px at 86% 2%,rgba(0,207,196,.17),transparent 62%),
+    radial-gradient(680px 460px at 4% 96%,rgba(28,86,214,.2),transparent 64%);
+  pointer-events:none;
+}
+.hero-grid{
+  position:relative;
+  display:grid;
+  grid-template-columns:1.04fr .96fr;
+  align-items:center;
+  gap:54px;
+}
+.hero h1{
+  font-size:clamp(36px,5.4vw,62px);
+  font-weight:700;
+  line-height:1.18;
+}
+.hero-sub{margin-top:22px;font-size:17px;max-width:520px}
+.hero-cta{display:flex;flex-wrap:wrap;gap:14px;margin-top:32px}
+.hero-note{margin-top:18px;font-size:13.5px;color:rgba(159,179,204,.72)}
+
+/* mockup */
+.mockwrap{position:relative;padding:8px}
+.mock{
+  position:relative;
+  border-radius:20px;
+  padding:14px;
+  background:linear-gradient(160deg,rgba(255,255,255,.09),rgba(255,255,255,.03));
+  border:1px solid rgba(255,255,255,.12);
+  box-shadow:0 34px 90px rgba(0,0,0,.5);
+  -webkit-backdrop-filter:blur(12px);
+  backdrop-filter:blur(12px);
+  animation:floaty 6s ease-in-out infinite;
+}
+.mbar{display:flex;align-items:center;gap:6px}
+.mdot{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.22)}
+.murl{
+  flex:1;
+  margin-left:10px;
+  padding:7px 14px;
+  border-radius:999px;
+  background:rgba(5,13,27,.55);
+  border:1px solid rgba(255,255,255,.08);
+  font-family:'Space Grotesk',sans-serif;
+  font-size:12px;
+  color:rgba(213,226,242,.75);
+}
+.murl b{color:var(--mint);font-weight:700}
+.mbanner{
+  height:150px;
+  margin-top:12px;
+  border-radius:12px;
+  background:linear-gradient(110deg,#0a2a5e 0%,#0e3a72 26%,#00cfc4 50%,#0e3a72 74%,#0a2a5e 100%);
+  background-size:220% 100%;
+  animation:shimmer 5s linear infinite;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.1);
+}
+.mrow{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px}
+.mrow span{
+  height:76px;
+  border-radius:10px;
+  background:linear-gradient(160deg,rgba(255,255,255,.09),rgba(255,255,255,.03));
+  border:1px solid rgba(255,255,255,.08);
+}
+.mbadge{
+  position:absolute;
+  right:-8px;
+  bottom:-16px;
+  padding:9px 16px;
+  border-radius:999px;
+  background:var(--mint);
+  color:#032226;
+  font-weight:700;
+  font-size:12.5px;
+  box-shadow:0 10px 26px rgba(0,0,0,.35);
+  animation:badgepulse 3s ease-out infinite;
+}
+.chip{
+  position:absolute;
+  display:flex;
+  align-items:center;
+  gap:7px;
+  padding:8px 15px;
+  border-radius:999px;
+  background:rgba(8,26,51,.86);
+  border:1px solid rgba(255,255,255,.14);
+  -webkit-backdrop-filter:blur(12px);
+  backdrop-filter:blur(12px);
+  font-family:'Space Grotesk',sans-serif;
+  font-weight:700;
+  font-size:12.5px;
+  color:#fff;
+  box-shadow:0 12px 30px rgba(0,0,0,.38);
+  animation:chipfloat 5s ease-in-out infinite;
+  z-index:2;
+}
+.chip i{width:8px;height:8px;border-radius:50%;display:block}
+.c1{top:7%;left:-4%;animation-delay:.2s}
+.c2{top:46%;right:-5%;animation-delay:1.2s}
+.c3{bottom:-3%;left:10%;animation-delay:2.1s}
+
+@keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+@keyframes chipfloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+@keyframes shimmer{to{background-position:-220% 0}}
+@keyframes badgepulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(94,234,212,.55),0 10px 26px rgba(0,0,0,.35)}
+  50%{box-shadow:0 0 0 12px rgba(94,234,212,0),0 10px 26px rgba(0,0,0,.35)}
+}
+
+/* ===== features ===== */
+.fgrid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:18px;
+  margin-top:52px;
+}
+.fcard{
+  position:relative;
+  border-radius:18px;
+  padding:26px 22px 24px;
+  background:linear-gradient(160deg,rgba(255,255,255,.05),rgba(255,255,255,.015));
+  border:1px solid var(--line);
+  overflow:hidden;
+  transition:transform .35s ease, border-color .35s ease, box-shadow .35s ease;
+}
+.fcard::before{
+  content:"";
+  position:absolute;
+  top:0;left:0;right:0;
+  height:2px;
+  background:linear-gradient(90deg,#00cfc4,#5eead4);
+}
+.fcard:hover{
+  transform:translateY(-7px);
+  border-color:rgba(0,207,196,.5);
+  box-shadow:0 20px 54px rgba(0,207,196,.16);
+}
+.ficon{
+  width:46px;height:46px;
+  border-radius:13px;
+  display:grid;place-items:center;
+  background:rgba(0,207,196,.1);
+  border:1px solid rgba(0,207,196,.25);
+  color:#5eead4;
+  margin-bottom:18px;
+}
+.ficon svg{width:22px;height:22px}
+.fcard h3{font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;margin-bottom:8px}
+.fcard p{font-size:14.5px;line-height:1.6}
+.fcard.wide{
+  grid-column:span 2;
+  background:linear-gradient(160deg,rgba(255,122,26,.09),rgba(255,122,26,.02));
+  border-color:rgba(255,122,26,.3);
+}
+.fcard.wide::before{background:linear-gradient(90deg,#ff7a1a,#ffb066)}
+.fcard.wide .ficon{background:rgba(255,122,26,.12);border-color:rgba(255,122,26,.32);color:#ffb066}
+
+/* ===== pricing ===== */
+.plans{
+  max-width:900px;
+  margin:56px auto 0;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:26px;
+}
+.plan{
+  position:relative;
+  border-radius:22px;
+  padding:40px 30px 30px;
+  background:linear-gradient(170deg,#0d2a50,#081a33);
+  border:1px solid var(--line);
+  transition:transform .35s ease, border-color .35s ease, box-shadow .35s ease;
+}
+.plan:hover{transform:translateY(-6px);border-color:rgba(0,207,196,.35)}
+.plan.pro{
+  border:1.5px solid rgba(0,207,196,.65);
+  box-shadow:0 0 54px rgba(0,207,196,.16),inset 0 0 44px rgba(0,207,196,.05);
+}
+.plan.pro:hover{box-shadow:0 18px 60px rgba(0,207,196,.26)}
+.ptag{
+  position:absolute;
+  top:-14px;left:28px;
+  padding:5px 15px;
+  border-radius:999px;
+  background:var(--mint);
+  color:#032226;
+  font-weight:700;
+  font-size:12.5px;
+  line-height:1.5;
+  box-shadow:0 6px 18px rgba(94,234,212,.28);
+}
+.pname{font-family:'Space Grotesk',sans-serif;font-size:21px;font-weight:700}
+.pprice{
+  display:flex;
+  align-items:baseline;
+  gap:7px;
+  margin-top:8px;
+  font-family:'Space Grotesk',sans-serif;
+}
+.pprice b{font-size:46px;font-weight:700;color:#fff;line-height:1.1}
+.pprice span{font-size:14px;color:rgba(159,179,204,.85)}
+.plist{list-style:none;margin:24px 0 28px;padding:0;display:grid;gap:11px}
+.plist li{display:flex;align-items:center;gap:10px;font-size:14.5px}
+.plist li.off{opacity:.42}
+.ptick{flex:0 0 18px;width:18px;height:18px;display:grid;place-items:center}
+.pdot{
+  flex:0 0 8px;
+  width:8px;height:8px;
+  margin:0 5px;
+  border-radius:50%;
+  background:rgba(255,255,255,.28);
+}
+.plan-foot{
+  max-width:900px;
+  margin:30px auto 0;
+  text-align:center;
+  font-size:14px;
+  color:rgba(159,179,204,.78);
+}
+
+/* ===== how it works ===== */
+.steps{
+  position:relative;
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:18px;
+  margin-top:58px;
+}
+.steps::before{
+  content:"";
+  position:absolute;
+  top:26px;
+  left:8%;
+  right:8%;
+  border-top:2px dashed rgba(0,207,196,.3);
+}
+.step{position:relative;text-align:center}
+.snum{
+  position:relative;
+  z-index:1;
+  width:52px;height:52px;
+  margin:0 auto 18px;
+  border-radius:50%;
+  display:grid;place-items:center;
+  background:#081a33;
+  border:2px solid rgba(0,207,196,.55);
+  color:var(--mint);
+  font-family:'Space Grotesk',sans-serif;
+  font-weight:700;
+  font-size:19px;
+  box-shadow:0 0 24px rgba(0,207,196,.25);
+  transition:background .3s, color .3s, transform .3s, box-shadow .3s;
+}
+.step:hover .snum{
+  background:var(--teal);
+  color:#032226;
+  transform:scale(1.12);
+  box-shadow:0 0 36px rgba(0,207,196,.5);
+}
+.step h3{font-size:16px;margin-bottom:5px}
+.step p{font-size:13.5px;line-height:1.55}
+
+/* ===== shop address ===== */
+.addr{
+  display:grid;
+  grid-template-columns:1.05fr .95fr;
+  gap:60px;
+  align-items:center;
+}
+.addr h2{font-size:clamp(26px,3.8vw,38px)}
+.addr .eyebrow{margin-bottom:12px}
+.addr-copy p{margin-top:18px;font-size:16px}
+.chipcode{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:.88em;
+  color:var(--mint);
+  background:rgba(0,207,196,.1);
+  border:1px solid rgba(0,207,196,.22);
+  border-radius:6px;
+  padding:1px 7px;
+  white-space:nowrap;
+}
+.ticks{list-style:none;margin:26px 0 0;padding:0;display:grid;gap:12px}
+.ticks li{display:flex;gap:10px;align-items:flex-start;font-size:15px}
+.ticks .ptick{margin-top:4px}
+.addr-card{
+  border-radius:20px;
+  padding:30px;
+  background:linear-gradient(170deg,#0d2a50,#081a33);
+  border:1px solid var(--line);
+  box-shadow:0 24px 60px rgba(0,0,0,.32);
+}
+.addr-label{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:11px;
+  letter-spacing:.2em;
+  text-transform:uppercase;
+  color:var(--mint);
+}
+.addr-line{
+  display:block;
+  margin-top:12px;
+  padding:12px 15px;
+  border-radius:10px;
+  background:rgba(255,255,255,.03);
+  border:1px solid var(--line);
+  font-family:'Space Grotesk',sans-serif;
+  font-size:16.5px;
+  color:rgba(213,226,242,.72);
+  text-decoration:none;
+  transition:transform .3s ease, border-color .3s ease, background .3s ease;
+}
+.addr-line b{color:#fff;font-weight:700}
+.addr-line:hover{
+  transform:translateX(8px);
+  border-color:rgba(0,207,196,.45);
+  background:rgba(0,207,196,.05);
+}
+.addr-note{
+  display:block;
+  margin-top:18px;
+  font-size:13px;
+  color:rgba(159,179,204,.72);
+}
+
+/* ===== designs marquee ===== */
+.designs{overflow:hidden}
+.marquee{
+  margin-top:52px;
+  overflow:hidden;
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);
+  mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);
+}
+.dtrack{
+  display:flex;
+  width:max-content;
+  animation:marq 40s linear infinite;
+  padding:10px 0 24px;
+}
+.marquee:hover .dtrack{animation-play-state:paused}
+.dcard{
+  flex:0 0 300px;
+  width:300px;
+  margin-right:22px;
+  padding:12px;
+  border-radius:16px;
+  background:var(--navy);
+  border:1px solid var(--line);
+  transition:transform .35s ease, border-color .35s ease, box-shadow .35s ease;
+}
+.dcard:hover{
+  transform:translateY(-6px);
+  border-color:rgba(0,207,196,.6);
+  box-shadow:0 20px 54px rgba(0,207,196,.18);
+}
+.dwin{
+  height:210px;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,.14);
+  background:#fff;
+  overflow:hidden;
+  position:relative;
+}
+.dshot{will-change:transform;transition:transform 7s ease-in-out}
+.dshot img{display:block;width:100%;height:auto}
+.dcard:hover .dshot{transform:translateY(calc(-100% + 210px))}
+.dname{
+  padding:12px 4px 4px;
+  color:#fff;
+  font-size:14px;
+  font-weight:700;
+}
+@keyframes marq{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* storefront mock scenes inside design cards */
+.scene{
+  height:660px;
+  background:#fff;
+  color:#0f172a;
+  font-family:'Hind Siliguri',sans-serif;
+  font-size:10px;
+  line-height:1.35;
+  overflow:hidden;
+}
+.s-top{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:9px 12px;
+  background:#0b1220;
+  color:#e2e8f0;
+}
+.s-logo{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:12.5px;white-space:nowrap}
+.s-search{flex:1;height:20px;border-radius:999px;background:rgba(255,255,255,.12)}
+.s-ic{width:16px;height:16px;border-radius:50%;background:rgba(255,255,255,.16);flex:0 0 auto}
+.s-nav{display:flex;gap:12px;padding:7px 12px;background:#111c31;color:#93a8c4;font-size:9px}
+.s-hero{
+  margin:9px 12px;
+  height:112px;
+  border-radius:10px;
+  padding:0 16px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  color:#fff;
+  background:linear-gradient(120deg,#0e3a72,#00cfc4);
+}
+.s-hero h4{margin:0;font-size:14px;color:#fff;line-height:1.2}
+.s-hero em{display:block;font-style:normal;font-size:8.5px;opacity:.92;margin-top:3px}
+.s-art{
+  width:76px;height:58px;
+  border-radius:8px;
+  background:rgba(255,255,255,.22);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.4);
+  flex:0 0 auto;
+}
+.s-cats{display:flex;gap:6px;padding:2px 12px 8px}
+.s-cat{
+  flex:1;
+  padding:9px 2px;
+  border-radius:8px;
+  background:#f1f5f9;
+  color:#475569;
+  text-align:center;
+  font-size:8px;
+  line-height:1.2;
+}
+.s-title{display:flex;justify-content:space-between;align-items:center;padding:4px 12px;font-weight:700;font-size:10px}
+.s-title span{font-size:8px;font-weight:500;color:#64748b}
+.s-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;padding:6px 12px 14px}
+.s-grid.two{grid-template-columns:repeat(2,1fr)}
+.s-prod{border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;background:#fff}
+.s-img{display:block;height:52px}
+.s-prod b{display:block;font-size:8.5px;line-height:1.25;padding:5px 5px 1px;font-weight:600}
+.s-prod i{display:block;font-style:normal;font-size:8.5px;font-weight:700;color:#ef4444;padding:0 5px 6px}
+.s-foot{
+  margin:6px 12px 0;
+  height:46px;
+  border-radius:8px;
+  background:#0b1220;
+  color:#94a3b8;
+  display:flex;align-items:center;justify-content:center;
+  font-size:8px;
+  text-align:center;
+}
+.s-lay{display:flex;gap:9px;padding:8px 12px 0}
+.s-side{
+  flex:0 0 62px;
+  border-radius:8px;
+  background:#fff;
+  border:1px solid #e2e8f0;
+  padding:7px 6px;
+  font-size:8px;
+  color:#475569;
+}
+.s-side b{display:block;font-size:8.5px;color:#0f172a;margin-bottom:5px}
+.s-side span{display:block;padding:4px 0;border-bottom:1px solid #f1f5f9}
+.s-main{flex:1;min-width:0}
+.s-main .s-hero{margin:0 0 8px}
+.s-main .s-grid{padding:6px 0 12px}
+
+/* electronics (dark) */
+.ev{background:#080f1c;color:#dbe6f5}
+.ev .s-top{background:#070d18}
+.ev .s-nav{background:#0c1729;color:#8aa2c0;border-bottom:1px solid #16233a}
+.ev .s-cat{background:#0f1a2e;color:#9db3d1}
+.ev .s-prod{background:#0f1a2e;border-color:#1e2f4a}
+.ev .s-prod b{color:#e2e8f0}
+.ev .s-prod i{color:#5eead4}
+.ev .s-title span{color:#6f86a6}
+.ev .s-foot{background:#0c1729;color:#7e94b3}
+.ev .i1{background:linear-gradient(135deg,#1e3a8a,#3b82f6)}
+.ev .i2{background:linear-gradient(135deg,#164e63,#06b6d4)}
+.ev .i3{background:linear-gradient(135deg,#312e81,#8b5cf6)}
+.ev .i4{background:linear-gradient(135deg,#0f766e,#2dd4bf)}
+.ev .i5{background:linear-gradient(135deg,#374151,#9ca3af)}
+.ev .i6{background:linear-gradient(135deg,#701a75,#d946ef)}
+.ev .i7{background:linear-gradient(135deg,#7c2d12,#fb923c)}
+.ev .i8{background:linear-gradient(135deg,#14532d,#4ade80)}
+
+/* grocery (light, orange) */
+.of{background:#fffbf5}
+.of .s-top{background:#fff7ed;color:#7c2d12}
+.of .s-search{background:#fed7aa}
+.of .s-ic{background:#fdba74}
+.of .s-logo{color:#c2410c}
+.of .s-nav{background:#fff;color:#9a3412;border-bottom:1px solid #ffedd5}
+.of .s-hero{background:linear-gradient(120deg,#f59e0b,#fb923c)}
+.of .s-cat{background:#fff7ed;color:#9a3412;border:1px solid #ffedd5}
+.of .s-title span{color:#b45309}
+.of .s-prod{border-color:#ffedd5}
+.of .s-prod b{color:#7c2d12}
+.of .s-prod i{color:#ea580c}
+.of .s-foot{background:#7c2d12;color:#fed7aa}
+.of .i1{background:linear-gradient(135deg,#fef3c7,#f59e0b)}
+.of .i2{background:linear-gradient(135deg,#ffedd5,#ea580c)}
+.of .i3{background:linear-gradient(135deg,#fef9c3,#eab308)}
+.of .i4{background:linear-gradient(135deg,#dcfce7,#16a34a)}
+.of .i5{background:linear-gradient(135deg,#fee2e2,#dc2626)}
+.of .i6{background:linear-gradient(135deg,#fef3c7,#d97706)}
+
+/* fashion (red) */
+.fw{background:#fafafa}
+.fw .s-top{background:#b91c1c;color:#fff}
+.fw .s-search{background:rgba(255,255,255,.24)}
+.fw .s-ic{background:rgba(255,255,255,.24)}
+.fw .s-nav{background:#991b1b;color:#fecaca}
+.fw .s-hero{background:linear-gradient(120deg,#7f1d1d,#ef4444)}
+.fw .s-art{border-radius:50% 50% 8px 8px;background:rgba(255,255,255,.28)}
+.fw .s-side{background:#fff;border-color:#fecaca}
+.fw .s-side b{color:#991b1b}
+.fw .s-title{color:#991b1b}
+.fw .s-prod b{color:#1f2937}
+.fw .s-prod i{color:#dc2626}
+.fw .s-foot{background:#991b1b;color:#fecaca}
+.fw .i1{background:linear-gradient(135deg,#fee2e2,#ef4444)}
+.fw .i2{background:linear-gradient(135deg,#fecaca,#b91c1c)}
+.fw .i3{background:linear-gradient(135deg,#f3f4f6,#9ca3af)}
+.fw .i4{background:linear-gradient(135deg,#fef2f2,#f87171)}
+
+/* perfume (purple) */
+.pf{background:#faf7ff}
+.pf .s-top{background:#4c1d95;color:#f5f3ff}
+.pf .s-search{background:rgba(255,255,255,.2)}
+.pf .s-ic{background:rgba(255,255,255,.2)}
+.pf .s-nav{background:#5b21b6;color:#ddd6fe}
+.pf .s-hero{background:linear-gradient(120deg,#4c1d95,#a855f7)}
+.pf .s-art{border-radius:10px 10px 14px 14px;background:rgba(255,255,255,.26)}
+.pf .s-side{background:#fff;border-color:#ede9fe}
+.pf .s-side b{color:#5b21b6}
+.pf .s-title{color:#5b21b6}
+.pf .s-prod b{color:#1f2937}
+.pf .s-prod i{color:#7c3aed}
+.pf .s-foot{background:#4c1d95;color:#ddd6fe}
+.pf .i1{background:linear-gradient(135deg,#ede9fe,#a855f7)}
+.pf .i2{background:linear-gradient(135deg,#f5f3ff,#8b5cf6)}
+.pf .i3{background:linear-gradient(135deg,#fae8ff,#d946ef)}
+.pf .i4{background:linear-gradient(135deg,#f3e8ff,#c084fc)}
+
+/* ===== partners ===== */
+.pmarquee{
+  margin-top:50px;
+  overflow:hidden;
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);
+  mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);
+}
+.ptrack{
+  display:flex;
+  width:max-content;
+  animation:marq 30s linear infinite reverse;
+  padding:8px 0;
+}
+.pmarquee:hover .ptrack{animation-play-state:paused}
+.pill{
+  flex:0 0 auto;
+  margin-right:18px;
+  padding:16px 34px;
+  border-radius:14px;
+  background:rgba(255,255,255,.04);
+  border:1px solid var(--line);
+  font-family:'Space Grotesk',sans-serif;
+  font-weight:700;
+  font-size:18px;
+  color:#fff;
+  transition:border-color .3s, color .3s, transform .3s;
+  white-space:nowrap;
+}
+.pill:hover{border-color:var(--teal);color:var(--mint);transform:translateY(-2px)}
+
+/* ===== faq ===== */
+.faq-list{
+  max-width:760px;
+  margin:46px auto 0;
+  display:grid;
+  gap:14px;
+}
+.faq-list details{
+  background:var(--navy);
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:0 22px;
+  transition:border-color .3s;
+}
+.faq-list details[open]{border-color:rgba(0,207,196,.55)}
+.faq-list summary{
+  list-style:none;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  padding:18px 0;
+  color:#fff;
+  font-weight:600;
+  font-size:16px;
+}
+.faq-list summary::-webkit-details-marker{display:none}
+.faq-list summary::marker{content:""}
+.faq-plus{
+  position:relative;
+  flex:0 0 18px;
+  width:18px;height:18px;
+  transition:transform .3s;
+}
+.faq-plus::before,.faq-plus::after{
+  content:"";
+  position:absolute;
+  background:var(--mint);
+  border-radius:2px;
+}
+.faq-plus::before{left:0;right:0;top:8px;height:2px}
+.faq-plus::after{top:0;bottom:0;left:8px;width:2px}
+details[open] .faq-plus{transform:rotate(45deg)}
+.faq-list details p{
+  margin:0 0 20px;
+  font-size:14.5px;
+  line-height:1.65;
+  color:var(--text);
+}
+
+/* ===== cta ===== */
+.cta-sec{padding-top:40px}
+.cta-box{
+  position:relative;
+  max-width:1000px;
+  margin:0 auto;
+  border:1.5px solid rgba(0,207,196,.6);
+  border-radius:26px;
+  padding:64px 30px;
+  text-align:center;
+  background:
+    radial-gradient(620px 260px at 50% 0%,rgba(0,207,196,.15),transparent 70%),
+    #081a33;
+  animation:ctapulse 4s ease-in-out infinite;
+}
+.cta-box h2{font-size:clamp(26px,4vw,40px)}
+.cta-box p{margin-top:14px;font-size:16px}
+.cta-actions{display:flex;justify-content:center;flex-wrap:wrap;gap:14px;margin-top:30px}
+@keyframes ctapulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(0,207,196,.22)}
+  50%{box-shadow:0 0 70px 8px rgba(0,207,196,.2)}
+}
+
+/* ===== footer ===== */
+.footer{border-top:1px solid var(--line);padding:60px 0 28px}
+.foot-top{display:flex;justify-content:space-between;gap:32px;flex-wrap:wrap}
+.foot-brand p{margin-top:14px;font-size:14px;color:rgba(159,179,204,.8)}
+.foot-nav{display:flex;flex-wrap:wrap;gap:8px 24px;align-items:center}
+.foot-nav a{font-size:14px;text-decoration:none;color:rgba(213,226,242,.8);transition:color .25s}
+.foot-nav a:hover{color:var(--mint)}
+.foot-bottom{
+  display:flex;
+  justify-content:space-between;
+  gap:14px;
+  flex-wrap:wrap;
+  margin-top:42px;
+  padding-top:22px;
+  border-top:1px solid var(--line);
+  font-size:13px;
+  color:rgba(159,179,204,.72);
+}
+
+/* ===== whatsapp ===== */
+.wa{
+  position:fixed;
+  right:20px;
+  bottom:calc(20px + env(safe-area-inset-bottom,0px));
+  z-index:60;
+  display:flex;
+  align-items:center;
+  gap:9px;
+  padding:12px 20px;
+  border-radius:999px;
+  background:#25d366;
+  color:#fff !important;
+  text-decoration:none;
+  font-family:'Hind Siliguri',sans-serif;
+  font-weight:700;
+  font-size:15px;
+  box-shadow:0 10px 30px rgba(37,211,102,.45);
+  transition:transform .3s ease, box-shadow .3s ease;
+  animation:waup .6s .6s both;
+}
+.wa::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  box-shadow:0 0 0 0 rgba(37,211,102,.55);
+  animation:waring 2.2s ease-out 1.4s infinite;
+  pointer-events:none;
+}
+.wa:hover{
+  transform:translateY(-4px) scale(1.04);
+  box-shadow:0 16px 42px rgba(37,211,102,.6);
+}
+.wa svg{display:block;flex:0 0 auto}
+.wa-t{white-space:nowrap}
+@keyframes waup{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:translateY(0)}}
+@keyframes waring{
+  0%{box-shadow:0 0 0 0 rgba(37,211,102,.5)}
+  70%{box-shadow:0 0 0 16px rgba(37,211,102,0)}
+  100%{box-shadow:0 0 0 0 rgba(37,211,102,0)}
+}
+
+/* ===== reveal ===== */
+.reveal{opacity:0;transform:translateY(34px);transition:opacity .8s ease,transform .8s ease}
+.reveal.in{opacity:1;transform:translateY(0)}
+
+/* ===== responsive ===== */
+@media (max-width:900px){
+  .sec{padding:64px 0}
+  .hero{padding:64px 0 84px}
+  .nav-links{display:none}
+  .hero-grid{grid-template-columns:1fr;gap:52px}
+  .hero-sub{max-width:none}
+  .mockwrap{max-width:560px;width:100%;margin:0 auto}
+  .fgrid{grid-template-columns:repeat(2,1fr)}
+  .steps{grid-template-columns:repeat(2,1fr)}
+  .steps::before{display:none}
+  .addr{grid-template-columns:1fr;gap:40px}
+  .cta-box{padding:52px 24px}
+}
+@media (max-width:560px){
+  .sec{padding:64px 0}
+  .fgrid{grid-template-columns:1fr}
+  .fcard.wide{grid-column:auto}
+  .plans{grid-template-columns:1fr}
+  .steps{grid-template-columns:1fr;gap:24px}
+  .hero-cta .btn{flex:1 1 100%}
+  .hero h1{font-size:clamp(34px,10vw,44px)}
+  .chip{font-size:11.5px;padding:7px 12px}
+  .c1{top:-14px;left:6%}
+  .c2{right:0}
+  .c3{bottom:-14px;left:6%}
+  .mbadge{right:4px}
+  .wa{padding:13px;border-radius:50%}
+  .wa .wa-t{display:none}
+  .foot-top{gap:24px}
+  .cta-actions .btn{flex:1 1 100%}
+  .addr-card{padding:24px 20px}
+  .nav-in{gap:10px}
+  .nav-act{gap:8px}
+  .nav .btn{padding:8px 12px;font-size:12px}
+  .nav-login{background:none;border:0;padding:8px 2px;font-size:12.5px;color:rgba(213,226,242,.85)}
+  .nav-login:hover{background:none;transform:none}
+  .logo-txt{font-size:20px}
+}
+@media (max-width:400px){
+  .nav .btn{padding:8px 10px;font-size:11.5px}
+  .nav-act{gap:6px}
+}
+@media (max-width:360px){
+  .logo-txt{display:none}
+}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.001ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.001ms !important;
+    scroll-behavior:auto !important;
+  }
+  .reveal{opacity:1;transform:none}
+}
+</style>
 </head>
 <body>
-  <header class="ld-header">
-    <div class="ld-wrap ld-header-in">
-      <a class="ld-brand" id="ldBrand" href="/"><span data-pb-name>LUXE</span><span class="ld-brand-dot">.</span></a>
-      <nav class="ld-nav" aria-label="প্রধান মেনু">
-        <a href="#plans">প্যাকেজ</a>
-        <a href="#address">দোকানের ঠিকানা</a>
-      </nav>
-      <div class="ld-actions">
-        <a class="ld-link" id="ldLogin" href="/login.html">লগ-ইন</a>
-        <a class="ld-btn ld-btn-primary" id="ldStart" href="/login.html?next=%2Fportal.html">দোকান খুলুন</a>
+
+<!-- ===== 1. NAVBAR ===== -->
+<header class="nav">
+  <div class="wrap nav-in">
+    <a class="logo" href="#top" aria-label="Amar Bazaar">
+      <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true">
+        <rect width="34" height="34" rx="10" fill="#00cfc4"/>
+        <path d="M11.5 13.5h11l-1.2 9.2a2 2 0 0 1-2 1.8h-4.6a2 2 0 0 1-2-1.8z" fill="none" stroke="#032226" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M13 13.5a4 4 0 0 1 8 0" fill="none" stroke="#032226" stroke-width="2"/>
+      </svg>
+      <span class="logo-txt">Amar <b>Bazaar</b></span>
+    </a>
+    <nav class="nav-links" aria-label="প্রধান মেনু">
+      <a href="#features">ফিচার</a>
+      <a href="#pricing">প্যাকেজ</a>
+      <a href="#address">দোকানের ঠিকানা</a>
+      <a href="#faq">প্রশ্নোত্তর</a>
+    </nav>
+    <div class="nav-act">
+      <a class="btn bg nav-login" href="/login.html">লগ-ইন</a>
+      <a class="btn bp" href="/login.html?next=%2Fportal.html">দোকান খুলুন</a>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- ===== 2. HERO ===== -->
+  <section class="hero" id="hero">
+    <div class="wrap hero-grid">
+      <div class="hero-copy">
+        <span class="eyebrow">SaaS স্টোর প্ল্যাটফর্ম</span>
+        <h1>আপনার দোকান, <span class="ac">আপনার নিজের ঠিকানায়।</span></h1>
+        <p class="hero-sub">প্যাকেজ বেছে নিন, দোকানের নাম লিখুন — ব্যস। প্রোডাক্ট, অর্ডার, কাস্টমার, রিপোর্ট সব এক জায়গায়। কোডিং লাগবে না, সার্ভার ভাড়া লাগবে না।</p>
+        <div class="hero-cta">
+          <a class="btn bp" href="/login.html?next=%2Fportal.html">ফ্রি দোকান খুলুন</a>
+          <a class="btn bg" href="#pricing">প্যাকেজ দেখুন</a>
+        </div>
+        <p class="hero-note">ফ্রি প্যাকেজে শুরু করুন — যেকোনো সময় আপগ্রেড।</p>
+      </div>
+
+      <div class="mockwrap" aria-hidden="true">
+        <div class="mock">
+          <div class="mbar">
+            <span class="mdot"></span><span class="mdot"></span><span class="mdot"></span>
+            <span class="murl">luxe.shop/<b>amar-dokan</b></span>
+          </div>
+          <div class="mbanner"></div>
+          <div class="mrow"><span></span><span></span><span></span></div>
+          <div class="mbadge">আপনার ঠিকানা প্রস্তুত</div>
+        </div>
+        <span class="chip c1"><i style="background:#e2136e"></i>bKash</span>
+        <span class="chip c2"><i style="background:#ff3b30"></i>Pathao</span>
+        <span class="chip c3"><i style="background:#23b26d"></i>Steadfast</span>
       </div>
     </div>
-  </header>
+  </section>
 
-  <main>
-    <section class="ld-hero">
-      <div class="ld-wrap ld-hero-in">
-        <div class="ld-hero-copy">
-          <span class="ld-kicker">SaaS স্টোর প্ল্যাটফর্ম</span>
-          <h1>আপনার দোকান,<br />আপনার নিজের ঠিকানায়।</h1>
-          <p>
-            প্যাকেজ বেছে নিন, দোকানের নাম লিখুন — ব্যস। প্রোডাক্ট, অর্ডার, কাস্টমার,
-            রিপোর্ট সব এক জায়গায়। কোডিং লাগবে না, সার্ভার ভাড়া লাগবে না।
-          </p>
-          <div class="ld-hero-cta">
-            <a class="ld-btn ld-btn-primary" href="/login.html?next=%2Fportal.html">ফ্রি দোকান খুলুন</a>
-            <a class="ld-btn ld-btn-ghost" href="#plans">প্যাকেজ দেখুন</a>
-          </div>
-          <p class="ld-hero-note">ফ্রি প্যাকেজে শুরু করুন — যেকোনো সময় আপগ্রেড।</p>
-        </div>
-
-        <div class="ld-mock" aria-hidden="true">
-          <div class="ld-mock-bar">
-            <span></span><span></span><span></span>
-            <div class="ld-mock-url">luxe.shop/<b>amar-dokan</b></div>
-          </div>
-          <div class="ld-mock-body">
-            <div class="ld-mock-hero"></div>
-            <div class="ld-mock-row">
-              <i></i><i></i><i></i>
-            </div>
-            <div class="ld-mock-row ld-mock-row-sm">
-              <i></i><i></i>
-            </div>
-          </div>
-          <div class="ld-mock-badge">আপনার ঠিকানা প্রস্তুত</div>
-        </div>
+  <!-- ===== 3. FEATURES ===== -->
+  <section class="sec" id="features">
+    <div class="wrap">
+      <div class="sec-head" data-reveal>
+        <span class="eyebrow">ফিচার</span>
+        <h2>একটি প্ল্যাটফর্মে <span class="ac">সবকিছু</span></h2>
+        <p>দোকান চালাতে যা যা লাগে — সব হাতের মুঠোয়।</p>
       </div>
-    </section>
-
-    <section class="ld-plans" id="plans">
-      <div class="ld-wrap">
-        <div class="ld-sec-head">
-          <span class="ld-kicker">প্যাকেজ</span>
-          <h2>আপনার কাজের মাপে বেছে নিন</h2>
-          <p>সব প্যাকেজেই অসীম কাস্টমার, অর্ডার প্রসেসিং আর মোবাইল-ফ্রেন্ডলি দোকান।</p>
-        </div>
-        <div class="ld-plan-grid" id="ldPlanGrid">
-          <div class="ld-plan-skeleton">প্যাকেজ লোড হচ্ছে…</div>
-        </div>
-        <p class="ld-plans-foot" id="ldPlansFoot"></p>
+      <div class="fgrid">
+        <article class="fcard" data-reveal>
+          <span class="ficon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 9.4 7.55 4.24"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="M3.27 6.96 12 12.01l8.73-5.05"/><path d="M12 22.08V12"/></svg>
+          </span>
+          <h3>Product Management</h3>
+          <p>প্রোডাক্ট, ভ্যারিয়েন্ট ও ক্যাটাগরি পরিচালনা।</p>
+        </article>
+        <article class="fcard" data-reveal>
+          <span class="ficon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.62l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>
+          </span>
+          <h3>Order &amp; Delivery</h3>
+          <p>অর্ডার, কুরিয়ার ও ডেলিভারি ট্র্যাক করুন।</p>
+        </article>
+        <article class="fcard" data-reveal>
+          <span class="ficon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>
+          </span>
+          <h3>Marketing Tools</h3>
+          <p>কুপন, ক্যাম্পেইন ও কাস্টমার সেগমেন্ট।</p>
+        </article>
+        <article class="fcard" data-reveal>
+          <span class="ficon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="7" x="3" y="3" rx="1"/><rect width="9" height="7" x="3" y="14" rx="1"/><rect width="5" height="7" x="16" y="14" rx="1"/></svg>
+          </span>
+          <h3>Landing Page</h3>
+          <p>ল্যান্ডিং পেইজ ম্যানেজমেন্ট।</p>
+        </article>
+        <article class="fcard" data-reveal>
+          <span class="ficon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></svg>
+          </span>
+          <h3>Account &amp; Inventory</h3>
+          <p>একাউন্ট ও ইনভেন্টরি ম্যানেজমেন্ট।</p>
+        </article>
+        <article class="fcard" data-reveal>
+          <span class="ficon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
+          </span>
+          <h3>Sales &amp; Reports</h3>
+          <p>বিক্রি, প্রফিট ও স্টক রিপোর্ট রিয়েল টাইমে।</p>
+        </article>
+        <article class="fcard wide" data-reveal>
+          <span class="ficon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22v-5"/><path d="M9 8V2"/><path d="M15 8V2"/><path d="M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z"/></svg>
+          </span>
+          <h3>Integrations</h3>
+          <p>পেমেন্ট, এসএমএস ও কুরিয়ার কানেক্ট করুন।</p>
+        </article>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <section class="ld-address" id="address">
-      <div class="ld-wrap ld-address-in">
-        <div>
-          <span class="ld-kicker">দোকানের ঠিকানা</span>
-          <h2>প্রতিটি দোকান পায় নিজস্ব ঠিকানা</h2>
-          <p>
-            দোকান খুললেই <code>luxe.shop/আপনার-নাম</code> ধরনের একটা ঠিকানা পাবেন —
-            কাস্টমার সেই লিংক দিয়েই আপনার প্রোডাক্ট দেখবে, কার্টে দেবে, অর্ডার করবে।
-            পেছনে প্রতিটি দোকানের ডেটা আলাদা থাকে, অন্য দোকান কিছুই দেখে না।
-          </p>
-          <ul class="ld-ticks">
-            <li>আপনার পছন্দের slug (যেমন: <code>sadia-fashion</code>)</li>
-            <li>প্রোডাক্ট, অর্ডার, কাস্টমার — সব আলাদা দোকানে আলাদা</li>
-            <li>একই অ্যাকাউন্টে একাধিক দোকান</li>
+  <!-- ===== 4. PRICING ===== -->
+  <section class="sec" id="pricing">
+    <div class="wrap">
+      <div class="sec-head" data-reveal>
+        <span class="eyebrow">প্যাকেজ</span>
+        <h2>আপনার কাজের মাপে <span class="ac">বেছে নিন</span></h2>
+        <p>সব প্যাকেজেই অসীম কাস্টমার, অর্ডার প্রসেসিং আর মোবাইল-ফ্রেন্ডলি দোকান।</p>
+      </div>
+
+      <div class="plans">
+        <article class="plan" data-reveal>
+          <span class="ptag">শুরু করুন</span>
+          <h3 class="pname">Free</h3>
+          <div class="pprice"><b>৳ 0</b><span>/মাস</span></div>
+          <ul class="plist">
+            <li><span class="ptick"><svg width="18" height="18" viewBox="0 0 20 20"><circle cx="10" cy="10" r="10" fill="#5eead4"/><path d="m6 10.3 2.6 2.6L14 7.5" fill="none" stroke="#032226" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>প্রোডাক্ট: 10টি</li>
+            <li><span class="ptick"><svg width="18" height="18" viewBox="0 0 20 20"><circle cx="10" cy="10" r="10" fill="#5eead4"/><path d="m6 10.3 2.6 2.6L14 7.5" fill="none" stroke="#032226" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>মাসে অর্ডার: 50টি</li>
+            <li><span class="ptick"><svg width="18" height="18" viewBox="0 0 20 20"><circle cx="10" cy="10" r="10" fill="#5eead4"/><path d="m6 10.3 2.6 2.6L14 7.5" fill="none" stroke="#032226" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>স্টাফ অ্যাকাউন্ট: 1জন</li>
+            <li><span class="ptick"><svg width="18" height="18" viewBox="0 0 20 20"><circle cx="10" cy="10" r="10" fill="#5eead4"/><path d="m6 10.3 2.6 2.6L14 7.5" fill="none" stroke="#032226" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>স্টোরেজ: 100MB</li>
+            <li class="off"><span class="pdot"></span>কাস্টম ডোমেইন</li>
+            <li class="off"><span class="pdot"></span>বিক্রি অ্যানালিটিক্স</li>
+            <li class="off"><span class="pdot"></span>API অ্যাক্সেস</li>
+            <li class="off"><span class="pdot"></span>প্রায়োরিটি সাপোর্ট</li>
           </ul>
-        </div>
-        <div class="ld-address-card">
-          <span class="ld-address-label">যেমন</span>
-          <div class="ld-address-line">luxe.shop/<b>sadia-fashion</b></div>
-          <div class="ld-address-line">luxe.shop/<b>karigar-hat</b></div>
-          <div class="ld-address-line">luxe.shop/<b>tech-bazar</b></div>
-          <span class="ld-address-note">প্রতিটি = আলাদা দোকান, আলাদা মালিক</span>
-        </div>
-      </div>
-    </section>
-  </main>
+          <a class="btn bp full" href="/login.html?next=%2Fportal.html">ফ্রি দোকান খুলুন</a>
+        </article>
 
-  <footer class="ld-footer">
-    <div class="ld-wrap ld-footer-in">
-      <div>
-        <a class="ld-brand" id="ldFooterBrand" href="/"><span data-pb-name>LUXE</span><span class="ld-brand-dot">.</span></a>
-        <p class="ld-footer-tag" id="ldFooterLeft">ছোট ব্যবসার জন্য সহজ অনলাইন দোকান।</p>
+        <article class="plan pro" data-reveal>
+          <span class="ptag">সবচেয়ে বেশি ফিচার</span>
+          <h3 class="pname">Pro</h3>
+          <div class="pprice"><b>৳ 400</b><span>/মাস</span></div>
+          <ul class="plist">
+            <li><span class="ptick"><svg width="18" height="18" viewBox="0 0 20 20"><circle cx="10" cy="10" r="10" fill="#5eead4"/><path d="m6 10.3 2.6 2.6L14 7.5" fill="none" stroke="#032226" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>প্রোডাক্ট: 100টি</li>
+            <li><span class="ptick"><svg width="18" height="18" viewBox="0 0 20 20"><circle cx="10" cy="10" r="10" fill="#5eead4"/><path d="m6 10.3 2.6 2.6L14 7.5" fill="none" stroke="#032226" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>মাসে অর্ডার: 1,000টি</li>
+            <li><span class="ptick"><svg width="18" height="18" viewBox="0 0 20 20"><circle cx="10" cy="10" r="10" fill="#5eead4"/><path d="m6 10.3 2.6 2.6L14 7.5" fill="none" stroke="#032226" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>স্টাফ অ্যাকাউন্ট: 10জন</li>
+            <li><span class="ptick"><svg width="18" height="18" viewBox="0 0 20 20"><circle cx="10" cy="10" r="10" fill="#5eead4"/><path d="m6 10.3 2.6 2.6L14 7.5" fill="none" stroke="#032226" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>স্টোরেজ: 20,000MB</li>
+            <li><span class="ptick"><svg width="18" height="18" viewBox="0 0 20 20"><circle cx="10" cy="10" r="10" fill="#5eead4"/><path d="m6 10.3 2.6 2.6L14 7.5" fill="none" stroke="#032226" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>কাস্টম ডোমেইন</li>
+            <li><span class="ptick"><svg width="18" height="18" viewBox="0 0 20 20"><circle cx="10" cy="10" r="10" fill="#5eead4"/><path d="m6 10.3 2.6 2.6L14 7.5" fill="none" stroke="#032226" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>বিক্রি অ্যানালিটিক্স</li>
+            <li><span class="ptick"><svg width="18" height="18" viewBox="0 0 20 20"><circle cx="10" cy="10" r="10" fill="#5eead4"/><path d="m6 10.3 2.6 2.6L14 7.5" fill="none" stroke="#032226" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>API অ্যাক্সেস</li>
+            <li class="off"><span class="pdot"></span>প্রায়োরিটি সাপোর্ট</li>
+          </ul>
+          <a class="btn bp full" href="/plan-checkout.html?plan=pro">এই প্যাকেজ নিন</a>
+        </article>
       </div>
-      <nav class="ld-footer-nav" aria-label="ফুটার মেনু">
-        <a href="#plans">প্যাকেজ</a>
+      <p class="plan-foot" data-reveal>যেকোনো প্যাকেজে শুরু করে পরে আপগ্রেড করা যায় — দোকানের ডেটা ঠিক থাকে।</p>
+    </div>
+  </section>
+
+  <!-- ===== 5. HOW IT WORKS ===== -->
+  <section class="sec" id="how">
+    <div class="wrap">
+      <div class="sec-head" data-reveal>
+        <span class="eyebrow">কীভাবে শুরু করবেন</span>
+        <h2>মাত্র <span class="ac">৫ ধাপে</span> দোকান চালু</h2>
+        <p>কয়েক মিনিটেই আপনার অনলাইন দোকান রেডি।</p>
+      </div>
+      <div class="steps">
+        <div class="step" data-reveal>
+          <span class="snum">1</span>
+          <h3>দোকান খুলুন ক্লিক</h3>
+          <p>হোমপেজ থেকে বাটনে ক্লিক করুন</p>
+        </div>
+        <div class="step" data-reveal>
+          <span class="snum">2</span>
+          <h3>সাইন আপ</h3>
+          <p>নাম, ইমেইল ও পাসওয়ার্ড দিন</p>
+        </div>
+        <div class="step" data-reveal>
+          <span class="snum">3</span>
+          <h3>নাম ও slug</h3>
+          <p>দোকানের নাম ও ঠিকানা লিখুন</p>
+        </div>
+        <div class="step" data-reveal>
+          <span class="snum">4</span>
+          <h3>প্যাকেজ সিলেক্ট</h3>
+          <p>Free বা Pro বেছে নিন</p>
+        </div>
+        <div class="step" data-reveal>
+          <span class="snum">5</span>
+          <h3>সাবডোমেইন তৈরি</h3>
+          <p>নিজস্ব ডোমেইনও যোগ করুন, তারপর অ্যাডমিন প্যানেলে যান</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 6. SHOP ADDRESS ===== -->
+  <section class="sec" id="address">
+    <div class="wrap addr">
+      <div class="addr-copy" data-reveal>
+        <span class="eyebrow">দোকানের ঠিকানা</span>
+        <h2>প্রতিটি দোকান পায় <span class="ac">নিজস্ব ঠিকানা</span></h2>
+        <p>দোকান খুললেই <span class="chipcode">luxe.shop/আপনার-নাম</span> ধরনের একটা ঠিকানা পাবেন — কাস্টমার সেই লিংক দিয়েই আপনার প্রোডাক্ট দেখবে, কার্টে দেবে, অর্ডার করবে। পেছনে প্রতিটি দোকানের ডেটা আলাদা থাকে, অন্য দোকানে কিছুই দেখে না।</p>
+        <ul class="ticks">
+          <li><span class="ptick"><svg width="18" height="18" viewBox="0 0 20 20"><circle cx="10" cy="10" r="10" fill="#5eead4"/><path d="m6 10.3 2.6 2.6L14 7.5" fill="none" stroke="#032226" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span>আপনার পছন্দের slug (যেমন: <span class="chipcode">sadia-fashion</span>)</span></li>
+          <li><span class="ptick"><svg width="18" height="18" viewBox="0 0 20 20"><circle cx="10" cy="10" r="10" fill="#5eead4"/><path d="m6 10.3 2.6 2.6L14 7.5" fill="none" stroke="#032226" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span>প্রোডাক্ট, অর্ডার, কাস্টমার — সব আলাদা দোকানে আলাদা</span></li>
+          <li><span class="ptick"><svg width="18" height="18" viewBox="0 0 20 20"><circle cx="10" cy="10" r="10" fill="#5eead4"/><path d="m6 10.3 2.6 2.6L14 7.5" fill="none" stroke="#032226" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span>একই অ্যাকাউন্টে একাধিক দোকান</span></li>
+        </ul>
+      </div>
+      <div class="addr-card" data-reveal>
+        <span class="addr-label">যেমন</span>
+        <span class="addr-line">luxe.shop/<b>sadia-fashion</b></span>
+        <span class="addr-line">luxe.shop/<b>karigar-hat</b></span>
+        <span class="addr-line">luxe.shop/<b>tech-bazar</b></span>
+        <span class="addr-note">প্রতিটি = আলাদা দোকান, আলাদা মালিক</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 7. OUR DESIGNS ===== -->
+  <!-- NOTE: each .dshot currently holds a code-drawn storefront placeholder.
+       When the 4 store screenshots arrive, swap the inner .scene for
+       <img src="data:image/jpeg;base64,..." alt="..."> (top ~3200px, 640px wide, q70). -->
+  <section class="sec designs" id="designs">
+    <div class="wrap">
+      <div class="sec-head" data-reveal>
+        <span class="eyebrow">ডিজাইন</span>
+        <h2>আমাদের <span class="ac">ডিজাইন সমূহ</span></h2>
+        <p>রেডিমেড থিম বেছে নিন, এক ক্লিকে নিজের করে নিন। (কার্ডে মাউস নিলে পুরো পেজ স্ক্রল হয়ে দেখা যাবে)</p>
+      </div>
+    </div>
+    <div class="marquee">
+      <div class="dtrack" id="designTrack">
+
+        <article class="dcard">
+          <div class="dwin">
+            <div class="dshot">
+              <div class="scene ev">
+                <div class="s-top"><b class="s-logo">Star Tech</b><span class="s-search"></span><span class="s-ic"></span><span class="s-ic"></span></div>
+                <div class="s-nav"><span>মোবাইল</span><span>ল্যাপটপ</span><span>ক্যামেরা</span><span>গ্যাজেট</span></div>
+                <div class="s-hero"><div><h4>গ্যাজেট মেলা</h4><em>সেরা দামে শুরু হোক</em></div><span class="s-art"></span></div>
+                <div class="s-cats"><span class="s-cat">ফোন</span><span class="s-cat">ল্যাপটপ</span><span class="s-cat">স্মার্ট ওয়াচ</span><span class="s-cat">হেডফোন</span></div>
+                <div class="s-title">ফিচার্ড পণ্য <span>সব দেখুন</span></div>
+                <div class="s-grid">
+                  <div class="s-prod"><span class="s-img i1"></span><b>Galaxy S24</b><i>৳ 89,999</i></div>
+                  <div class="s-prod"><span class="s-img i2"></span><b>MacBook Air</b><i>৳ 1,24,999</i></div>
+                  <div class="s-prod"><span class="s-img i3"></span><b>Smart Watch</b><i>৳ 12,500</i></div>
+                  <div class="s-prod"><span class="s-img i4"></span><b>AirPods Pro</b><i>৳ 21,900</i></div>
+                  <div class="s-prod"><span class="s-img i5"></span><b>Gaming Mouse</b><i>৳ 3,200</i></div>
+                  <div class="s-prod"><span class="s-img i6"></span><b>Bluetooth Speaker</b><i>৳ 4,750</i></div>
+                </div>
+                <div class="s-foot">Star Tech — আপনার বিশ্বস্ত গ্যাজেট পার্টনার</div>
+              </div>
+            </div>
+          </div>
+          <div class="dname">Tech &amp; Gadgets</div>
+        </article>
+
+        <article class="dcard">
+          <div class="dwin">
+            <div class="dshot">
+              <div class="scene of">
+                <div class="s-top"><b class="s-logo">Ghorer Bazar</b><span class="s-search"></span><span class="s-ic"></span><span class="s-ic"></span></div>
+                <div class="s-nav"><span>মধু</span><span>খেজুর</span><span>মশলা</span><span>ঘি</span></div>
+                <div class="s-hero"><div><h4>খাঁটি মধু ও খেজুর</h4><em>সরাসরি গাঁথা থেকে</em></div><span class="s-art"></span></div>
+                <div class="s-cats"><span class="s-cat">মধু</span><span class="s-cat">খেজুর</span><span class="s-cat">মশলা</span><span class="s-cat">ঘি</span></div>
+                <div class="s-title">আজকের অফার <span>সব দেখুন</span></div>
+                <div class="s-grid">
+                  <div class="s-prod"><span class="s-img i1"></span><b>সুন্দরবনের মধু</b><i>৳ 850</i></div>
+                  <div class="s-prod"><span class="s-img i2"></span><b>আজওয়া খেজুর</b><i>৳ 1,200</i></div>
+                  <div class="s-prod"><span class="s-img i3"></span><b>হলুদ গুঁড়া</b><i>৳ 240</i></div>
+                  <div class="s-prod"><span class="s-img i4"></span><b>গাওয়া ঘি</b><i>৳ 1,450</i></div>
+                  <div class="s-prod"><span class="s-img i5"></span><b>মিষ্টি আচার</b><i>৳ 320</i></div>
+                  <div class="s-prod"><span class="s-img i6"></span><b>দারুচিনি</b><i>৳ 180</i></div>
+                </div>
+                <div class="s-foot">Ghorer Bazar — ঘরের বাজার, খাঁটি পণ্য</div>
+              </div>
+            </div>
+          </div>
+          <div class="dname">Organic Food</div>
+        </article>
+
+        <article class="dcard">
+          <div class="dwin">
+            <div class="dshot">
+              <div class="scene fw">
+                <div class="s-top"><b class="s-logo">T-Shirt House</b><span class="s-search"></span><span class="s-ic"></span><span class="s-ic"></span></div>
+                <div class="s-nav"><span>টি-শার্ট</span><span>পাঞ্জাবি</span><span>জিন্স</span><span>হুডি</span></div>
+                <div class="s-lay">
+                  <aside class="s-side">
+                    <b>ক্যাটাগরি</b>
+                    <span>টি-শার্ট</span><span>পাঞ্জাবি</span><span>জিন্স</span><span>হুডি</span><span>ক্যাপ</span><span>এক্সেসরিজ</span>
+                  </aside>
+                  <div class="s-main">
+                    <div class="s-hero"><div><h4>ক্যাজুয়াল টি-শার্ট</h4><em>নতুন কালেকশন</em></div><span class="s-art"></span></div>
+                    <div class="s-title">হট ডিল <span>সব দেখুন</span></div>
+                    <div class="s-grid two">
+                      <div class="s-prod"><span class="s-img i1"></span><b>কটন টি-শার্ট</b><i>৳ 590</i></div>
+                      <div class="s-prod"><span class="s-img i2"></span><b>ওভারসাইজ টি</b><i>৳ 690</i></div>
+                      <div class="s-prod"><span class="s-img i3"></span><b>পোলো শার্ট</b><i>৳ 750</i></div>
+                      <div class="s-prod"><span class="s-img i4"></span><b>হাফ স্লিভ</b><i>৳ 490</i></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="s-foot">T-Shirt House — স্টাইল হোক সহজ</div>
+              </div>
+            </div>
+          </div>
+          <div class="dname">Fashion Wear</div>
+        </article>
+
+        <article class="dcard">
+          <div class="dwin">
+            <div class="dshot">
+              <div class="scene pf">
+                <div class="s-top"><b class="s-logo">Tara Mart</b><span class="s-search"></span><span class="s-ic"></span><span class="s-ic"></span></div>
+                <div class="s-nav"><span>আতর</span><span>পারফিউম</span><span>বডি স্প্রে</span><span>গিফট</span></div>
+                <div class="s-lay">
+                  <aside class="s-side">
+                    <b>ক্যাটাগরি</b>
+                    <span>আতর</span><span>পারফিউম</span><span>বডি স্প্রে</span><span>গিফট প্যাক</span><span>নতুন</span><span>অফার</span>
+                  </aside>
+                  <div class="s-main">
+                    <div class="s-hero"><div><h4>ঈদ স্পেশাল আতর</h4><em>ঘ্রাণে থাকুক উৎসব</em></div><span class="s-art"></span></div>
+                    <div class="s-title">জনপ্রিয় আতর <span>সব দেখুন</span></div>
+                    <div class="s-grid two">
+                      <div class="s-prod"><span class="s-img i1"></span><b>Oud Musk</b><i>৳ 650</i></div>
+                      <div class="s-prod"><span class="s-img i2"></span><b>জান্নাতুল ফেরদৌস</b><i>৳ 480</i></div>
+                      <div class="s-prod"><span class="s-img i3"></span><b>মাস্ক আল হারামাইন</b><i>৳ 720</i></div>
+                      <div class="s-prod"><span class="s-img i4"></span><b>শাহী আতর</b><i>৳ 550</i></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="s-foot">Tara Mart — সুগন্ধির নির্ভরযোগ্য ঠিকানা</div>
+              </div>
+            </div>
+          </div>
+          <div class="dname">Perfume &amp; Attar</div>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 8. INTEGRATED PARTNERS ===== -->
+  <section class="sec" id="partners">
+    <div class="wrap">
+      <div class="sec-head" data-reveal>
+        <span class="eyebrow">Integrated Partners</span>
+        <h2>সব সার্ভিস <span class="ac">একসাথে</span></h2>
+        <p>পেমেন্ট, কুরিয়ার, এসএমএস, লজিস্টিকস এবং আরও অনেক সার্ভিস—সবই Amar Bazaar-এর সাথে ইন্টিগ্রেটেড।</p>
+      </div>
+    </div>
+    <div class="pmarquee">
+      <div class="ptrack" id="partnerTrack">
+        <span class="pill">Meta</span>
+        <span class="pill">bKash</span>
+        <span class="pill">Steadfast</span>
+        <span class="pill">Obiram</span>
+        <span class="pill">SSLCommerz</span>
+        <span class="pill">Pathao</span>
+        <span class="pill">DGPay</span>
+        <span class="pill">RedX</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 9. FAQ ===== -->
+  <section class="sec" id="faq">
+    <div class="wrap">
+      <div class="sec-head" data-reveal>
+        <span class="eyebrow">FAQ</span>
+        <h2>Frequently asked questions</h2>
+      </div>
+      <div class="faq-list">
+        <details data-reveal>
+          <summary>Can I get Amarbazaar Free?<span class="faq-plus" aria-hidden="true"></span></summary>
+          <p>হ্যাঁ। Free প্যাকেজে ১০টি প্রোডাক্ট ও মাসে ৫০টি অর্ডার পর্যন্ত বিনামূল্যে চালাতে পারবেন, কার্ড লাগবে না।</p>
+        </details>
+        <details data-reveal>
+          <summary>What is Amarbazaar?<span class="faq-plus" aria-hidden="true"></span></summary>
+          <p>Amar Bazaar একটি SaaS স্টোর প্ল্যাটফর্ম, যেখানে কোডিং ছাড়াই নিজের অনলাইন দোকান খুলে প্রোডাক্ট, অর্ডার ও রিপোর্ট ম্যানেজ করা যায়।</p>
+        </details>
+        <details data-reveal>
+          <summary>Can I use my own domain and branding?<span class="faq-plus" aria-hidden="true"></span></summary>
+          <p>Pro প্যাকেজে নিজের কাস্টম ডোমেইন যোগ করে নিজের ব্র্যান্ডিংয়ে দোকান চালাতে পারবেন।</p>
+        </details>
+        <details data-reveal>
+          <summary>Can Amarbazaar grow with my business?<span class="faq-plus" aria-hidden="true"></span></summary>
+          <p>অবশ্যই। যেকোনো সময় প্যাকেজ আপগ্রেড করা যায় এবং আপনার দোকানের সব ডেটা ঠিক থাকে।</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 10. CTA ===== -->
+  <section class="sec cta-sec" id="cta">
+    <div class="wrap">
+      <div class="cta-box" data-reveal>
+        <h2>এখনই শুরু করুন আপনার <span class="ac">অনলাইন স্টোর</span></h2>
+        <p>ফ্রি ট্রায়ালে সেটআপ দেখে নিন। কার্ড লাগবে না।</p>
+        <div class="cta-actions">
+          <a class="btn bp" href="/login.html?next=%2Fportal.html">Start Free Trial →</a>
+          <a class="btn bg" href="/login.html?next=%2Fportal.html">Request a demo</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ===== 11. FOOTER ===== -->
+<footer class="footer">
+  <div class="wrap">
+    <div class="foot-top">
+      <div class="foot-brand">
+        <a class="logo" href="#top" aria-label="Amar Bazaar">
+          <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true">
+            <rect width="34" height="34" rx="10" fill="#00cfc4"/>
+            <path d="M11.5 13.5h11l-1.2 9.2a2 2 0 0 1-2 1.8h-4.6a2 2 0 0 1-2-1.8z" fill="none" stroke="#032226" stroke-width="2" stroke-linejoin="round"/>
+            <path d="M13 13.5a4 4 0 0 1 8 0" fill="none" stroke="#032226" stroke-width="2"/>
+          </svg>
+          <span class="logo-txt">Amar <b>Bazaar</b></span>
+        </a>
+        <p>ছোট ব্যবসার জন্য সহজ অনলাইন দোকান।</p>
+      </div>
+      <nav class="foot-nav" aria-label="ফুটার মেনু">
+        <a href="#pricing">প্যাকেজ</a>
         <a href="#address">দোকানের ঠিকানা</a>
         <a href="/login.html">লগ-ইন</a>
         <a href="/login.html?next=%2Fportal.html">দোকান খুলুন</a>
         <a href="/admin-login.html">প্ল্যাটফর্ম অ্যাডমিন</a>
       </nav>
     </div>
-    <div class="ld-wrap ld-footer-bottom">
-      <span id="ldCopyright">© <span id="ldYear"></span> LUXE — সর্বস্বত্ব সংরক্ষিত</span>
-      <span id="ldFooterRight">Made for small shops in Bangladesh</span>
+    <div class="foot-bottom">
+      <span>© 2026 Amar Bazaar — সর্বস্বত্ব সংরক্ষিত</span>
+      <span>Made for small shops in Bangladesh</span>
     </div>
-  </footer>
+  </div>
+</footer>
 
-  <script src="/js/platform-brand.js?v=1"></script>
-  <script src="/js/landing.js?v=3"></script>
+<!-- ===== 12. FLOATING WHATSAPP ===== -->
+<a class="wa" data-wa href="https://wa.me/" target="_blank" rel="noopener" aria-label="WhatsApp-এ চ্যাট করুন">
+  <svg viewBox="0 0 32 32" width="26" height="26" fill="currentColor" aria-hidden="true">
+    <path d="M16.04 4C9.93 4 4.97 8.96 4.97 15.07c0 2.02.55 3.99 1.6 5.72L4.8 27.2l6.57-1.72a11 11 0 0 0 4.66 1.05h.01c6.11 0 11.08-4.96 11.08-11.07C27.12 8.96 22.15 4 16.04 4zm0 20.28h-.01a9.2 9.2 0 0 1-4.69-1.28l-.34-.2-3.9 1.02 1.04-3.8-.22-.35a9.16 9.16 0 0 1-1.41-4.9c0-5.07 4.13-9.2 9.21-9.2 2.46 0 4.77.96 6.51 2.7a9.15 9.15 0 0 1 2.69 6.51c0 5.08-4.13 9.2-9.2 9.2zm5.05-6.89c-.28-.14-1.64-.81-1.9-.9-.25-.09-.44-.14-.62.14-.18.28-.71.9-.87 1.08-.16.18-.32.2-.6.07-.28-.14-1.17-.43-2.23-1.37-.82-.73-1.38-1.63-1.54-1.91-.16-.28-.02-.43.12-.57.12-.12.28-.32.42-.48.14-.16.18-.28.28-.46.09-.18.05-.35-.02-.49-.07-.14-.62-1.5-.85-2.05-.22-.54-.45-.47-.62-.48h-.53c-.18 0-.48.07-.73.35-.25.28-.96.94-.96 2.29s.98 2.66 1.12 2.84c.14.18 1.93 2.95 4.68 4.13.65.28 1.16.45 1.56.58.66.21 1.25.18 1.72.11.53-.08 1.64-.67 1.87-1.32.23-.65.23-1.2.16-1.32-.07-.12-.25-.18-.53-.32z"/>
+  </svg>
+  <span class="wa-t">চ্যাট করুন</span>
+</a>
+
+<script>
+(function () {
+  "use strict";
+
+  function q(sel, root) { return (root || document).querySelector(sel); }
+  function qa(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
+  function el(tag, cls, textValue) {
+    var node = document.createElement(tag);
+    if (cls) node.className = cls;
+    if (textValue !== undefined) node.textContent = textValue;
+    return node;
+  }
+  function safeHref(value) {
+    return typeof value === "string" && /^(#[\w-]*|\/(?!\/)|https?:\/\/|mailto:|tel:)/i.test(value) ? value : "#";
+  }
+  function setHref(node, value) { if (node) node.setAttribute("href", safeHref(value)); }
+  function setText(node, value) { if (node && typeof value === "string") node.textContent = value; }
+
+  /* [[...]] → inline code chip (address text) */
+  function chipFragment(value) {
+    var frag = document.createDocumentFragment();
+    String(value || "").split(/(\[\[[^\]]+\]\])/).forEach(function (part) {
+      if (!part) return;
+      var match = part.match(/^\[\[(.+)\]\]$/);
+      if (match) frag.appendChild(el("span", "chipcode", match[1]));
+      else frag.appendChild(document.createTextNode(part));
+    });
+    return frag;
+  }
+  function setChipText(node, value) {
+    if (!node) return;
+    node.textContent = "";
+    node.appendChild(chipFragment(value));
+  }
+
+  var TICK =
+    '<span class="ptick"><svg width="18" height="18" viewBox="0 0 20 20"><circle cx="10" cy="10" r="10" fill="#5eead4"/><path d="m6 10.3 2.6 2.6L14 7.5" fill="none" stroke="#032226" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
+
+  /* captured before any CMS re-render */
+  var ICONS = qa(".fgrid .fcard .ficon").map(function (n) { return n.innerHTML; });
+  var SCENES = {};
+  qa("#designTrack .dshot .scene").forEach(function (scene) {
+    var key = Array.prototype.slice.call(scene.classList).filter(function (c) { return c !== "scene"; })[0];
+    if (key && !SCENES[key]) SCENES[key] = scene.cloneNode(true);
+  });
+  var SCENE_ORDER = Object.keys(SCENES);
+
+  var SECTION_EL = {
+    hero: q("#hero"),
+    features: q("#features"),
+    pricing: q("#pricing"),
+    steps: q("#how"),
+    address: q("#address"),
+    designs: q("#designs"),
+    partners: q("#partners"),
+    faq: q("#faq"),
+    cta: q("#cta")
+  };
+
+  function renderHeading(container, sec, opts) {
+    if (!container) return;
+    var eyebrow = q(".eyebrow", container);
+    if (eyebrow) setText(eyebrow, sec.eyebrow || "");
+    var heading = q("h2", container);
+    if (heading) {
+      heading.textContent = "";
+      if (sec.title) heading.appendChild(document.createTextNode(sec.title));
+      if (sec.accent) {
+        if (sec.title) heading.appendChild(document.createTextNode(" "));
+        heading.appendChild(el("span", "ac", sec.accent));
+      }
+      if (sec.titleEnd) heading.appendChild(document.createTextNode(" " + sec.titleEnd));
+    }
+    var para = q("p", container);
+    if (para) setText(para, sec.subtitle || "");
+    else if (sec.subtitle && opts && opts.addPara) {
+      container.appendChild(el("p", "", sec.subtitle));
+    }
+  }
+
+  function renderBrandText(scope, brand) {
+    qa(".logo-txt", scope).forEach(function (txt) {
+      txt.textContent = brand.name + " ";
+      var strong = el("b", "", brand.accent || "");
+      txt.appendChild(strong);
+    });
+    var logo = q(".logo", scope);
+    if (!logo) return;
+    logo.setAttribute("aria-label", (brand.name + " " + (brand.accent || "")).trim());
+    var img = q(".logo-img", logo);
+    if (brand.logo) {
+      if (!img) {
+        img = el("img", "logo-img");
+        var svg = q("svg", logo);
+        if (svg) logo.replaceChild(img, svg);
+        else logo.insertBefore(img, logo.firstChild);
+      }
+      img.src = brand.logo;
+      img.alt = (brand.name + " " + (brand.accent || "")).trim();
+      logo.classList.add("has-logo");
+    } else if (img) {
+      img.remove();
+      logo.classList.remove("has-logo");
+    }
+  }
+
+  function apply(content) {
+    var c = content;
+
+    if (c.meta) {
+      if (c.meta.title) document.title = c.meta.title;
+      var desc = q('meta[name="description"]');
+      if (desc && c.meta.description) desc.setAttribute("content", c.meta.description);
+    }
+    if (c.brand) {
+      if (c.brand.favicon) {
+        var icon = q('link[rel="icon"]');
+        if (icon) icon.setAttribute("href", c.brand.favicon);
+      }
+      renderBrandText(q(".nav"), c.brand);
+      renderBrandText(q(".footer"), c.brand);
+    }
+
+    /* nav */
+    var nav = q(".nav");
+    if (nav) nav.hidden = c.nav.enabled === false;
+    var navLinks = q(".nav-links");
+    if (navLinks) {
+      navLinks.textContent = "";
+      (c.nav.links || []).forEach(function (link) {
+        var a = el("a", "", link.label);
+        setHref(a, link.href);
+        navLinks.appendChild(a);
+      });
+    }
+    var loginBtn = q(".nav-login");
+    if (loginBtn) {
+      setText(loginBtn, c.nav.loginLabel);
+      setHref(loginBtn, c.nav.loginHref);
+      loginBtn.hidden = c.nav.showLogin === false;
+    }
+    var navCta = q(".nav-act .bp");
+    if (navCta) {
+      setText(navCta, c.nav.ctaLabel);
+      setHref(navCta, c.nav.ctaHref);
+    }
+
+    /* hero */
+    var hero = SECTION_EL.hero;
+    if (hero) hero.hidden = c.hero.enabled === false;
+    var heroCopy = q(".hero-copy");
+    if (heroCopy) {
+      setText(q(".eyebrow", heroCopy), c.hero.eyebrow);
+      var h1 = q("h1", heroCopy);
+      if (h1) {
+        h1.textContent = "";
+        if (c.hero.title) h1.appendChild(document.createTextNode(c.hero.title));
+        if (c.hero.accent) {
+          if (c.hero.title) h1.appendChild(document.createTextNode(" "));
+          h1.appendChild(el("span", "ac", c.hero.accent));
+        }
+      }
+      setText(q(".hero-sub", heroCopy), c.hero.subtitle);
+      var heroBtns = qa(".hero-cta .btn", heroCopy);
+      if (heroBtns[0]) {
+        setText(heroBtns[0], c.hero.primaryLabel);
+        setHref(heroBtns[0], c.hero.primaryHref);
+      }
+      if (heroBtns[1]) {
+        setText(heroBtns[1], c.hero.secondaryLabel);
+        setHref(heroBtns[1], c.hero.secondaryHref);
+      }
+      setText(q(".hero-note", heroCopy), c.hero.note);
+    }
+    var mock = q(".mockwrap");
+    if (mock) {
+      var url = q(".murl", mock);
+      if (url) {
+        url.textContent = "";
+        var raw = String(c.hero.mockUrl || "");
+        var cut = raw.lastIndexOf("/");
+        if (cut > 0) {
+          url.appendChild(document.createTextNode(raw.slice(0, cut + 1)));
+          url.appendChild(el("b", "", raw.slice(cut + 1)));
+        } else {
+          url.textContent = raw;
+        }
+      }
+      setText(q(".mbadge", mock), c.hero.badge);
+      qa(".chip", mock).forEach(function (chip) { chip.remove(); });
+      (c.hero.chips || []).slice(0, 3).forEach(function (chip, i) {
+        var span = el("span", "chip c" + (i + 1));
+        var dot = el("i");
+        dot.style.background = chip.color;
+        span.appendChild(dot);
+        span.appendChild(document.createTextNode(chip.label));
+        mock.appendChild(span);
+      });
+    }
+
+    /* features */
+    if (SECTION_EL.features) SECTION_EL.features.hidden = c.features.enabled === false;
+    renderHeading(q("#features .sec-head"), c.features);
+    var grid = q(".fgrid");
+    if (grid) {
+      grid.textContent = "";
+      var genericIcon = ICONS[ICONS.length - 1] || "";
+      (c.features.items || []).forEach(function (item, i) {
+        var card = el("article", "fcard" + (item.wide ? " wide" : ""));
+        card.setAttribute("data-reveal", "");
+        var icon = el("span", "ficon");
+        icon.innerHTML = ICONS[i] || genericIcon;
+        card.appendChild(icon);
+        card.appendChild(el("h3", "", item.title));
+        card.appendChild(el("p", "", item.text));
+        grid.appendChild(card);
+      });
+    }
+
+    /* pricing */
+    if (SECTION_EL.pricing) SECTION_EL.pricing.hidden = c.pricing.enabled === false;
+    renderHeading(q("#pricing .sec-head"), c.pricing);
+    var plansEl = q(".plans");
+    if (plansEl) {
+      plansEl.textContent = "";
+      (c.pricing.plans || []).forEach(function (plan) {
+        var card = el("article", "plan" + (plan.featured ? " pro" : ""));
+        card.setAttribute("data-reveal", "");
+        if (plan.tag) card.appendChild(el("span", "ptag", plan.tag));
+        card.appendChild(el("h3", "pname", plan.name));
+        var price = el("div", "pprice");
+        price.appendChild(el("b", "", plan.price));
+        price.appendChild(el("span", "", plan.per));
+        card.appendChild(price);
+        var ul = el("ul", "plist");
+        (plan.features || []).forEach(function (row) {
+          var li = el("li", row.on ? "" : "off");
+          if (row.on) li.innerHTML = TICK + '<span></span>';
+          else li.appendChild(el("span", "pdot"));
+          var last = li.lastElementChild;
+          if (last && last.tagName === "SPAN" && row.on) setText(last, row.text);
+          else li.appendChild(document.createTextNode(row.text));
+          ul.appendChild(li);
+        });
+        card.appendChild(ul);
+        var cta = el("a", "btn bp full", plan.ctaLabel);
+        setHref(cta, plan.ctaHref);
+        card.appendChild(cta);
+        plansEl.appendChild(card);
+      });
+    }
+    setText(q(".plan-foot"), c.pricing.footer);
+
+    /* steps */
+    if (SECTION_EL.steps) SECTION_EL.steps.hidden = c.steps.enabled === false;
+    renderHeading(q("#how .sec-head"), c.steps);
+    var stepsEl = q(".steps");
+    if (stepsEl) {
+      stepsEl.textContent = "";
+      (c.steps.items || []).forEach(function (item, i) {
+        var step = el("div", "step");
+        step.setAttribute("data-reveal", "");
+        step.appendChild(el("span", "snum", String(i + 1)));
+        step.appendChild(el("h3", "", item.title));
+        step.appendChild(el("p", "", item.text));
+        stepsEl.appendChild(step);
+      });
+    }
+
+    /* address */
+    if (SECTION_EL.address) SECTION_EL.address.hidden = c.address.enabled === false;
+    var addrCopy = q(".addr-copy");
+    if (addrCopy) {
+      setText(q(".eyebrow", addrCopy), c.address.eyebrow);
+      var addrH2 = q("h2", addrCopy);
+      if (addrH2) {
+        addrH2.textContent = "";
+        if (c.address.title) addrH2.appendChild(document.createTextNode(c.address.title));
+        if (c.address.accent) {
+          if (c.address.title) addrH2.appendChild(document.createTextNode(" "));
+          addrH2.appendChild(el("span", "ac", c.address.accent));
+        }
+      }
+      var addrP = q("p", addrCopy);
+      if (addrP) setChipText(addrP, c.address.subtitle);
+      var ticks = q(".ticks", addrCopy);
+      if (ticks) {
+        ticks.textContent = "";
+        (c.address.ticks || []).forEach(function (tickText) {
+          var li = el("li");
+          li.innerHTML = TICK;
+          var span = el("span");
+          setChipText(span, tickText);
+          li.appendChild(span);
+          ticks.appendChild(li);
+        });
+      }
+    }
+    var addrCard = q(".addr-card");
+    if (addrCard) {
+      addrCard.textContent = "";
+      addrCard.appendChild(el("span", "addr-label", c.address.cardLabel));
+      (c.address.cardLines || []).forEach(function (line) {
+        var row = el("span", "addr-line");
+        row.appendChild(document.createTextNode(line.prefix));
+        row.appendChild(el("b", "", line.name));
+        addrCard.appendChild(row);
+      });
+      addrCard.appendChild(el("span", "addr-note", c.address.cardNote));
+    }
+
+    /* designs */
+    if (SECTION_EL.designs) SECTION_EL.designs.hidden = c.designs.enabled === false;
+    renderHeading(q("#designs .sec-head"), c.designs);
+    var track = q("#designTrack");
+    if (track) {
+      track.textContent = "";
+      (c.designs.items || []).forEach(function (item) {
+        var card = el("article", "dcard");
+        var win = el("div", "dwin");
+        var shot = el("div", "dshot");
+        if (item.image) {
+          var img = el("img");
+          img.src = item.image;
+          img.alt = item.alt || item.name;
+          img.loading = "lazy";
+          shot.appendChild(img);
+        } else {
+          var template = SCENES[item.scene] || SCENES[SCENE_ORDER[0]];
+          if (template) shot.appendChild(template.cloneNode(true));
+        }
+        win.appendChild(shot);
+        card.appendChild(win);
+        card.appendChild(el("div", "dname", item.name));
+        track.appendChild(card);
+      });
+    }
+
+    /* partners */
+    if (SECTION_EL.partners) SECTION_EL.partners.hidden = c.partners.enabled === false;
+    renderHeading(q("#partners .sec-head"), c.partners);
+    var ptrack = q("#partnerTrack");
+    if (ptrack) {
+      ptrack.textContent = "";
+      (c.partners.items || []).forEach(function (name) {
+        ptrack.appendChild(el("span", "pill", name));
+      });
+    }
+
+    /* faq */
+    if (SECTION_EL.faq) SECTION_EL.faq.hidden = c.faq.enabled === false;
+    renderHeading(q("#faq .sec-head"), c.faq, { addPara: true });
+    var faqList = q(".faq-list");
+    if (faqList) {
+      faqList.textContent = "";
+      (c.faq.items || []).forEach(function (item) {
+        var details = el("details");
+        details.setAttribute("data-reveal", "");
+        var summary = el("summary", "", item.q);
+        summary.appendChild(el("span", "faq-plus"));
+        details.appendChild(summary);
+        details.appendChild(el("p", "", item.a));
+        faqList.appendChild(details);
+      });
+    }
+
+    /* cta */
+    if (SECTION_EL.cta) SECTION_EL.cta.hidden = c.cta.enabled === false;
+    var ctaBox = q(".cta-box");
+    if (ctaBox) {
+      var ctaH2 = q("h2", ctaBox);
+      if (ctaH2) {
+        ctaH2.textContent = "";
+        if (c.cta.title) ctaH2.appendChild(document.createTextNode(c.cta.title));
+        if (c.cta.accent) {
+          if (c.cta.title) ctaH2.appendChild(document.createTextNode(" "));
+          ctaH2.appendChild(el("span", "ac", c.cta.accent));
+        }
+      }
+      setText(q("p", ctaBox), c.cta.subtitle);
+      var ctaBtns = qa(".cta-actions .btn", ctaBox);
+      if (ctaBtns[0]) {
+        setText(ctaBtns[0], c.cta.primaryLabel);
+        setHref(ctaBtns[0], c.cta.primaryHref);
+      }
+      if (ctaBtns[1]) {
+        setText(ctaBtns[1], c.cta.secondaryLabel);
+        setHref(ctaBtns[1], c.cta.secondaryHref);
+      }
+    }
+
+    /* footer */
+    var footer = q(".footer");
+    if (footer) footer.hidden = c.footer.enabled === false;
+    setText(q(".foot-brand > p"), c.footer.tagline);
+    var footNav = q(".foot-nav");
+    if (footNav) {
+      footNav.textContent = "";
+      (c.footer.links || []).forEach(function (link) {
+        var a = el("a", "", link.label);
+        setHref(a, link.href);
+        footNav.appendChild(a);
+      });
+    }
+    var bottom = qa(".foot-bottom span");
+    if (bottom[0]) setText(bottom[0], c.footer.copyright);
+    if (bottom[1]) setText(bottom[1], c.footer.note);
+
+    /* whatsapp */
+    var wa = q(".wa");
+    if (wa) {
+      wa.hidden = c.whatsapp.enabled === false;
+      var number = String(c.whatsapp.number || "").replace(/\D/g, "");
+      var waText = encodeURIComponent(c.whatsapp.text || "");
+      // no valid number → WhatsApp share sheet instead of a broken wa.me/xxxx link
+      wa.href = number.length >= 8 ? "https://wa.me/" + number + "?text=" + waText : "https://wa.me/?text=" + waText;
+      setText(q(".wa-t", wa), c.whatsapp.label);
+    }
+
+    /* extra custom sections */
+    qa(".xsec").forEach(function (node) { node.remove(); });
+    var main = q("main");
+    if (main) {
+      (c.extras || []).forEach(function (extra) {
+        if (extra.enabled === false) return;
+        if (!extra.title && !extra.body && !extra.image) return;
+        var section = el("section", "sec xsec");
+        section.id = "x-" + extra.id;
+        var inner = el("div", "wrap xsec-in");
+        var headBox = el("div", "sec-head");
+        headBox.setAttribute("data-reveal", "");
+        if (extra.title) headBox.appendChild(el("h2", "", extra.title));
+        if (extra.body) headBox.appendChild(el("p", "", extra.body));
+        inner.appendChild(headBox);
+        if (extra.image) {
+          var picture = el("img", "xsec-img");
+          picture.src = extra.image;
+          picture.alt = extra.alt || "";
+          picture.loading = "lazy";
+          picture.setAttribute("data-reveal", "");
+          inner.appendChild(picture);
+        }
+        if (extra.buttonLabel && extra.buttonHref) {
+          var button = el("a", "btn bp", extra.buttonLabel);
+          setHref(button, extra.buttonHref);
+          button.setAttribute("data-reveal", "");
+          inner.appendChild(button);
+        }
+        section.appendChild(inner);
+        var target = extra.after === "start" ? null : SECTION_EL[extra.after];
+        if (extra.after === "start") main.insertBefore(section, main.firstElementChild);
+        else if (target) target.parentNode.insertBefore(section, target.nextSibling);
+        else main.appendChild(section);
+      });
+    }
+  }
+
+  function initAnimations() {
+    var designTrack = document.getElementById("designTrack");
+    if (designTrack) {
+      var originals = Array.prototype.slice.call(designTrack.children);
+      for (var i = 0; i < 3; i++) {
+        originals.forEach(function (card) {
+          designTrack.appendChild(card.cloneNode(true));
+        });
+      }
+    }
+
+    var partnerTrack = document.getElementById("partnerTrack");
+    if (partnerTrack) {
+      Array.prototype.slice.call(partnerTrack.children).forEach(function (pill) {
+        partnerTrack.appendChild(pill.cloneNode(true));
+      });
+    }
+
+    var targets = document.querySelectorAll("[data-reveal]");
+    var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduced || !("IntersectionObserver" in window)) {
+      targets.forEach(function (node) { node.classList.add("in"); });
+    } else {
+      targets.forEach(function (node) { node.classList.add("reveal"); });
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("in");
+            io.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.12 });
+      targets.forEach(function (node) { io.observe(node); });
+    }
+  }
+
+  var started = false;
+  function start() {
+    if (started) return;
+    started = true;
+    try {
+      initAnimations();
+    } catch (err) {
+      /* animations are optional */
+    }
+  }
+
+  function load() {
+    if (!window.fetch) return start();
+    fetch("/api/public/landing", { cache: "no-store" })
+      .then(function (res) { return res.ok ? res.json() : null; })
+      .then(function (data) {
+        if (data && data.content) {
+          try {
+            apply(data.content);
+          } catch (err) {
+            /* malformed content must not blank the page */
+          }
+        }
+      })
+      .catch(function () {})
+      .then(start);
+  }
+
+  load();
+})();
+</script>
 </body>
 </html>

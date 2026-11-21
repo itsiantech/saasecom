@@ -45,6 +45,15 @@ const {
   testConnection: trackingTestConnection,
   sendTestEvent: trackingSendTestEvent,
 } = require("../services/serverTracking");
+const { COURIER_DEFAULTS, BOOL_FIELDS: COURIER_BOOL_FIELDS } = require("../lib/courierSettings");
+const {
+  COURIER_KEYS,
+  adminSettings: courierAdminSettings,
+  prepareSave: prepareCourierSave,
+  testConnection: courierTestConnection,
+  pathaoCities: courierPathaoCities,
+  pathaoZones: courierPathaoZones,
+} = require("../services/courierSettings");
 const { featuresForStore } = require("../lib/features");
 const { sendMail } = require("../lib/mailer");
 const { sendSms } = require("../lib/sms");
@@ -113,6 +122,8 @@ const SETTING_KEYS = [
   ...Object.keys(GOOGLE_SEO_DEFAULTS),
   // Server side tracking
   ...TRACKING_KEYS,
+  // Courier API (Pathao / Steadfast)
+  ...COURIER_KEYS,
 ];
 
 const BOOL_KEYS = [
@@ -140,6 +151,7 @@ const BOOL_KEYS = [
   "home_new_products_enabled",
   ...GOOGLE_SEO_BOOL_FIELDS,
   ...TRACKING_BOOL_FIELDS,
+  ...COURIER_BOOL_FIELDS,
 ];
 
 const DEFAULTS = {
@@ -179,6 +191,7 @@ const DEFAULTS = {
   storefront_menu: "[]",
   ...GOOGLE_SEO_DEFAULTS,
   ...TRACKING_DEFAULTS,
+  ...COURIER_DEFAULTS,
 };
 
 // je branding key gulo prottek dokan alada rakhbe — SiteSetting er field er sathe mapping
@@ -451,7 +464,7 @@ async function buildAdminPayload() {
   // field order always fixed
   const fieldMap = new Map(fields.map((f) => [f.fieldKey, f]));
   return {
-    settings: trackingAdminSettings(settings),
+    settings: courierAdminSettings(trackingAdminSettings(settings)),
     homeSections: parseSections(settings.home_category_sections),
     menu: buildMenu(settings.storefront_menu, {
       categories: cats.filter((row) => row.status !== "trashed" && !row.deletedAt),
@@ -535,6 +548,8 @@ async function adminSave(req, res) {
   if (seoError) return res.status(400).json({ message: seoError });
   const trackingSave = prepareTrackingSave(storeId, current, settings);
   if (trackingSave.error) return res.status(400).json({ message: trackingSave.error });
+  const courierSave = prepareCourierSave(storeId, current, settings);
+  if (courierSave.error) return res.status(400).json({ message: courierSave.error });
   const nextEmail = settings.login_email_enabled === undefined
     ? boolOf(current, "login_email_enabled")
     : String(settings.login_email_enabled) === "true";
@@ -564,6 +579,8 @@ async function adminSave(req, res) {
     if (settings[key] === undefined) return;
     // tracking keys (including encrypted secrets) go through prepareTrackingSave
     if (TRACKING_KEYS.includes(key)) return;
+    // courier keys (including encrypted secrets) go through prepareCourierSave
+    if (COURIER_KEYS.includes(key)) return;
     let value = settings[key];
     if (key === "home_category_sections") {
       value = JSON.stringify(normalizeSections(value, allowedHomeCategories));
@@ -589,6 +606,7 @@ async function adminSave(req, res) {
   });
   if (ops.length) await Settings.bulkWrite(ops);
   if (trackingSave.ops.length) await Settings.bulkWrite(trackingSave.ops);
+  if (courierSave.ops.length) await Settings.bulkWrite(courierSave.ops);
   if (Object.keys(branding).length) {
     await SiteSetting.updateOne({ store: storeId }, { $set: branding }, { upsert: true });
   }
@@ -1233,6 +1251,45 @@ async function trackingEventTest(req, res) {
 }
 
 /* ------------------------------------------------------------------ *
+ * Courier API — test connection + Pathao city/zone lookups.
+ * Body: { provider, config } — config = unsaved form values; masked/blank
+ * secrets fall back to the stored ones.
+ * ------------------------------------------------------------------ */
+async function courierConnectionTest(req, res) {
+  const storeId = storeIdOf(req);
+  if (!storeId) return res.status(400).json({ message: "Store pawa jayni" });
+  const body = req.body || {};
+  const result = await courierTestConnection(storeId, String(body.provider || "").toLowerCase(), body.config || {});
+  res.json(result);
+}
+
+async function courierPathaoCityList(req, res) {
+  const storeId = storeIdOf(req);
+  if (!storeId) return res.status(400).json({ message: "Store pawa jayni" });
+  try {
+    const result = await courierPathaoCities(storeId, req.body && req.body.config ? req.body.config : {});
+    res.json(result);
+  } catch (err) {
+    res.json({ ok: false, message: err.message });
+  }
+}
+
+async function courierPathaoZoneList(req, res) {
+  const storeId = storeIdOf(req);
+  if (!storeId) return res.status(400).json({ message: "Store pawa jayni" });
+  try {
+    const result = await courierPathaoZones(
+      storeId,
+      String(req.query.cityId || ""),
+      req.body && req.body.config ? req.body.config : {}
+    );
+    res.json(result);
+  } catch (err) {
+    res.json({ ok: false, message: err.message });
+  }
+}
+
+/* ------------------------------------------------------------------ *
  * GET /api/settings/invoice/preview — sample double-copy invoice
  * ------------------------------------------------------------------ */
 async function invoicePreview(req, res) {
@@ -1276,6 +1333,9 @@ module.exports = {
   smsTest,
   trackingConnectionTest,
   trackingEventTest,
+  courierConnectionTest,
+  courierPathaoCityList,
+  courierPathaoZoneList,
   invoicePreview,
   getShippingConfig,
   quoteFromConfig,

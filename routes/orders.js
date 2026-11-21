@@ -15,6 +15,7 @@ const ctrl = require("../controllers/orderCatalogController");
 const { changeOrderStatus, OrderStatusError } = require("../services/orderStatusChange");
 const { restoreOrderStock } = require("../services/orderStock");
 const { requireFeature } = require("../lib/features");
+const { sendOrder, CourierError } = require("../services/courierService");
 
 // tenant context chara Query gulo filter-hinno hoye sob dokan er order fenle
 const guard = [requireTenant, auth, requireAdmin, requireFeature("orders")];
@@ -245,6 +246,31 @@ router.get("/:id/status-history", guard, ctrl.history);
 
 // quick edit — status / courier / note (admin)
 router.patch("/:id", guard, ctrl.quickEdit);
+
+// send the order to Pathao / Steadfast (admin) — booking, not a status change
+router.post("/:id/courier", guard, async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return res.status(404).json({ message: "Order pawa jayni" });
+    }
+    const result = await sendOrder(req.storeId, req.params.id, String((req.body || {}).provider || ""));
+    res.json({
+      ok: true,
+      message: `${result.providerLabel} e order pathano hoyeche`,
+      provider: result.provider,
+      courierName: result.providerLabel,
+      consignmentId: result.consignmentId,
+      trackingCode: result.trackingCode,
+      status: result.status,
+      codAmount: result.codAmount,
+      sentAt: result.order.courierSentAt,
+    });
+  } catch (err) {
+    if (err instanceof CourierError) return res.status(err.status).json({ message: err.message });
+    console.error("courier send:", err.message);
+    res.status(500).json({ message: "Courier e pathate parlam na" });
+  }
+});
 
 // ekta order dekha (admin only — customer er naam/phone/thikan ache)
 router.get("/:id", guard, async (req, res) => {

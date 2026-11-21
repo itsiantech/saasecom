@@ -8,6 +8,7 @@ const crypto = require("crypto");
 const cron = require("node-cron");
 const Subscription = require("../../models/Subscription");
 const Store = require("../../models/Store");
+const Settings = require("../../models/Settings");
 // populate() needs these schemas registered even when the cron is required
 // directly (standalone script / worker), not through the API routes.
 require("../../models/Plan");
@@ -33,6 +34,34 @@ function suspendAfterDays() {
 
 function autoSuspendStores() {
   return process.env.BILLING_AUTO_SUSPEND === "true";
+}
+
+// Platform billing settings: super admin sets the default grace window and the
+// auto-ban switch. When the settings row was never saved we fall back to the
+// env vars so existing deployments keep their behaviour.
+async function loadBillingPolicy() {
+  const { BILLING_KEY, parseSettings } = require("../../lib/platformBilling");
+  const doc = await Settings.findOne({ key: BILLING_KEY });
+  if (!doc) return { autoBan: autoSuspendStores(), graceDays: suspendAfterDays() };
+  const settings = parseSettings(doc.value);
+  return {
+    autoBan: settings.autoBan === true || autoSuspendStores(),
+    graceDays: settings.defaultGraceDays,
+  };
+}
+
+// Ban lands exactly `grace` days after the due date — the super admin picks
+// that number per store, so no hidden minimum is applied here.
+function graceFor(sub, policy = {}) {
+  const override = sub && sub.graceDaysOverride;
+  const days =
+    Number.isFinite(Number(override)) && override !== null && override !== undefined
+      ? Number(override)
+      : policy.graceDays != null
+        ? Number(policy.graceDays)
+        : suspendAfterDays();
+  const n = Number.isFinite(days) ? days : suspendAfterDays();
+  return Math.max(0, Math.min(90, Math.round(n)));
 }
 
 function appBaseUrl() {
@@ -93,8 +122,8 @@ function storeUrl(store) {
   return base && store.slug ? base + "/" + encodeURIComponent(store.slug) : "";
 }
 
-// Pure decision function: (subscription, now) -> action | null.
-function reminderFor(sub, now = new Date()) {
+// Pure decision function: (subscription, now, policy) -> action | null.
+function reminderFor(sub, now = new Date(), policy = {}) {
   if (!sub || !sub.store || sub.store.deletedAt) return null;
   if (["cancelled", "expired", "suspended"].includes(sub.status)) return null;
   if (sub.store.status === "suspended") return null;
@@ -175,9 +204,10 @@ function reminderFor(sub, now = new Date()) {
   }
 
   const overdueDays = calendarDaysBetween(billingDate, now);
-  if (overdueDays < OVERDUE_AFTER_DAYS) return null;
+  const suspendAt = graceFor(sub, policy);
+  // a short grace (0–2 days) bans before the usual 3-day warning would fire
+  if (overdueDays < Math.min(OVERDUE_AFTER_DAYS, suspendAt)) return null;
 
-  const suspendAt = suspendAfterDays();
   if (overdueDays < suspendAt) {
     return {
       kind: "overdue",
@@ -220,7 +250,7 @@ function reminderFor(sub, now = new Date()) {
       `আপনার ${store.name} দোকানের পেমেন্ট ${suspendAt} দিনের বেশি বকেয়া থাকায় অ্যাকাউন্টটি সাসপেন্ড করা হয়েছে।`,
       "পেমেন্ট করে সাথে সাথে দোকান আবার চালু করতে পারবেন।",
     ],
-    note: autoSuspendStores()
+    note: (policy.autoBan != null ? policy.autoBan : autoSuspendStores())
       ? "দোকানের ভিজিটরদের জন্য স্টোরফ্রন্টও বন্ধ করা হয়েছে — পেমেন্ট হলে আবার চালু হবে।"
       : "সাবস্ক্রিপশনটি সাসপেন্ড অবস্থায় আছে।",
     meta: { billingDate, overdueDays },
@@ -257,13 +287,15 @@ async function loadSubscriptions() {
     });
 }
 
-async function applyBillingState(sub, action, now) {
+async function applyBillingState(sub, action, now, policy = {}) {
   if (action.kind === "overdue") {
     sub.status = "past_due";
   } else if (action.kind === "suspend") {
     sub.status = "suspended";
     sub.billingSuspendedAt = now;
-    if (autoSuspendStores()) {
+    sub.suspendReason = "payment";
+    const autoBan = policy.autoBan != null ? policy.autoBan : autoSuspendStores();
+    if (autoBan) {
       await Store.updateOne({ _id: sub.store._id, status: { $ne: "suspended" } }, { $set: { status: "suspended" } });
     }
   }
@@ -274,6 +306,7 @@ async function applyBillingState(sub, action, now) {
         status: sub.status,
         lastNotifiedAt: now,
         ...(sub.billingSuspendedAt ? { billingSuspendedAt: sub.billingSuspendedAt } : {}),
+        ...(sub.suspendReason ? { suspendReason: sub.suspendReason } : {}),
       },
     }
   );
@@ -283,6 +316,7 @@ async function runBillingReminders({ now = new Date(), enqueue = enqueueEmail, d
   const brandInfo = await landingBranding.getBranding();
   const brand = brandInfo.name || "LUXE";
   const subs = await loadSubscriptions();
+  const policy = await loadBillingPolicy();
 
   const summary = {
     scanned: subs.length,
@@ -296,7 +330,7 @@ async function runBillingReminders({ now = new Date(), enqueue = enqueueEmail, d
   };
 
   for (const sub of subs) {
-    const action = reminderFor(sub, now);
+    const action = reminderFor(sub, now, policy);
     if (!action) continue;
 
     // hardened against a second pass on the same Dhaka day
@@ -362,7 +396,7 @@ async function runBillingReminders({ now = new Date(), enqueue = enqueueEmail, d
       } else {
         summary.sent += 1;
       }
-      await applyBillingState(sub, action, now);
+      await applyBillingState(sub, action, now, policy);
       summary.actions.push({ kind: action.kind, store: sub.store.slug, to: action.to, cycleKey: action.cycleKey });
     } catch (err) {
       console.error("billing email enqueue failed:", String(sub.store && sub.store.slug), err.message);

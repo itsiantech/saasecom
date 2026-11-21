@@ -130,6 +130,26 @@
 }
 .ol-status-select:hover { border-color: var(--gold); }
 
+/* courier tracking chip under the status select */
+.ol-courier-chip {
+  display: inline-block;
+  max-width: 160px;
+  margin-top: 5px;
+  padding: 2px 8px;
+  border: 1px solid var(--line-soft);
+  border-radius: 999px;
+  color: var(--gold);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* send-to-courier row action */
+.icon-btn.send:hover:not(:disabled) { color: var(--gold); border-color: var(--gold); background: var(--gold-soft); }
+.icon-btn.send:disabled { opacity: 0.45; cursor: not-allowed; }
+
 /* ---- bulk bar extra ---- */
 .ol-bulk-label { font-size: 13px; color: var(--muted); }
 #olBulkStatus {

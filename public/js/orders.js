@@ -66,6 +66,7 @@ const state = {
   rows: [],
   counts: {},
   modes: { wholesale: false, partialPayment: false, international: false },
+  courier: { enabled: false, providers: [], defaultProvider: "", codMode: "due" },
   selected: new Set(),
 };
 
@@ -80,6 +81,8 @@ const ICONS = {
   edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>',
   trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>',
   power: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><path d="M12 2v10"/></svg>',
+  send: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>',
+  check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>',
 };
 
 function thumbHtml(src) {
@@ -316,6 +319,7 @@ async function loadList() {
     state.total = data.total || 0;
     state.pages = data.pages || 1;
     state.modes = data.modes || state.modes;
+    state.courier = data.courier || state.courier;
     renderBanner();
     renderTable();
     renderFoot();
@@ -385,10 +389,15 @@ function cellHtml(o, col) {
       return `<select class="ol-status-select" data-status="${o.id}" aria-label="Change status for ${esc(o.orderNumber)}">
         ${STATUS_OPTIONS.map(([v, l]) => `<option value="${v}" ${o.status === v ? "selected" : ""}>${l}</option>`).join("")}
       </select>
-      ${o.courierName ? `<div style="font-size:12px;color:var(--muted);margin-top:4px;">${esc(o.courierName)}</div>` : ""}`;
+      ${o.courierName ? `<div class="ol-courier-chip" title="${esc(o.courierStatus || "")}">${esc(o.courierName)}${o.courierTrackingCode ? ` · ${esc(o.courierTrackingCode)}` : ""}</div>` : ""}`;
     case "action": {
       const isCancelled = o.status === "cancelled";
+      const sent = !!(o.courierConsignmentId || o.courierTrackingCode);
+      const sendBtn = sent
+        ? `<button type="button" class="icon-btn send" disabled title="Courier e pathano hoyeche${o.courierTrackingCode ? " — " + esc(o.courierTrackingCode) : ""}">${ICONS.check}</button>`
+        : `<button type="button" class="icon-btn send" data-send="${o.id}" title="${isCancelled ? "Cancelled order courier e pathano jabe na" : "Send to courier"}" ${isCancelled ? "disabled" : ""}>${ICONS.send}</button>`;
       return `<div class="pc-row-actions">
+        ${sendBtn}
         <button type="button" class="icon-btn edit" data-toggle="${o.id}" title="${isCancelled ? "Restore to Pending" : "Cancel order"}">${ICONS.power}</button>
         <button type="button" class="icon-btn edit" data-edit="${o.id}" title="Edit">${ICONS.edit}</button>
         <button type="button" class="icon-btn del" data-del="${o.id}" title="Delete">${ICONS.trash}</button>
@@ -483,6 +492,14 @@ function bindTableEvents() {
     });
   });
 
+  wrap.querySelectorAll("[data-send]").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const o = state.rows.find((x) => String(x.id) === btn.dataset.send);
+      if (o) openCourierModal(o);
+    });
+  });
+
   wrap.querySelectorAll("[data-del]").forEach((btn) => {
     btn.addEventListener("click", async (e) => {
       e.stopPropagation();
@@ -542,6 +559,78 @@ async function setStatus(id, status, selectEl) {
     }
     toast(err.message, "err");
   }
+}
+
+/* ---- courier send ---- */
+
+function courierCodPreview(o) {
+  const mode = state.courier.codMode || "due";
+  if (mode === "none" || o.paymentStatus === "paid") return 0;
+  if (mode === "total") return Math.round(Number(o.totalAmount) || 0);
+  if (o.paymentMode === "installment") return Math.round((Number(o.dueAmount) || 0) / 100);
+  return Math.round(Number(o.totalAmount) || 0);
+}
+
+function openCourierModal(o) {
+  const providers = state.courier.providers || [];
+  if (!state.courier.enabled || !providers.length) {
+    toast("Courier API on kora nai — Settings → Courier API", "err");
+    return;
+  }
+  const defaultProvider = state.courier.defaultProvider || providers[0].key;
+  const cod = courierCodPreview(o);
+
+  const pop = document.createElement("div");
+  pop.className = "pc-pop";
+  pop.innerHTML = `
+    <div class="pc-pop-box ol-edit-box" role="dialog" aria-modal="true" aria-labelledby="olCourierTitle">
+      <h3 id="olCourierTitle">Send order to courier</h3>
+      <p class="hint">Order <b>${esc(o.orderNumber)}</b> — ${esc(o.customerName)}${o.customerPhone ? " · " + esc(o.customerPhone) : ""}</p>
+      ${providers.length > 1
+        ? `<label class="pc-adv-field"><span>Courier</span>
+            <select id="olCourierPick">
+              ${providers.map((p) => `<option value="${esc(p.key)}" ${p.key === defaultProvider ? "selected" : ""}>${esc(p.label)}</option>`).join("")}
+            </select>
+          </label>`
+        : `<input type="hidden" id="olCourierPick" value="${esc(providers[0].key)}" />`}
+      <p class="hint">COD: <b>${money(cod)}</b> · Order status change hobe na</p>
+      <div class="pc-pop-actions">
+        <button type="button" class="btn-ghost" id="olCourierCancel">Cancel</button>
+        <button type="button" class="btn-gold" id="olCourierSend">Send</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(pop);
+  pop.querySelector("#olCourierCancel").addEventListener("click", () => pop.remove());
+  pop.addEventListener("click", (e) => {
+    if (e.target === pop) pop.remove();
+  });
+
+  const sendBtn = pop.querySelector("#olCourierSend");
+  sendBtn.addEventListener("click", async () => {
+    const provider = pop.querySelector("#olCourierPick").value;
+    sendBtn.disabled = true;
+    sendBtn.textContent = "Sending…";
+    try {
+      const res = await api("/api/orders/" + o.id + "/courier", {
+        method: "POST",
+        body: JSON.stringify({ provider }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || "Courier e pathate parlam na");
+      pop.remove();
+      toast(
+        `${data.courierName || "Courier"} e pathano hoyeche${data.trackingCode ? " — " + data.trackingCode : ""}`,
+        "ok"
+      );
+      loadCounts();
+      await loadList();
+    } catch (err) {
+      sendBtn.disabled = false;
+      sendBtn.textContent = "Send";
+      toast(err.message, "err");
+    }
+  });
 }
 
 /* ---- bulk print ---- */

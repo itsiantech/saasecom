@@ -19,6 +19,7 @@ const {
 const { changeOrderStatus, OrderStatusError } = require("../services/orderStatusChange");
 const { restoreOrderStock } = require("../services/orderStock");
 const { shapeOrderDetail } = require("../services/orderDetail");
+const { courierListInfo } = require("../services/courierService");
 
 function storeOf(req) {
   if (req.store && req.store._id) return req.store._id;
@@ -159,6 +160,11 @@ async function list(req, res, next) {
         paymentMethodLabel: methodLabel,
         status: o.status,
         courierName: o.courierName || "",
+        courierProvider: o.courierProvider || "",
+        courierConsignmentId: o.courierConsignmentId || "",
+        courierTrackingCode: o.courierTrackingCode || "",
+        courierStatus: o.courierStatus || "",
+        courierSentAt: o.courierSentAt || null,
         installment: partialActive && o.paymentMode === "installment" && inst && inst.total
           ? { current: Math.min(inst.paid + 1, inst.total), total: inst.total }
           : null,
@@ -171,6 +177,7 @@ async function list(req, res, next) {
       page,
       pages: Math.max(1, Math.ceil(total / limit)),
       modes: { wholesale, partialPayment: partialActive, international },
+      courier: await courierListInfo(storeId),
     });
   } catch (err) {
     next(err);

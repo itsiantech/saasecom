@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/css/style.css" />
-  <link rel="stylesheet" href="/css/admin.css?v=15" />
+  <link rel="stylesheet" href="/css/admin.css?v=17" />
   <script>
     (function () {
       try {
@@ -105,7 +105,7 @@
         <div class="table-wrap">
           <table>
             <thead id="storeHead">
-              <tr><th>দোকান</th><th>মালিক</th><th>বর্তমান প্ল্যান</th><th>প্ল্যান বদলান</th></tr>
+              <tr><th>দোকান</th><th>মালিক</th><th>বর্তমান প্ল্যান</th><th>পেমেন্ট</th><th>প্ল্যান বদলান</th></tr>
             </thead>
             <tbody id="storeBody"></tbody>
           </table>
@@ -159,6 +159,22 @@
               <span class="slider"></span>
             </label>
           </div>
+          <div class="billing-policy">
+            <div class="switch-row">
+              <label for="bAutoBan">ডেডলাইন পেরোলে অটো ব্যান — বকেয়া থাকলে দোকান ও অ্যাডমিন বন্ধ হয়ে যাবে</label>
+              <label class="switch">
+                <input type="checkbox" id="bAutoBan" />
+                <span class="slider"></span>
+              </label>
+            </div>
+            <div class="billing-policy-grid">
+              <div class="field">
+                <label for="bGraceDays">ডিফল্ট গ্রেস (দিন)</label>
+                <input id="bGraceDays" type="number" min="0" max="90" step="1" />
+              </div>
+              <p class="billing-hint">ডেডলাইন = পেমেন্ট ডিউ তারিখ + গ্রেস। গ্রেস পার হলে ব্যান হবে। প্রতিটি দোকানের জন্য আলাদা দিনও ঠিক করা যায় — Stores প্যানেলের “পেমেন্ট” কলাম থেকে।</p>
+            </div>
+          </div>
           <div class="billing-grid" id="billingGrid"></div>
           <div class="billing-foot">
             <span class="theme-note" id="billingNote"></span>
@@ -185,12 +201,14 @@
       <section class="panel" id="landing">
         <div class="panel-head">
           <div>
-            <h3>ল্যান্ডিং পেজ সেটিংস</h3>
-            <p class="count">টাইটেল, লোগো, ফ্যাভিকন আর ফুটার টেক্সট — সেভ করলেই ল্যান্ডিং পেজে লাইভ হবে</p>
+            <h3>ল্যান্ডিং পেজ</h3>
+            <p class="count">প্রতিটি সেকশনের লেখা/ছবি বদলান, সেকশন চালু-বন্ধ করুন, নতুন সেকশন যোগ করুন — সেভ করলেই লাইভ</p>
           </div>
-          <button class="btn-add" id="landingSaveBtn" type="button">সেভ করুন</button>
+          <button class="btn-add" id="landingSaveBtn" type="button">ব্র্যান্ডিং সেভ</button>
         </div>
         <div class="landing-body">
+          <h4 class="cms-title">প্ল্যাটফর্ম ব্র্যান্ডিং</h4>
+          <p class="cms-sub">নাম, লোগো, ফ্যাভিকন আর ফুটার — লগইন, পোর্টাল, সেটআপ ও এই প্যানেলে ব্যবহৃত হয়</p>
           <div class="landing-grid">
             <div class="field">
               <label for="lbName">ব্র্যান্ড নাম</label>
@@ -239,7 +257,24 @@
 
           <div class="landing-foot">
             <span class="theme-note" id="landingNote"></span>
-            <span class="billing-hint">ব্র্যান্ড নাম ল্যান্ডিং, লগইন, পোর্টাল, সেটআপ আর প্যানেলের সব লোগোটেক্সটে বসবে। লোগো দিলে সাইডবারে লোগোই দেখাবে।</span>
+            <span class="billing-hint">ব্র্যান্ড নাম লগইন, পোর্টাল, সেটআপ আর প্যানেলের সব লোগোটেক্সটে বসবে। ল্যান্ডিং পেজের নিজস্ব ব্র্যান্ড নিচের সেকশনে।</span>
+          </div>
+        </div>
+
+        <div class="landing-body cms-body">
+          <div class="cms-head">
+            <div>
+              <h4 class="cms-title">ল্যান্ডিং পেজ কনটেন্ট</h4>
+              <p class="cms-sub">সেকশনভিত্তিক লেখা, ছবি, লিংক আর চালু/বন্ধ। নতুন কাস্টম সেকশনও যোগ করা যায়।</p>
+            </div>
+            <button class="btn-add" id="cmsSaveBtn" type="button">ল্যান্ডিং সেভ করুন</button>
+          </div>
+          <div id="landingCms" class="cms-list">
+            <p class="cms-empty">লোড হচ্ছে...</p>
+          </div>
+          <div class="landing-foot">
+            <span class="theme-note" id="cmsNote"></span>
+            <span class="billing-hint">লেখায় [[...]] দিলে ঠিকানা-চিপ হিসেবে দেখাবে। ছবি সর্বোচ্চ ৮MB (jpg/png/webp/gif)। কোনো সেকশন বন্ধ করলে পেজ থেকে পুরো সেকশনটা বাদ যাবে।</span>
           </div>
         </div>
       </section>
@@ -408,6 +443,35 @@
     </div>
   </div>
 
+  <!-- per-store payment deadline / ban modal -->
+  <div class="modal-overlay" id="billingOverlay">
+    <div class="modal" style="max-width:560px;">
+      <h3>পেমেন্ট ও ব্যান — <span id="blStoreName">—</span></h3>
+      <p class="muted" style="margin-top:8px;font-size:13px;" id="blStatusLine">—</p>
+      <div class="grid-2">
+        <div class="field">
+          <label for="blDueDate">পেমেন্ট ডিউ তারিখ</label>
+          <input id="blDueDate" type="date" />
+        </div>
+        <div class="field">
+          <label for="blGraceDays">ডিউয়ের পর গ্রেস (দিন)</label>
+          <input id="blGraceDays" type="number" min="0" max="90" step="1" placeholder="ডিফল্ট" />
+        </div>
+      </div>
+      <p class="bl-ban-date" id="blBanDate">—</p>
+      <div class="field">
+        <label for="blNote">নোট (ঐচ্ছিক)</label>
+        <input id="blNote" type="text" maxlength="300" placeholder="যেমন: মালিককে ফোনে জানানো হয়েছে" />
+      </div>
+      <p class="msg" id="blMsg"></p>
+      <div class="modal-actions">
+        <button type="button" class="btn-ghost" id="blCancelBtn">বাতিল</button>
+        <button type="button" class="btn-danger" id="blBanBtn">ব্যান করুন</button>
+        <button type="button" class="btn-gold" id="blSaveBtn">সেভ করুন</button>
+      </div>
+    </div>
+  </div>
+
   <!-- store trash / permanent delete confirmation -->
   <div class="modal-overlay" id="storeActionOverlay">
     <div class="modal">
@@ -429,5 +493,6 @@
 
   <script src="/js/platform-brand.js?v=1"></script>
   <script src="/js/admin.js?v=19"></script>
+  <script src="/js/landing-admin.js?v=1"></script>
 </body>
 </html>

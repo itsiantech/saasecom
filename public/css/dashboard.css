@@ -936,3 +936,85 @@ tbody tr:last-child td { border-bottom: none; }
   .fg-prompt-box,
   .fg-relogin-box { padding: 18px; }
 }
+
+/* ---- payment deadline ban — owner panel lock ---- */
+.billing-lock {
+  position: fixed;
+  inset: 0;
+  z-index: 4000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  overflow: auto;
+  background:
+    radial-gradient(circle at 30% 18%, rgba(212, 175, 122, 0.09), transparent 46%),
+    var(--bg);
+}
+.bl-card {
+  width: min(460px, 100%);
+  margin: auto;
+  padding: 34px 30px 26px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+.bl-mark {
+  width: 54px;
+  height: 54px;
+  margin: 0 auto 16px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--gold-soft);
+  color: var(--gold);
+  font: 700 22px/1 "Playfair Display", Georgia, serif;
+}
+.bl-mark img { max-width: 34px; max-height: 34px; object-fit: contain; }
+.bl-card h2 { font-size: 24px; font-weight: 600; }
+.bl-sub { margin-top: 10px; color: var(--muted); font-size: 13.5px; line-height: 1.75; }
+.bl-facts { display: grid; gap: 8px; margin-top: 20px; text-align: left; }
+.bl-facts > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--line-soft);
+  border-radius: 10px;
+  font-size: 13px;
+}
+.bl-facts span { color: var(--muted); }
+.bl-facts b { font-weight: 600; color: var(--text); }
+.bl-note { margin-top: 14px; min-height: 1px; color: var(--muted); font-size: 12px; line-height: 1.6; }
+.bl-pay {
+  display: block;
+  margin-top: 20px;
+  padding: 14px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--gold), var(--gold-2));
+  color: #17120a;
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: none;
+  transition: filter 0.2s, transform 0.2s;
+}
+.bl-pay:hover { filter: brightness(1.06); transform: translateY(-1px); }
+.bl-out {
+  margin-top: 12px;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-size: 12.5px;
+  text-decoration: underline;
+}
+.bl-out:hover { color: var(--text); }
+body.is-locked { overflow: hidden; }
+
+html[data-theme="light"] .billing-lock {
+  background:
+    radial-gradient(circle at 30% 18%, rgba(212, 175, 122, 0.18), transparent 46%),
+    var(--bg);
+}

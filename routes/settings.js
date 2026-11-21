@@ -74,6 +74,10 @@ const trackingGuard = requireFeature("serverSideTracking");
 const settingsGuard = requireFeature("settings");
 router.post("/tracking/test-connection", auth, requireAdmin, trackingGuard, ctrl.trackingConnectionTest);
 router.post("/tracking/test-event", auth, requireAdmin, trackingGuard, ctrl.trackingEventTest);
+// Courier API — every store owner may connect Pathao / Steadfast
+router.post("/couriers/test-connection", auth, requireAdmin, ctrl.courierConnectionTest);
+router.get("/couriers/pathao/cities", auth, requireAdmin, ctrl.courierPathaoCityList);
+router.get("/couriers/pathao/zones", auth, requireAdmin, ctrl.courierPathaoZoneList);
 router.get("/invoice/preview", auth, requireAdmin, ctrl.invoicePreview);
 router.post("/invoice/preview", auth, requireAdmin, ctrl.invoicePreview);
 

@@ -79,6 +79,13 @@ function shapeOrderDetail(order, opts = {}) {
     paymentMethod: order.paymentMethod || "",
     paymentLabel: order.paymentLabel || order.paymentMethod || "",
     courierName: order.courierName || "",
+    courier: {
+      provider: order.courierProvider || "",
+      consignmentId: order.courierConsignmentId || "",
+      trackingCode: order.courierTrackingCode || "",
+      status: order.courierStatus || "",
+      sentAt: order.courierSentAt || null,
+    },
     customer: {
       id: order.customer || null,
       name: order.customerName || "",
