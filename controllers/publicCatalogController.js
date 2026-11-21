@@ -21,7 +21,7 @@ const { getWholesaleSettings } = require("../lib/wholesaleSettings");
 const { getSettingsMap } = require("./settingsController");
 const { loadLiveFlashSales, bestFlashSale, publicFlashSale } = require("../services/promotions");
 const { toPaisa, fromPaisa } = require("../lib/money");
-const { parseSections } = require("../lib/homeSections");
+const { parseSections, fixedConfig } = require("../lib/homeSections");
 const { sanitizeRichText } = require("../lib/richText");
 const { buildMenu } = require("../lib/storeMenu");
 const { buildGoogleSeo } = require("../lib/googleSeo");
@@ -635,13 +635,14 @@ async function listHome(req, res, next) {
       loadLiveFlashSales(store._id),
     ]);
 
+    const fixed = fixedConfig(map);
     const flags = {
-      hotDeals: String(map.home_hot_deals_enabled) === "true",
-      newProducts: String(map.home_new_products_enabled) === "true",
+      hotDeals: fixed.hot.enabled,
+      newProducts: fixed.new.enabled,
     };
 
     const configured = parseSections(map.home_category_sections).filter((row) => row.enabled !== false);
-    if (!configured.length) return res.json({ sections: [], flags });
+    if (!configured.length) return res.json({ sections: [], flags, fixed });
 
     const cats = await Category.find({ store: store._id, deletedAt: null }).select("_id name slug").lean();
     const byId = new Map(cats.map((row) => [String(row._id), row]));
@@ -689,6 +690,7 @@ async function listHome(req, res, next) {
         }))
         .filter((row) => row.products.length),
       flags,
+      fixed,
     });
   } catch (err) {
     next(err);

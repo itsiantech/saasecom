@@ -121,6 +121,37 @@ test("normalizeSections clamps values, drops duplicates and foreign categories",
   assert.equal(rows[1].limit, 4);
 });
 
+test("fixed hot/new sections carry their own layout knobs", async () => {
+  const initial = await home();
+  assert.equal(initial.status, 200, JSON.stringify(initial.body));
+  assert.deepEqual(initial.body.fixed.hot, { enabled: true, mode: "grid", columns: 4, limit: 6 });
+  assert.deepEqual(initial.body.fixed.new, { enabled: true, mode: "grid", columns: 4, limit: 12 });
+
+  const saved = await saveHome({
+    settings: {
+      home_hot_deals_mode: "drag",
+      home_hot_deals_columns: "5",
+      home_hot_deals_limit: "30",
+      home_new_products_enabled: "false",
+      home_new_products_columns: "7",
+      home_new_products_limit: "2",
+    },
+  });
+  assert.equal(saved.status, 200, JSON.stringify(saved.body));
+  assert.equal(saved.body.settings.home_hot_deals_mode, "drag");
+  assert.equal(saved.body.settings.home_hot_deals_columns, "5");
+  assert.equal(saved.body.settings.home_hot_deals_limit, "24");
+  // out-of-range values fall back to the defaults instead of breaking the page
+  assert.equal(saved.body.settings.home_new_products_columns, "4");
+  assert.equal(saved.body.settings.home_new_products_limit, "4");
+
+  const after = await home();
+  assert.deepEqual(after.body.fixed.hot, { enabled: true, mode: "drag", columns: 5, limit: 24 });
+  assert.deepEqual(after.body.fixed.new, { enabled: false, mode: "grid", columns: 4, limit: 4 });
+  assert.equal(after.body.flags.hotDeals, true);
+  assert.equal(after.body.flags.newProducts, false);
+});
+
 test("home settings save validates against this store's categories and keeps order", async () => {
   const res = await saveHome({
     settings: {

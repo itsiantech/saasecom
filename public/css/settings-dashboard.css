@@ -478,6 +478,16 @@ html[data-theme="light"] #view-settings .ws-chip.is-on { background: var(--gold-
   touch-action: none;
 }
 #view-settings .hs-handle:active { cursor: grabbing; }
+#view-settings .hs-handle.is-fixed { cursor: default; opacity: 0.55; }
+#view-settings .hs-fixed-tag {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border: 1px dashed var(--line-soft);
+  border-radius: 6px;
+  padding: 4px 8px;
+}
 #view-settings .hs-name { min-width: 0; }
 #view-settings .hs-name strong {
   display: block;

@@ -825,20 +825,32 @@
    * Home page category sections
    * ------------------------------------------------------------------ */
   const HOME_MODE_LABELS = { slider: "Slider", drag: "Drag", grid: "Grid" };
-  const HOME_FIXED_TOGGLES = {
-    setHomeHotDeals: "home_hot_deals_enabled",
-    setHomeNewProducts: "home_new_products_enabled",
-  };
+  const HOME_FIXED_SECTIONS = [
+    { id: "hot", label: "হট ডিল", base: "home_hot_deals", defaultLimit: 6 },
+    { id: "new", label: "নতুন পণ্য", base: "home_new_products", defaultLimit: 12 },
+  ];
 
-  Object.entries(HOME_FIXED_TOGGLES).forEach(([id, key]) => {
-    const el = $(id);
-    if (!el) return;
-    el.addEventListener("change", () => {
-      state.settings[key] = el.checked ? "true" : "false";
-      markDirty();
-      renderHomeSectionChips(categoryLookup());
+  function homeFixedBase(id) {
+    const row = HOME_FIXED_SECTIONS.find((section) => section.id === id);
+    return row ? row.base : "";
+  }
+
+  function homeFixedRows() {
+    return HOME_FIXED_SECTIONS.map(({ id, label, base, defaultLimit }) => {
+      const mode = String(state.settings[base + "_mode"] || "grid");
+      const columns = Number(state.settings[base + "_columns"]);
+      const limit = Number(state.settings[base + "_limit"]);
+      return {
+        id,
+        label,
+        base,
+        enabled: String(state.settings[base + "_enabled"]) !== "false",
+        mode: ["slider", "drag", "grid"].includes(mode) ? mode : "grid",
+        columns: [4, 5, 6].includes(columns) ? columns : 4,
+        limit: Math.min(24, Math.max(4, limit || defaultLimit)),
+      };
     });
-  });
+  }
 
   function categoryLookup() {
     const map = new Map();
@@ -858,17 +870,44 @@
     return id;
   }
 
+  function homeSegHtml(field, values, current) {
+    return `<div class="hs-seg" data-field="${field}">${values
+      .map(
+        (value) =>
+          `<button type="button" data-value="${value}" class="${String(current) === String(value) ? "is-on" : ""}">${HOME_MODE_LABELS[value] || value}</button>`
+      )
+      .join("")}</div>`;
+  }
+
+  function homeFixedRowHtml(row) {
+    const meta = `${row.limit} pcs · ${HOME_MODE_LABELS[row.mode] || "Grid"} · ${row.columns} column`;
+    return `
+      <div class="hs-row${row.enabled ? "" : " is-off"}" data-fixed="${row.id}">
+        <span class="hs-handle is-fixed" title="Fixed section">•</span>
+        <div class="hs-name">
+          <strong>${esc(row.label)}</strong>
+          <span>${esc(meta)}</span>
+        </div>
+        <div class="hs-neg">
+          ${homeSegHtml("mode", ["slider", "drag", "grid"], row.mode)}
+          ${homeSegHtml("columns", [4, 5, 6], row.columns)}
+          <label class="hs-count">
+            <input type="number" class="settings-input" data-field="limit" min="4" max="24" step="1" value="${row.limit}" aria-label="Product count" />
+            <span>pcs</span>
+          </label>
+        </div>
+        <label class="pf-switch" title="Show on storefront">
+          <input type="checkbox" data-field="enabled" ${row.enabled ? "checked" : ""} aria-label="Show on storefront" />
+          <span class="slider"></span>
+        </label>
+        <div class="hs-actions"><span class="hs-fixed-tag">Fixed</span></div>
+      </div>`;
+  }
+
   function homeSectionRowHtml(section, index, lookup) {
     const cat = lookup.get(String(section.category));
     const name = cat ? cat.name : "Category removed";
     const meta = `${section.limit} pcs · ${HOME_MODE_LABELS[section.mode] || "Grid"} · ${section.columns} column`;
-    const seg = (field, values, current) =>
-      `<div class="hs-seg" data-field="${field}">${values
-        .map(
-          (value) =>
-            `<button type="button" data-value="${value}" class="${String(current) === String(value) ? "is-on" : ""}">${HOME_MODE_LABELS[value] || value}</button>`
-        )
-        .join("")}</div>`;
 
     return `
       <div class="hs-row${section.enabled ? "" : " is-off"}" draggable="true" data-id="${esc(section.id)}">
@@ -878,8 +917,8 @@
           <span>${esc(meta)}</span>
         </div>
         <div class="hs-neg">
-          ${seg("mode", ["slider", "drag", "grid"], section.mode)}
-          ${seg("columns", [4, 5, 6], section.columns)}
+          ${homeSegHtml("mode", ["slider", "drag", "grid"], section.mode)}
+          ${homeSegHtml("columns", [4, 5, 6], section.columns)}
           <label class="hs-count">
             <input type="number" class="settings-input" data-field="limit" min="4" max="24" step="1" value="${section.limit}" aria-label="Product count" />
             <span>pcs</span>
@@ -902,8 +941,7 @@
     const el = $("homeSectionsOrder");
     if (!el) return;
     const rows = [];
-    if (String(state.settings.home_hot_deals_enabled) !== "false") rows.push({ label: "হট ডিল", fixed: true });
-    if (String(state.settings.home_new_products_enabled) !== "false") rows.push({ label: "নতুন পণ্য", fixed: true });
+    homeFixedRows().forEach((row) => rows.push({ label: row.label, fixed: true, off: !row.enabled }));
     state.homeSections.forEach((section) => {
       const cat = lookup.get(String(section.category));
       rows.push({ label: cat ? cat.name : "—", off: !section.enabled });
@@ -938,10 +976,17 @@
     btn.disabled = !select.value;
   }
 
+  function renderHomeFixedRows() {
+    const rowsEl = $("homeFixedRows");
+    if (!rowsEl) return;
+    rowsEl.innerHTML = homeFixedRows().map(homeFixedRowHtml).join("");
+  }
+
   function renderHomeSections() {
     const rowsEl = $("homeSectionRows");
     if (!rowsEl) return;
     const lookup = categoryLookup();
+    renderHomeFixedRows();
     rowsEl.innerHTML = state.homeSections
       .map((section, index) => homeSectionRowHtml(section, index, lookup))
       .join("");
@@ -1065,6 +1110,42 @@
         .filter(Boolean);
       markDirty();
       renderHomeSections();
+    });
+  }
+
+  // fixed sections (হট ডিল / নতুন পণ্য) — always on top, only layout knobs
+  const homeFixedRowsEl = $("homeFixedRows");
+  if (homeFixedRowsEl) {
+    homeFixedRowsEl.addEventListener("click", (e) => {
+      const row = e.target.closest(".hs-row[data-fixed]");
+      const segBtn = e.target.closest(".hs-seg button");
+      if (!row || !segBtn) return;
+      const base = homeFixedBase(row.dataset.fixed);
+      if (!base) return;
+      const field = segBtn.closest(".hs-seg").dataset.field;
+      state.settings[`${base}_${field}`] =
+        field === "columns" ? String(segBtn.dataset.value) : segBtn.dataset.value;
+      markDirty();
+      renderHomeSections();
+    });
+
+    homeFixedRowsEl.addEventListener("change", (e) => {
+      const row = e.target.closest(".hs-row[data-fixed]");
+      if (!row) return;
+      const base = homeFixedBase(row.dataset.fixed);
+      if (!base) return;
+      const field = e.target.dataset.field;
+      if (field === "limit") {
+        const n = Math.round(Number(e.target.value));
+        const fallback = (HOME_FIXED_SECTIONS.find((section) => section.base === base) || {}).defaultLimit || 12;
+        state.settings[`${base}_limit`] = String(Number.isFinite(n) ? Math.min(24, Math.max(4, n)) : fallback);
+        markDirty();
+        renderHomeSections();
+      } else if (field === "enabled") {
+        state.settings[`${base}_enabled`] = e.target.checked ? "true" : "false";
+        markDirty();
+        renderHomeSections();
+      }
     });
   }
 
@@ -4321,10 +4402,6 @@
     $("setCardCheckoutPopup").checked = String(state.settings.card_checkout_popup_enabled) !== "false";
 
     // home page fixed sections + category sections
-    Object.entries(HOME_FIXED_TOGGLES).forEach(([id, key]) => {
-      const el = $(id);
-      if (el) el.checked = String(state.settings[key]) !== "false";
-    });
     renderHomeSections();
     renderMenuBuilder();
 

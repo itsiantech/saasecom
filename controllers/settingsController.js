@@ -26,7 +26,7 @@ const { buildTree } = require("../lib/categoryHelpers");
 const { CHECKOUT_FIELDS, FIELD_KEYS } = require("../lib/checkoutFields");
 const { encrypt, decrypt, maskSecret, isMasked } = require("../lib/secretBox");
 const { DEFAULT_TEMPLATES, TEMPLATE_LABELS } = require("../lib/emailTemplates");
-const { parseSections, normalizeSections } = require("../lib/homeSections");
+const { parseSections, normalizeSections, FIXED_KEYS, normalizeFixedValue } = require("../lib/homeSections");
 const { buildMenu, normalizeMenu } = require("../lib/storeMenu");
 const {
   GOOGLE_SEO_DEFAULTS,
@@ -116,6 +116,7 @@ const SETTING_KEYS = [
   "home_category_sections",
   "home_hot_deals_enabled",
   "home_new_products_enabled",
+  ...FIXED_KEYS,
   // storefront navigation
   "storefront_menu",
   // Google SEO
@@ -188,6 +189,12 @@ const DEFAULTS = {
   home_category_sections: "[]",
   home_hot_deals_enabled: "true",
   home_new_products_enabled: "true",
+  home_hot_deals_mode: "grid",
+  home_hot_deals_columns: "4",
+  home_hot_deals_limit: "6",
+  home_new_products_mode: "grid",
+  home_new_products_columns: "4",
+  home_new_products_limit: "12",
   storefront_menu: "[]",
   ...GOOGLE_SEO_DEFAULTS,
   ...TRACKING_DEFAULTS,
@@ -587,6 +594,7 @@ async function adminSave(req, res) {
     } else if (key === "storefront_menu") {
       value = JSON.stringify(normalizeMenu(value, { allowedCategoryIds: allowedMenuCategories }));
     } else if (BOOL_KEYS.includes(key)) value = value === true || value === "true" ? "true" : "false";
+    else if (FIXED_KEYS.includes(key)) value = normalizeFixedValue(key, value);
     else if (key.startsWith("seo_")) value = normalizeSeoValue(key, value);
     else value = String(value == null ? "" : value);
     if (["logo_width", "logo_height"].includes(key)) {
