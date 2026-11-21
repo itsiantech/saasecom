@@ -1463,12 +1463,12 @@ async function saveLanding() {
       }),
     });
     renderLanding(data && data.branding);
-    landingNote("সেভ হয়েছে — ল্যান্ডিং পেজে লাইভ", "ok");
+    landingNote("ব্র্যান্ডিং সেভ হয়েছে — লগ-ইন/পোর্টাল/অ্যাডমিন পেজে দেখাবে", "ok");
   } catch (err) {
     landingNote(err.message, "err");
   } finally {
     btn.disabled = false;
-    btn.textContent = "সেভ করুন";
+    btn.textContent = "ব্র্যান্ডিং সেভ";
   }
 }
 

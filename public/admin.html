@@ -197,18 +197,40 @@
         </div>
       </section>
 
-      <!-- landing page branding -->
+      <!-- landing page content + platform branding -->
       <section class="panel" id="landing">
         <div class="panel-head">
           <div>
             <h3>ল্যান্ডিং পেজ</h3>
-            <p class="count">প্রতিটি সেকশনের লেখা/ছবি বদলান, সেকশন চালু-বন্ধ করুন, নতুন সেকশন যোগ করুন — সেভ করলেই লাইভ</p>
+            <p class="count">সেকশনের লেখা/ছবি বদলে “ল্যান্ডিং সেভ করুন” চাপুন — লাইভ পেজে রিফ্রেশ করলেই দেখবে</p>
           </div>
-          <button class="btn-add" id="landingSaveBtn" type="button">ব্র্যান্ডিং সেভ</button>
+          <a class="btn-mini link" href="/" target="_blank" rel="noopener">লাইভ পেজ দেখুন ↗</a>
         </div>
+        <div class="landing-body cms-body">
+          <div class="cms-head">
+            <div>
+              <h4 class="cms-title">লাইভ ল্যান্ডিং পেজ</h4>
+              <p class="cms-sub">এই লেখা/ছবি/সেকশনগুলোই amarbazaar.bd-এর হোম পেজে দেখায়। সেকশন বন্ধ করলে পুরো সেকশনটা বাদ যায়, নতুন কাস্টম সেকশনও যোগ করা যায়।</p>
+            </div>
+            <button class="btn-add" id="cmsSaveBtn" type="button">ল্যান্ডিং সেভ করুন</button>
+          </div>
+          <div id="landingCms" class="cms-list">
+            <p class="cms-empty">লোড হচ্ছে...</p>
+          </div>
+          <div class="landing-foot">
+            <span class="theme-note" id="cmsNote"></span>
+            <span class="billing-hint">লেখায় [[...]] দিলে ঠিকানা-চিপ হিসেবে দেখাবে। ছবি সর্বোচ্চ ৮MB (jpg/png/webp/gif)। কোথাও না দেখালে পেজটি একবার রিফ্রেশ করুন (Ctrl+F5)।</span>
+          </div>
+        </div>
+
         <div class="landing-body">
-          <h4 class="cms-title">প্ল্যাটফর্ম ব্র্যান্ডিং</h4>
-          <p class="cms-sub">নাম, লোগো, ফ্যাভিকন আর ফুটার — লগইন, পোর্টাল, সেটআপ ও এই প্যানেলে ব্যবহৃত হয়</p>
+          <div class="cms-head">
+            <div>
+              <h4 class="cms-title">প্ল্যাটফর্ম ব্র্যান্ডিং (ল্যান্ডিং পেজে নয়)</h4>
+              <p class="cms-sub">নাম, লোগো, ফ্যাভিকন আর ফুটার — শুধু লগ-ইন, পোর্টাল, সেটআপ আর এই অ্যাডমিন প্যানেলে দেখায়; লাইভ ল্যান্ডিং পেজ বদলায় না</p>
+            </div>
+            <button class="btn-add" id="landingSaveBtn" type="button">ব্র্যান্ডিং সেভ</button>
+          </div>
           <div class="landing-grid">
             <div class="field">
               <label for="lbName">ব্র্যান্ড নাম</label>
@@ -257,24 +279,7 @@
 
           <div class="landing-foot">
             <span class="theme-note" id="landingNote"></span>
-            <span class="billing-hint">ব্র্যান্ড নাম লগইন, পোর্টাল, সেটআপ আর প্যানেলের সব লোগোটেক্সটে বসবে। ল্যান্ডিং পেজের নিজস্ব ব্র্যান্ড নিচের সেকশনে।</span>
-          </div>
-        </div>
-
-        <div class="landing-body cms-body">
-          <div class="cms-head">
-            <div>
-              <h4 class="cms-title">ল্যান্ডিং পেজ কনটেন্ট</h4>
-              <p class="cms-sub">সেকশনভিত্তিক লেখা, ছবি, লিংক আর চালু/বন্ধ। নতুন কাস্টম সেকশনও যোগ করা যায়।</p>
-            </div>
-            <button class="btn-add" id="cmsSaveBtn" type="button">ল্যান্ডিং সেভ করুন</button>
-          </div>
-          <div id="landingCms" class="cms-list">
-            <p class="cms-empty">লোড হচ্ছে...</p>
-          </div>
-          <div class="landing-foot">
-            <span class="theme-note" id="cmsNote"></span>
-            <span class="billing-hint">লেখায় [[...]] দিলে ঠিকানা-চিপ হিসেবে দেখাবে। ছবি সর্বোচ্চ ৮MB (jpg/png/webp/gif)। কোনো সেকশন বন্ধ করলে পেজ থেকে পুরো সেকশনটা বাদ যাবে।</span>
+            <span class="billing-hint">এই ব্র্যান্ডিং শুধু লগ-ইন, পোর্টাল, সেটআপ ও অ্যাডমিন প্যানেলে যায় — লাইভ ল্যান্ডিং পেজ বদলাতে উপরের “লাইভ ল্যান্ডিং পেজ” সেকশন ব্যবহার করুন।</span>
           </div>
         </div>
       </section>
@@ -492,7 +497,7 @@
   <div class="toast" id="toast"></div>
 
   <script src="/js/platform-brand.js?v=1"></script>
-  <script src="/js/admin.js?v=19"></script>
-  <script src="/js/landing-admin.js?v=1"></script>
+  <script src="/js/admin.js?v=20"></script>
+  <script src="/js/landing-admin.js?v=2"></script>
 </body>
 </html>

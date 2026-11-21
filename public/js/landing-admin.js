@@ -11,6 +11,7 @@
 
   var TOKEN = localStorage.getItem("luxe_token");
   var state = { content: null, busy: false };
+  saveBtn.disabled = true; // no silent clicks before the editor is ready
   var noteTimer = null;
 
   /* ---------------- helpers ---------------- */
@@ -751,13 +752,19 @@
       state.content = data && data.content;
       if (!state.content) throw new Error("কনটেন্ট পাওয়া যায়নি");
       render();
+      saveBtn.disabled = false;
     } catch (err) {
       root.textContent = err.message;
+      say("এডিটর লোড হয়নি — " + err.message, "err");
     }
   }
 
   saveBtn.addEventListener("click", async function () {
-    if (state.busy || !state.content) return;
+    if (state.busy) return;
+    if (!state.content) {
+      say("এডিটর এখনো তৈরি হয়নি — একটু অপেক্ষা করে আবার চেষ্টা করুন", "err");
+      return;
+    }
     state.busy = true;
     saveBtn.disabled = true;
     saveBtn.textContent = "সেভ হচ্ছে...";
@@ -767,7 +774,7 @@
         body: JSON.stringify({ content: state.content })
       });
       if (data && data.content) state.content = data.content;
-      say("সেভ হয়েছে — ল্যান্ডিং পেজে লাইভ", "ok");
+      say("সেভ হয়েছে — লাইভ পেজটি একবার রিফ্রেশ করুন (Ctrl+F5)", "ok");
     } catch (err) {
       say(err.message, "err");
     } finally {
