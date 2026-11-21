@@ -108,6 +108,17 @@
     });
   }
 
+  // panel links carry ?store=<slug> (portal → dashboard/settings); that choice
+  // must beat the last store opened in this browser, or the panel resolves a
+  // different shop and every admin call 403s
+  function pageSlug() {
+    try {
+      return new URLSearchParams(location.search).get("store") || "";
+    } catch {
+      return "";
+    }
+  }
+
   function buildHeaders(options) {
     const opts = options || {};
     const headers = Object.assign({}, opts.headers || {});
@@ -116,6 +127,8 @@
     if (!isForm && body !== undefined && !hasHeader(headers, "Content-Type")) {
       headers["Content-Type"] = "application/json";
     }
+    const slug = pageSlug();
+    if (slug && !hasHeader(headers, "x-store-slug")) headers["x-store-slug"] = slug;
     const token = getToken();
     if (token && !hasHeader(headers, "Authorization")) headers.Authorization = "Bearer " + token;
     // cookie session cannot use a bearer header, so state-changing calls carry
@@ -137,12 +150,14 @@
         const token = getToken();
         if (!token) return false;
         const headers = { "Content-Type": "application/json", Authorization: "Bearer " + token };
-        try {
-          const slug = localStorage.getItem(STORE_KEY);
-          if (slug) headers["x-store-slug"] = slug;
-        } catch {
-          /* private mode */
-        }
+        const slug = pageSlug() || (function () {
+          try {
+            return localStorage.getItem(STORE_KEY) || "";
+          } catch {
+            return "";
+          }
+        })();
+        if (slug) headers["x-store-slug"] = slug;
         try {
           const res = await fetch("/api/auth/refresh", {
             method: "POST",

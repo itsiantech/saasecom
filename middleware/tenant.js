@@ -60,6 +60,14 @@ async function resolveStore(req, saas) {
   if (!saas) {
     const hostStore = await resolveHostStore(req);
     if (hostStore) return hostStore;
+    // an explicit choice (?store= / x-store-slug) still wins: the portal links
+    // every shop as dashboard.html?store=<slug>. With one store this changes
+    // nothing; auth and ownership checks still gate every admin route.
+    const slug = req.headers["x-store-slug"] || req.query.store;
+    if (slug) {
+      const chosen = await Store.findOne({ slug: String(slug).toLowerCase(), deletedAt: null });
+      if (chosen) return chosen;
+    }
     let store = await Store.findOne({ deletedAt: null }).sort({ createdAt: 1 });
     if (!store) {
       const ownerId = getTokenUserId(req);
