@@ -5,7 +5,7 @@ const { auth, requireAdmin } = require("../middleware/auth");
 const { makeImageUpload, singleImage, finalizeImage } = require("../middleware/upload");
 const { requireFeature } = require("../lib/features");
 
-const imageUpload = makeImageUpload({ maxBytes: 2 * 1024 * 1024 });
+const imageUpload = makeImageUpload({ maxBytes: 20 * 1024 * 1024 });
 const productGuard = [auth, requireAdmin, requireFeature("products")];
 
 // image upload used by the product form (product / variation / swatch images)

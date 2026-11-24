@@ -58,7 +58,7 @@ recomputes the quote with the same engine the shopper saw.
   `EMI1 | iv | tag | ciphertext`). The key derives from
   `SETTINGS_SECRET` → `JWT_SECRET` → dev fallback; **set `SETTINGS_SECRET` in
   production and keep it stable**, otherwise stored scans cannot be decrypted.
-- Accepted types: JPG, PNG, WebP; max 4 MB; max 4 documents per application.
+- Accepted types: JPG, PNG, WebP; max 20 MB; max 4 documents per application.
   The MIME type is sniffed from the bytes, not the filename.
 - A pending upload expires after 24 hours and is deleted by the scheduler.
 - Admin download is authenticated:

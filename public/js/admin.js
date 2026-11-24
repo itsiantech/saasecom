@@ -1754,7 +1754,7 @@ function billingCard(m, data) {
         ? '<img id="bmQrImg" src="' + esc(data.imageUrl) + '" alt="QR" />'
         : '<div class="bm-qr-empty" id="bmQrImg">QR<br />নেই</div>') +
       '<div><input type="file" id="bmQrFile" accept="image/*" style="font-size:12px;width:100%;" />' +
-      '<p class="billing-hint" style="margin-top:6px;">QR ছবি আপলোড করুন (2MB এর নিচে) — অথবা নিচে লিংক বসান</p></div>' +
+      '<p class="billing-hint" style="margin-top:6px;">QR ছবি আপলোড করুন (20MB এর নিচে) — অথবা নিচে লিংক বসান</p></div>' +
       "</div>"
     : "";
 

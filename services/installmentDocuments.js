@@ -17,7 +17,7 @@ const { encryptBuffer, decryptBuffer } = require("../lib/secretBox");
 const { getInstallmentSettings } = require("../lib/installmentSettings");
 
 const ROOT = path.join(__dirname, "..", "storage", "private", "installment-documents");
-const MAX_BYTES = 4 * 1024 * 1024;
+const MAX_BYTES = 20 * 1024 * 1024;
 const MAX_DOCS = 4;
 const PENDING_TTL_MS = 24 * 60 * 60 * 1000;
 const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/webp"]);
@@ -91,7 +91,7 @@ async function uploadDocument({ storeId, type, filename, data }) {
 
   const buffer = decodeBase64(data);
   if (buffer.length > MAX_BYTES) {
-    throw documentError("ডকুমেন্ট সর্বোচ্চ ৪MB হতে পারে", 400);
+    throw documentError("ডকুমেন্ট সর্বোচ্চ ২০MB হতে পারে", 400);
   }
   const mime = sniffImage(buffer);
   if (!ALLOWED_MIME.has(mime)) {

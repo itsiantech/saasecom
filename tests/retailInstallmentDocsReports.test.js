@@ -203,7 +203,7 @@ before(async () => {
   });
   state.app.use(
     "/api/public/installments",
-    express.json({ limit: "6mb" }),
+    express.json({ limit: "30mb" }),
     require("../routes/publicInstallments")
   );
   state.app.use("/api/retail-installments", express.json(), require("../routes/retailInstallments"));

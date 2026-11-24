@@ -8,7 +8,7 @@ A comprehensive settings management system for your e-commerce platform that all
 ### 1. Basic Settings
 - **Website Title**: Browser tab title
 - **Store Title**: Display name on website
-- **Logo**: Upload custom store logo (PNG, JPG, SVG, WebP - Max 5MB)
+- **Logo**: Upload custom store logo (PNG, JPG, SVG, WebP - Max 20MB)
 - **Favicon**: Upload custom favicon (ICO, PNG - 32x32 recommended)
 - **Google Location**: Address, latitude, longitude, and Google Maps embed URL
 
@@ -199,7 +199,7 @@ document.title = settings.websiteTitle;
 
 ## File Upload Configuration
 
-- **Max file size**: 5MB
+- **Max file size**: 20MB
 - **Allowed formats**: JPEG, JPG, PNG, GIF, ICO, WebP, SVG
 - **Upload directory**: `public/uploads/settings/`
 - **URL prefix**: `/uploads/settings/`
@@ -260,7 +260,7 @@ Edit `routes/settings.js` - add to the `languages` array in the `/languages` end
 ## Troubleshooting
 
 ### File upload fails
-- Check file size (max 5MB)
+- Check file size (max 20MB)
 - Check file type (images only)
 - Ensure `public/uploads/settings/` directory exists and is writable
 

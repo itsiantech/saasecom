@@ -914,6 +914,7 @@
       videoUrl: $("pfVideoUrl").value.trim(),
       isTopFeature: $("pfTopFeature").checked,
       isHotDeal: $("pfHotDeal").checked,
+      lensEnabled: $("pfLensEnabled").checked,
       categories: [...state.selectedCategories],
       tags: state.tags,
       attributes,
@@ -996,6 +997,7 @@
     $("pfVideoUrl").value = "";
     $("pfTopFeature").checked = false;
     $("pfHotDeal").checked = false;
+    $("pfLensEnabled").checked = false;
     $("pfAttrSelect").value = "";
     $("pfTermInput").value = "";
     $("pfPerTerm").checked = false;
@@ -1034,6 +1036,7 @@
     $("pfVideoUrl").value = p.videoUrl || "";
     $("pfTopFeature").checked = !!p.isTopFeature;
     $("pfHotDeal").checked = !!p.isHotDeal;
+    $("pfLensEnabled").checked = !!p.lensEnabled;
 
     state.selectedCategories = new Set((data.categories || []).map(String));
     // old saves could carry Uncategorized next to a real category — keep the real one
@@ -1222,6 +1225,7 @@
   $("pfVideoUrl").addEventListener("input", () => { renderVideoPreview(); markDirty(); });
   $("pfTopFeature").addEventListener("change", markDirty);
   $("pfHotDeal").addEventListener("change", markDirty);
+  $("pfLensEnabled").addEventListener("change", markDirty);
   $("pfEmiOverride").addEventListener("change", () => {
     readEmiState();
     $("pfEmiFields").hidden = !state.emi.override;

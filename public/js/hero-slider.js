@@ -7,7 +7,7 @@
 
   const $ = (id) => document.getElementById(id);
   const TOKEN_KEY = "luxe_token";
-  const MAX_BYTES = 2 * 1024 * 1024;
+  const MAX_BYTES = 20 * 1024 * 1024;
 
   const state = {
     items: [],
@@ -446,7 +446,7 @@
       return;
     }
     if (file.size > MAX_BYTES) {
-      showFormError("Image 2MB er beshi hote parbe na");
+      showFormError("Image 20MB er beshi hote parbe na");
       return;
     }
 

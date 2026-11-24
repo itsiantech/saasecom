@@ -6,8 +6,8 @@ const { auth, optionalAuth, requireAdmin } = require("../middleware/auth");
 const { makeImageUpload, singleImage, finalizeImage } = require("../middleware/upload");
 const { requireFeature } = require("../lib/features");
 
-const genericImage = makeImageUpload({ maxBytes: 2 * 1024 * 1024 });
-const settingsImage = makeImageUpload({ maxBytes: 5 * 1024 * 1024, allowSvg: true });
+const genericImage = makeImageUpload({ maxBytes: 20 * 1024 * 1024 });
+const settingsImage = makeImageUpload({ maxBytes: 20 * 1024 * 1024, allowSvg: true });
 const SETTINGS_DIR = path.join(__dirname, "..", "public", "uploads", "settings");
 
 // image upload for logo / favicon / social icons / footer logo

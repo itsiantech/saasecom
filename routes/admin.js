@@ -532,7 +532,7 @@ router.put("/settings/theme", auth, requireSuperAdmin, async (req, res) => {
 /* ------------------------------------------------- landing page branding */
 
 const BRANDING_DIR = path.join(__dirname, "..", "public", "uploads", "branding");
-const brandingImage = makeImageUpload({ maxBytes: 10 * 1024 * 1024, allowSvg: true });
+const brandingImage = makeImageUpload({ maxBytes: 20 * 1024 * 1024, allowSvg: true });
 
 router.get("/settings/landing", auth, requireSuperAdmin, async (req, res) => {
   try {
@@ -576,7 +576,7 @@ for (const field of ["logo", "favicon"]) {
 /* --------------------------------------------- landing page content */
 
 const LANDING_DIR = path.join(__dirname, "..", "public", "uploads", "landing");
-const landingAsset = makeImageUpload({ maxBytes: 8 * 1024 * 1024 });
+const landingAsset = makeImageUpload({ maxBytes: 20 * 1024 * 1024 });
 
 router.get("/settings/landing/content", auth, requireSuperAdmin, async (req, res) => {
   try {

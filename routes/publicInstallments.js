@@ -25,7 +25,7 @@ router.post(
   ctrl.apply
 );
 
-// NID / photo upload — one file per call, base64 JSON (5 MB body = ~3.7 MB file).
+// NID / photo upload — one file per call, base64 JSON (30 MB body ≈ 20 MB file).
 router.post(
   "/documents",
   rateLimit({

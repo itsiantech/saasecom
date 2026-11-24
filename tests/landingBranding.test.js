@@ -177,11 +177,11 @@ test("logo upload stores the image and remove clears it", async () => {
 test("oversized uploads are refused with a clear message", async () => {
   const res = await admin("post", "/api/admin/settings/landing/logo", state.superToken).attach(
     "logo",
-    Buffer.alloc(10 * 1024 * 1024 + 1024, 0x89),
+    Buffer.alloc(20 * 1024 * 1024 + 1024, 0x89),
     { filename: "big.png", contentType: "image/png" }
   );
   assert.equal(res.status, 400);
-  assert.match(res.body.message, /10MB/);
+  assert.match(res.body.message, /20MB/);
 });
 
 test("non-superadmins cannot upload branding images", async () => {

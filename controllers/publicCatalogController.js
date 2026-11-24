@@ -457,6 +457,7 @@ function publicProduct(product) {
     weightKg: product.weightKg || 0,
     hasVariations: !!product.hasVariations,
     hasSwatches: !!product.hasSwatches,
+    lensEnabled: !!product.lensEnabled,
     categories: product.categories || [],
     brand: product.brand || null,
     internationalConfig: product.internationalConfig || null,

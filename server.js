@@ -8,8 +8,8 @@ const Store = require("./models/Store");
 
 const app = express();
 app.use(cors());
-// NID uploads are base64 JSON; the default 100kb cap would reject them.
-app.use("/api/public/installments/documents", express.json({ limit: "6mb" }));
+// NID uploads are base64 JSON; the default 100kb cap would reject them (20MB file ≈ 27MB base64).
+app.use("/api/public/installments/documents", express.json({ limit: "30mb" }));
 // rawBody kept for HMAC-verified webhooks
 app.use(express.json({ verify: (req, _res, buf) => { req.rawBody = buf; } }));
 
@@ -71,6 +71,12 @@ app.use("/api/admin", require("./routes/admin"));
 app.use("/api/categories", require("./routes/categories"));
 app.use("/api/brands", require("./routes/brands"));
 app.use("/api/product-form", require("./routes/productForm"));
+// Isolated module: lens selector admin must never stop the app from booting.
+try {
+  app.use("/api/admin/lens", require("./routes/lensAdmin"));
+} catch (err) {
+  console.error("Lens selector module mount failed:", err.message);
+}
 // Isolated module: product builder specs must never stop the app from booting.
 try {
   app.use("/api/specs", require("./routes/specs"));
@@ -208,7 +214,7 @@ app.use(async (req, res, next) => {
 app.use((err, req, res, next) => {
   const isMulter = err && (err.name === "MulterError" || /image|file/i.test(err.message || ""));
   if (isMulter) {
-    const msg = err.code === "LIMIT_FILE_SIZE" ? "File 2MB er beshi hote parbe na" : err.message;
+    const msg = err.code === "LIMIT_FILE_SIZE" ? "File 20MB er beshi hote parbe na" : err.message;
     return res.status(400).json({ message: msg });
   }
   res.status(err.status || 500).json({ message: err.message || "Server error" });

@@ -947,6 +947,7 @@
               <div class="pf-card-head"><h3>Featured <span class="hint">Highlight on the storefront</span></h3></div>
               <label class="pf-check"><input id="pfTopFeature" type="checkbox" /><span>Show as featured product</span></label>
               <label class="pf-check"><input id="pfHotDeal" type="checkbox" /><span>Show as hot deal</span></label>
+              <label class="pf-check"><input id="pfLensEnabled" type="checkbox" /><span>Offer power lens on this product</span></label>
             </div>
 
             <!-- 3. Image gallery -->
@@ -955,7 +956,7 @@
               <div class="pf-gallery" id="pfGallery" style="margin-top:10px;"></div>
               <button class="pf-btn-sm" id="addGalleryBtn" type="button" style="margin-top:10px;">+ Add images</button>
               <input id="pfGalleryFile" type="file" accept="image/*" hidden multiple />
-              <p class="pf-note" style="border:none;padding:0;margin-top:8px;">Click an image to remove it. Max 2MB each.</p>
+              <p class="pf-note" style="border:none;padding:0;margin-top:8px;">Click an image to remove it. Max 20MB each.</p>
             </div>
 
             <!-- 4. Video -->
@@ -4240,7 +4241,7 @@
             <div class="hs-upload-side">
               <input type="file" id="hsFile" accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml" hidden />
               <button type="button" class="btn-ghost" id="hsPickBtn">Upload image</button>
-              <p class="promo-hint">JPG / PNG / WebP · max 2MB · 1600×800 recommended</p>
+              <p class="promo-hint">JPG / PNG / WebP · max 20MB · 1600×800 recommended</p>
             </div>
           </div>
         </div>
@@ -4319,7 +4320,7 @@
   <script src="/js/form-guard.js?v=2"></script>
   <script src="/js/categories.js"></script>
   <script src="/js/brands.js"></script>
-  <script src="/js/product-form.js?v=1"></script>
+  <script src="/js/product-form.js?v=2"></script>
   <script src="/js/settings-dashboard.js?v=19"></script>
   <script src="/js/installments-admin.js?v=1"></script>
   <script src="/js/retail-installments-admin.js?v=1"></script>

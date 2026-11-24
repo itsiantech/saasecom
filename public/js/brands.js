@@ -654,8 +654,8 @@ brandImageBtn.addEventListener("click", () => brandImageInput.click());
 brandImageInput.addEventListener("change", (e) => {
   const file = e.target.files[0];
   if (file) {
-    if (file.size > 2 * 1024 * 1024) {
-      toast("Image must be under 2MB", "error");
+    if (file.size > 20 * 1024 * 1024) {
+      toast("Image must be under 20MB", "error");
       return;
     }
     uploadedImage = file;

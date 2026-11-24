@@ -6,7 +6,7 @@ const { auth, requireAdmin } = require("../middleware/auth");
 const requireTenant = require("../middleware/requireTenant");
 const { requireFeature } = require("../lib/features");
 
-const imageUpload = makeImageUpload({ maxBytes: 2 * 1024 * 1024 });
+const imageUpload = makeImageUpload({ maxBytes: 20 * 1024 * 1024 });
 
 // public storefront er brand /api/public/brands theke ase — eta admin panel er
 router.use(requireTenant, auth, requireAdmin, requireFeature("brands"));

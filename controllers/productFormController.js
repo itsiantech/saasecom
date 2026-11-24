@@ -255,6 +255,8 @@ async function buildProduct(storeId, payload, existing) {
     videoUrl: safeVideoUrl(payload.videoUrl),
     isTopFeature: !!payload.isTopFeature,
     isHotDeal: !!payload.isHotDeal,
+    // omitted = leave the stored flag alone (older clients never send it)
+    lensEnabled: payload.lensEnabled === undefined ? undefined : !!payload.lensEnabled,
     brand: payload.brand && mongoose.isValidObjectId(payload.brand) ? payload.brand : null,
     hasVariations: Array.isArray(payload.attributes) && payload.attributes.length > 0,
     hasSwatches: Array.isArray(payload.swatches) && payload.swatches.length > 0,

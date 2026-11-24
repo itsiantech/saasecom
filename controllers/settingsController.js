@@ -55,6 +55,7 @@ const {
   pathaoZones: courierPathaoZones,
 } = require("../services/courierSettings");
 const { featuresForStore } = require("../lib/features");
+const { LENS_MODULE_KEY } = require("../lib/lensSettings");
 const { sendMail } = require("../lib/mailer");
 const { sendSms } = require("../lib/sms");
 const {
@@ -108,6 +109,8 @@ const SETTING_KEYS = [
   "login_phone_enabled",
   // marketing
   "flash_sales_enabled",
+  // lens selector module
+  "lens_selector_enabled",
   // storefront product card
   "card_add_to_cart_enabled",
   "card_buy_now_enabled",
@@ -145,6 +148,7 @@ const BOOL_KEYS = [
   "login_email_enabled",
   "login_phone_enabled",
   "flash_sales_enabled",
+  "lens_selector_enabled",
   "card_add_to_cart_enabled",
   "card_buy_now_enabled",
   "card_checkout_popup_enabled",
@@ -183,6 +187,7 @@ const DEFAULTS = {
   login_email_enabled: "true",
   login_phone_enabled: "false",
   flash_sales_enabled: "true",
+  lens_selector_enabled: "false",
   card_add_to_cart_enabled: "true",
   card_buy_now_enabled: "true",
   card_checkout_popup_enabled: "true",

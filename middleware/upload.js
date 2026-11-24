@@ -7,7 +7,7 @@ const multer = require("multer");
 const UPLOAD_DIR = path.join(__dirname, "..", "public", "uploads");
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
-const MAX_SIZE = 2 * 1024 * 1024; // 2MB default for generic uploads
+const MAX_SIZE = 20 * 1024 * 1024; // 20MB default for image uploads
 
 // Safe extension is derived from the sniffed bytes, never from originalname.
 const MIME_EXT = {

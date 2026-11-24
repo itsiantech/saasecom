@@ -133,6 +133,9 @@ const productSchema = new mongoose.Schema(
     // ---- Retail EMI override (default undefined = inherit store/category) ----
     installment: { type: installmentPolicySchema, default: undefined },
 
+    // ---- Lens Selector opt-in for this frame (module itself is plan-gated) ----
+    lensEnabled: { type: Boolean, default: false },
+
     // ---- Product builder specs (key -> typed value; definitions live in SpecDefinition) ----
     specs: { type: mongoose.Schema.Types.Mixed, default: undefined },
 
