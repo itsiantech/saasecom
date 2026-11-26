@@ -4,7 +4,6 @@
 (function () {
   "use strict";
 
-  const TOKEN_KEY = "luxe_token";
   const CACHE_KEY = "luxe_dash_style";
   const STYLE_KEYS = [
     "bodyBg",
@@ -614,8 +613,7 @@
   }
 
   async function load() {
-    const token = localStorage.getItem(TOKEN_KEY);
-    if (!token) return;
+    if (!window.ApiSession.signedIn()) return;
     try {
       const res = await window.ApiSession.request(apiUrl(), {
         headers: { "Content-Type": "application/json" },
@@ -648,8 +646,7 @@
   }
 
   async function saveStyle() {
-    const token = localStorage.getItem(TOKEN_KEY);
-    if (!token) {
+    if (!window.ApiSession.signedIn()) {
       setStatus("সেভ করতে আগে লগইন করুন।", "err");
       return;
     }

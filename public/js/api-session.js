@@ -51,6 +51,12 @@
     }
   }
 
+  // Panels that used to test the bearer token alone went blank for owners who
+  // signed in through /admin.html, because that session lives only in a cookie.
+  function signedIn() {
+    return Boolean(getToken()) || isTenant();
+  }
+
   function cookieValue(name) {
     const rows = String(document.cookie || "").split(";");
     for (const row of rows) {
@@ -369,6 +375,7 @@
     clear: clear,
     decode: decode,
     isTenant: isTenant,
+    signedIn: signedIn,
     tenantLogout: tenantLogout,
   };
 })();

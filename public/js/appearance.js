@@ -3,7 +3,6 @@
   "use strict";
 
   const $ = (id) => document.getElementById(id);
-  const TOKEN_KEY = "luxe_token";
   const esc = (value) =>
     String(value == null ? "" : value)
       .replace(/&/g, "&amp;")
@@ -349,7 +348,7 @@
 
   /* ---------------- boot ---------------- */
   async function load() {
-    if (!localStorage.getItem(TOKEN_KEY)) {
+    if (!window.ApiSession.signedIn()) {
       setStatus("Appearance দেখতে আগে লগইন করুন।", "warn");
       return;
     }
