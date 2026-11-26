@@ -36,6 +36,10 @@ server {
     location = /portal.html    { proxy_pass http://127.0.0.1:5000; }
     location = /login.html     { proxy_pass http://127.0.0.1:5000; }
     location = /account.html   { proxy_pass http://127.0.0.1:5000; }
+    # matching add-ons ships with the storefront, but /js/ and /css/ belong to the
+    # panel — name these two exactly or the section 404s on this host too
+    location = /js/matching-addons.js   { proxy_pass http://127.0.0.1:3000; }
+    location = /css/matching-addons.css { proxy_pass http://127.0.0.1:3000; }
     location ^~ /css/          { proxy_pass http://127.0.0.1:5000; }
     location ^~ /js/           { proxy_pass http://127.0.0.1:5000; }
     location ^~ /uploads/      { proxy_pass http://127.0.0.1:5000; }
