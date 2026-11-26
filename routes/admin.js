@@ -23,6 +23,9 @@ const { syncFeatureEntitlements, createStoreWithSubscription } = require("../lib
 const { assertShopName } = require("../lib/shopAddress");
 const { writeAudit } = require("../lib/audit");
 const { purgeStoreData } = require("../lib/storePurge");
+const multer = require("multer");
+const Addon = require("../models/Addon");
+const addons = require("../lib/addons");
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -710,6 +713,144 @@ router.put("/billing/settings", auth, requireSuperAdmin, async (req, res) => {
     res.json({ settings: billing.maskedSettings(settings) });
   } catch (err) {
     res.status(400).json({ message: err.message });
+  }
+});
+
+/* ------------------------------------------------- add-ons / plugins */
+
+const zipUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: addons.MAX_ZIP_BYTES, files: 1 },
+  fileFilter: (_req, file, cb) => {
+    const type = String(file.mimetype || "").toLowerCase();
+    if (["application/zip", "application/x-zip-compressed", "application/octet-stream"].includes(type)) {
+      return cb(null, true);
+    }
+    const err = new Error("শুধু .zip ফাইল আপলোড করা যাবে");
+    err.status = 400;
+    cb(err);
+  },
+});
+
+function uploadZip(req, res, next) {
+  zipUpload.single("zip")(req, res, (err) => {
+    if (!err) return next();
+    if (err.code === "LIMIT_FILE_SIZE") {
+      return res.status(400).json({ message: "zip সর্বোচ্চ ২০MB হতে পারে" });
+    }
+    return res.status(err.status || 400).json({ message: err.message });
+  });
+}
+
+router.get("/addons", auth, requireSuperAdmin, async (_req, res) => {
+  const rows = await Addon.find().sort({ createdAt: -1 });
+  const out = await Promise.all(
+    rows.map(async (a) =>
+      addons.adminView(a, await Store.countDocuments({ deletedAt: null, disabledAddons: { $ne: a.key } }))
+    )
+  );
+  res.json(out);
+});
+
+// same key abar upload korle package replace hoy (version update)
+router.post("/addons/upload", auth, requireSuperAdmin, uploadZip, async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: "zip ফাইল দিন" });
+    const inspected = addons.inspectZip(req.file.buffer);
+    const existed = await Addon.findOne({ key: inspected.manifest.key });
+    const addon = await addons.installAddon(req.file.buffer, req.user.id, inspected);
+    await writeAudit({
+      user: req.user.id,
+      action: existed ? "addon.update" : "addon.upload",
+      entity: "Addon",
+      entityId: addon._id,
+      oldValue: existed ? { version: existed.version, fileCount: existed.fileCount } : undefined,
+      newValue: { key: addon.key, name: addon.name, version: addon.version, fileCount: addon.fileCount },
+    });
+    res.status(existed ? 200 : 201).json(addons.adminView(addon));
+  } catch (err) {
+    res.status(err.status || 400).json({ message: err.message });
+  }
+});
+
+router.patch("/addons/:id", auth, requireSuperAdmin, async (req, res) => {
+  try {
+    const addon = await Addon.findById(req.params.id);
+    if (!addon) return res.status(404).json({ message: "অ্যাড-অন পাওয়া যায়নি" });
+    const before = { name: addon.name, nameEn: addon.nameEn, description: addon.description, status: addon.status };
+    const body = req.body || {};
+    if (body.name !== undefined) {
+      const name = String(body.name || "").trim();
+      if (!name || name.length > 80) return res.status(400).json({ message: "নাম ১–৮০ অক্ষরের মধ্যে দিন" });
+      addon.name = name;
+    }
+    if (body.nameEn !== undefined) addon.nameEn = String(body.nameEn || "").trim().slice(0, 80);
+    if (body.description !== undefined) addon.description = String(body.description || "").trim().slice(0, 300);
+    if (body.status !== undefined) {
+      if (!["active", "disabled"].includes(body.status)) {
+        return res.status(400).json({ message: "status হবে active অথবা disabled" });
+      }
+      addon.status = body.status;
+    }
+    await addon.save();
+    await writeAudit({
+      user: req.user.id,
+      action: "addon.update",
+      entity: "Addon",
+      entityId: addon._id,
+      oldValue: before,
+      newValue: { name: addon.name, nameEn: addon.nameEn, description: addon.description, status: addon.status },
+    });
+    res.json(addons.adminView(addon));
+  } catch (err) {
+    res.status(err.status || 400).json({ message: err.message });
+  }
+});
+
+router.delete("/addons/:id", auth, requireSuperAdmin, async (req, res) => {
+  try {
+    const addon = await Addon.findById(req.params.id);
+    if (!addon) return res.status(404).json({ message: "অ্যাড-অন পাওয়া যায়নি" });
+    await addons.removeAddonFiles(addon.key);
+    await Addon.deleteOne({ _id: addon._id });
+    // store gulor off-list theke key shoriye dao — orphan key rakha jabe na
+    await Store.updateMany({ disabledAddons: addon.key }, { $pull: { disabledAddons: addon.key } });
+    await writeAudit({
+      user: req.user.id,
+      action: "addon.delete",
+      entity: "Addon",
+      entityId: addon._id,
+      oldValue: { key: addon.key, name: addon.name, version: addon.version },
+    });
+    res.json({ deleted: true });
+  } catch (err) {
+    res.status(err.status || 400).json({ message: err.message });
+  }
+});
+
+// per-store add-on control: disabled list-e je key gulo ache shegulo ei dokane dekhabe na
+router.patch("/stores/:id/addons", auth, requireSuperAdmin, async (req, res) => {
+  try {
+    const store = await Store.findById(req.params.id);
+    if (!store) return res.status(404).json({ message: "Store pawa jayni" });
+    const wanted = Array.from(new Set((Array.isArray(req.body && req.body.disabled) ? req.body.disabled : []).map((k) => String(k || ""))));
+    const known = await Addon.find({ key: { $in: wanted } }).select("key");
+    const disabled = known.map((a) => a.key);
+    const before = store.disabledAddons || [];
+    store.disabledAddons = disabled;
+    await store.save();
+    await writeAudit({
+      store: store._id,
+      user: req.user.id,
+      action: "store.addons.update",
+      entity: "Store",
+      entityId: store._id,
+      oldValue: { disabledAddons: before },
+      newValue: { disabledAddons: disabled },
+    });
+    res.json({ disabledAddons: disabled });
+  } catch (err) {
+    res.status(err.status || 400).json({ message: err.message });
   }
 });
 

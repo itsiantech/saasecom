@@ -15,6 +15,8 @@ const storeSchema = new mongoose.Schema(
       updatedAt: { type: Date, default: null },
       updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
     },
+    // add-on packages the superadmin switched off for this shop; empty = all active add-ons on
+    disabledAddons: { type: [String], default: [] },
     // domain gulo optional — default deya hoy na, na-hole sparse unique index null niye dhake
     subdomain: { type: String, unique: true, sparse: true, lowercase: true, trim: true },
     customDomain: { type: String, unique: true, sparse: true, lowercase: true, trim: true },

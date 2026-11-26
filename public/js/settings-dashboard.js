@@ -357,6 +357,10 @@
     state.settings.swatches_enabled = e.target.checked ? "true" : "false";
     markDirty();
   });
+  $("setMatchingAddons").addEventListener("change", (e) => {
+    state.settings.matching_addons_enabled = e.target.checked ? "true" : "false";
+    markDirty();
+  });
 
   /* ------------------------------------------------------------------ *
    * Home page product card switches
@@ -820,6 +824,111 @@
     const btn = $(row.btn);
     if (btn) btn.addEventListener("click", () => runCourierTest(row.provider, $(row.result), btn));
   });
+
+  /* ------------------------------------------------------------------ *
+   * Courier fraud check + Order protection
+   * ------------------------------------------------------------------ */
+  const FRAUD_TOGGLES = {
+    fraudCheckEnabled: "fraud_check_enabled",
+    fraudSteadfastEnabled: "fraud_steadfast_enabled",
+    fraudPathaoEnabled: "fraud_pathao_enabled",
+  };
+  const FRAUD_FIELDS = {
+    fraudLowFrom: "fraud_low_from",
+    fraudHighBelow: "fraud_high_below",
+  };
+  const PROTECT_TOGGLES = {
+    protectDuplicateEnabled: "protect_duplicate_enabled",
+    protectOtpEnabled: "protect_otp_enabled",
+  };
+  const PROTECT_FIELDS = {
+    protectRatePhoneMax: "protect_rate_phone_max",
+    protectRateIpMax: "protect_rate_ip_max",
+    protectRateWindowHours: "protect_rate_window_hours",
+    protectDuplicateWindowMinutes: "protect_duplicate_window_minutes",
+    protectDuplicateMinOrders: "protect_duplicate_min_orders",
+  };
+  const PROTECT_SELECTS = {
+    protectRateAction: "protect_rate_action",
+    protectDuplicateAction: "protect_duplicate_action",
+  };
+
+  function applyFraudEnabled() {
+    const on = String(state.settings.fraud_check_enabled) === "true";
+    const badge = document.querySelector("[data-fraud-off]");
+    if (badge) badge.hidden = on;
+    const status = $("fraudStatus");
+    if (status) {
+      status.textContent = on
+        ? "Fraud check ON — notun order place hole customer er phone courier API te check hobe."
+        : "Fraud check OFF — order er risk check hobe na.";
+    }
+    document
+      .querySelectorAll(
+        '#view-settings .settings-pane[data-pane="fraud-check"] input:not(#fraudCheckEnabled), ' +
+          '#view-settings .settings-pane[data-pane="fraud-check"] button.pf-btn-sm'
+      )
+      .forEach((el) => {
+        el.disabled = !on;
+      });
+  }
+
+  Object.entries(FRAUD_TOGGLES).forEach(([id, key]) => {
+    const el = $(id);
+    if (!el) return;
+    el.addEventListener("change", () => {
+      state.settings[key] = el.checked ? "true" : "false";
+      if (key === "fraud_check_enabled") applyFraudEnabled();
+      markDirty();
+    });
+  });
+  Object.entries(FRAUD_FIELDS).forEach(([id, key]) => {
+    const el = $(id);
+    if (!el) return;
+    el.addEventListener("input", () => {
+      state.settings[key] = el.value;
+      markDirty();
+    });
+  });
+  Object.entries(PROTECT_TOGGLES).forEach(([id, key]) => {
+    const el = $(id);
+    if (!el) return;
+    el.addEventListener("change", () => {
+      state.settings[key] = el.checked ? "true" : "false";
+      markDirty();
+    });
+  });
+  Object.entries(PROTECT_FIELDS).forEach(([id, key]) => {
+    const el = $(id);
+    if (!el) return;
+    el.addEventListener("input", () => {
+      state.settings[key] = el.value;
+      markDirty();
+    });
+  });
+  Object.entries(PROTECT_SELECTS).forEach(([id, key]) => {
+    const el = $(id);
+    if (!el) return;
+    el.addEventListener("change", () => {
+      state.settings[key] = el.value;
+      markDirty();
+    });
+  });
+
+  [
+    { provider: "steadfast", btn: "fraudSteadfastTestBtn", result: "fraudSteadfastResult" },
+    { provider: "pathao", btn: "fraudPathaoTestBtn", result: "fraudPathaoResult" },
+  ].forEach((row) => {
+    const btn = $(row.btn);
+    if (btn) btn.addEventListener("click", () => runCourierTest(row.provider, $(row.result), btn));
+  });
+
+  if ($("protectionBlacklistBtn")) {
+    $("protectionBlacklistBtn").addEventListener("click", () => {
+      const nav = document.querySelector('.nav-item[data-view="blacklist"]');
+      if (nav) nav.click();
+    });
+  }
 
   /* ------------------------------------------------------------------ *
    * Home page category sections
@@ -4312,6 +4421,33 @@
     applyCourierEnabled();
   }
 
+  function renderFraud() {
+    Object.entries(FRAUD_TOGGLES).forEach(([id, key]) => {
+      const el = $(id);
+      if (el) el.checked = String(state.settings[key]) === "true";
+    });
+    Object.entries(FRAUD_FIELDS).forEach(([id, key]) => {
+      const el = $(id);
+      if (el) el.value = state.settings[key] == null ? "" : state.settings[key];
+    });
+    applyFraudEnabled();
+  }
+
+  function renderProtection() {
+    Object.entries(PROTECT_TOGGLES).forEach(([id, key]) => {
+      const el = $(id);
+      if (el) el.checked = String(state.settings[key]) === "true";
+    });
+    Object.entries(PROTECT_FIELDS).forEach(([id, key]) => {
+      const el = $(id);
+      if (el) el.value = state.settings[key] == null ? "" : state.settings[key];
+    });
+    Object.entries(PROTECT_SELECTS).forEach(([id, key]) => {
+      const el = $(id);
+      if (el) el.value = state.settings[key] == null ? "" : String(state.settings[key]);
+    });
+  }
+
   const ACCESS_PANES = [
     { pane: "wholesale", key: "wholesale" },
     { pane: "partial", key: "partialPayment" },
@@ -4395,6 +4531,7 @@
     // product settings
     $("setAttributes").checked = String(state.settings.attributes_enabled) !== "false";
     $("setSwatches").checked = String(state.settings.swatches_enabled) !== "false";
+    $("setMatchingAddons").checked = String(state.settings.matching_addons_enabled) !== "false";
 
     // home page product card
     $("setCardAddToCart").checked = String(state.settings.card_add_to_cart_enabled) !== "false";
@@ -4441,6 +4578,8 @@
     renderGoogleSeo();
     renderTracking();
     renderCourier();
+    renderFraud();
+    renderProtection();
 
     Object.keys(TOGGLE_ID).forEach((key) => applyEnabled(key));
     Object.keys(PAY_TOGGLE).forEach((key) => applyPayEnabled(key));

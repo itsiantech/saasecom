@@ -377,7 +377,8 @@
   .hs-thumb { width: 82px; }
   .hs-meta .hs-link { max-width: 150px; }
   .hs-upload { grid-template-columns: 1fr; }
-  .hs-preview { max-width: 100%; }
+  .hs-preview { max-width: 100%; height: 250px; aspect-ratio: auto; }
+  .hs-preview img { object-fit: contain; }
   .hs-top-link { display: none; }
   .hs-settings { padding: 14px; }
   .hs-layout { width: 100%; }

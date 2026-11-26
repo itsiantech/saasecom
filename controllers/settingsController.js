@@ -47,6 +47,12 @@ const {
 } = require("../services/serverTracking");
 const { COURIER_DEFAULTS, BOOL_FIELDS: COURIER_BOOL_FIELDS } = require("../lib/courierSettings");
 const {
+  PROTECTION_DEFAULTS,
+  PROTECTION_KEYS,
+  BOOL_KEYS: PROTECTION_BOOL_KEYS,
+  normalizeProtectionValue,
+} = require("../lib/protectionSettings");
+const {
   COURIER_KEYS,
   adminSettings: courierAdminSettings,
   prepareSave: prepareCourierSave,
@@ -88,6 +94,7 @@ const SETTING_KEYS = [
   "footer_logo",
   "attributes_enabled",
   "swatches_enabled",
+  "matching_addons_enabled",
   "shipping_manual_enabled",
   "shipping_area_enabled",
   "shipping_class_enabled",
@@ -128,11 +135,14 @@ const SETTING_KEYS = [
   ...TRACKING_KEYS,
   // Courier API (Pathao / Steadfast)
   ...COURIER_KEYS,
+  // Website order protection (rate limits, duplicates, COD OTP)
+  ...PROTECTION_KEYS,
 ];
 
 const BOOL_KEYS = [
   "attributes_enabled",
   "swatches_enabled",
+  "matching_addons_enabled",
   "shipping_manual_enabled",
   "shipping_area_enabled",
   "shipping_class_enabled",
@@ -157,6 +167,7 @@ const BOOL_KEYS = [
   ...GOOGLE_SEO_BOOL_FIELDS,
   ...TRACKING_BOOL_FIELDS,
   ...COURIER_BOOL_FIELDS,
+  ...PROTECTION_BOOL_KEYS,
 ];
 
 const DEFAULTS = {
@@ -169,6 +180,7 @@ const DEFAULTS = {
   footer_logo: "",
   attributes_enabled: "true",
   swatches_enabled: "true",
+  matching_addons_enabled: "true",
   shipping_manual_enabled: "true",
   shipping_area_enabled: "false",
   shipping_class_enabled: "false",
@@ -204,6 +216,7 @@ const DEFAULTS = {
   ...GOOGLE_SEO_DEFAULTS,
   ...TRACKING_DEFAULTS,
   ...COURIER_DEFAULTS,
+  ...PROTECTION_DEFAULTS,
 };
 
 // je branding key gulo prottek dokan alada rakhbe — SiteSetting er field er sathe mapping
@@ -601,6 +614,7 @@ async function adminSave(req, res) {
     } else if (BOOL_KEYS.includes(key)) value = value === true || value === "true" ? "true" : "false";
     else if (FIXED_KEYS.includes(key)) value = normalizeFixedValue(key, value);
     else if (key.startsWith("seo_")) value = normalizeSeoValue(key, value);
+    else if (PROTECTION_KEYS.includes(key)) value = normalizeProtectionValue(key, value);
     else value = String(value == null ? "" : value);
     if (["logo_width", "logo_height"].includes(key)) {
       const n = Number(value);
@@ -1095,10 +1109,11 @@ async function checkoutGet(req, res) {
   const map = await getSettingsMap();
   const cfg = await getShippingConfig(storeId);
 
-  const [mobileRows, bankRows, gateways] = await Promise.all([
+  const [mobileRows, bankRows, gateways, smsSetting] = await Promise.all([
     PaymentMobileManual.find({}).sort({ sortOrder: 1 }).lean(),
     PaymentBankManual.find({}).sort({ sortOrder: 1 }).lean(),
     PaymentGateway.find({ active: true }).sort({ sortOrder: 1 }).lean(),
+    SmsSetting.findOne({ store: storeId }).lean(),
   ]);
 
   const apiMobile = boolOf(map, "api_mobile_enabled");
@@ -1178,6 +1193,18 @@ async function checkoutGet(req, res) {
       enabled: cfg.enabled,
       notes: cfg.notes,
       areas: cfg.areas.map((a) => ({ district: a.district, area: a.area, price: a.price })),
+    },
+    protection: {
+      fraudCheck: boolOf(map, "fraud_check_enabled"),
+      // COD OTP only when the store turned it on AND SMS can actually send
+      otpRequired:
+        boolOf(map, "protect_otp_enabled") &&
+        boolOf(map, "cod_enabled") &&
+        !!(smsSetting && smsSetting.enabled && smsSetting.otpEnabled && smsSetting.apiKey),
+    },
+    features: {
+      // "Matching add-ons" section on the product page (see public/js/matching-addons.js).
+      matchingAddons: boolOf(map, "matching_addons_enabled"),
     },
   });
 }

@@ -50,6 +50,10 @@ const {
   prepareInstallmentCheckout,
   createInstallmentRecords,
 } = require("../services/installmentCheckout");
+const { evaluateProtection } = require("../services/orderProtection");
+const { queueOrderCheck } = require("../services/fraudCheck");
+const { verifyOtp } = require("../lib/otp");
+const SmsSetting = require("../models/SmsSetting");
 
 const PHONE_RE = /^01[3-9]\d{8}$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -89,6 +93,21 @@ async function getOrCreateCart(req) {
 async function loadLineContext(storeId, item) {
   const product = await Product.findOne({ _id: item.product, store: storeId });
   if (!product) throw new WholesaleCartError("Product pawa jayni");
+
+  // Matching add-on rows resolve their price from Product.addons[_id]. Stock is
+  // infinite (add-ons are made on demand) and wholesale/flash never apply.
+  if (item.kind === "addon") {
+    if (!item.addonId) throw new WholesaleCartError("Addon id lagbe");
+    const row = (product.addons || []).find((a) => String(a._id) === String(item.addonId));
+    if (!row) throw new WholesaleCartError("Addon ta ar nei");
+    return {
+      product,
+      retailPrice: Number(row.price) || 0,
+      stock: Number.MAX_SAFE_INTEGER,
+      addonTitle: row.title,
+      addon: true,
+    };
+  }
 
   let retailPrice = product.salePrice || product.regularPrice || product.price || 0;
   let stock = Number(product.stock) || 0;
@@ -141,6 +160,21 @@ async function quoteLine({
   legacyUnitPrice = null,
   now = new Date(),
 }) {
+  // Matching add-on lines: retail only, no tiers, no flash sale, no wholesale.
+  if (item && item.kind === "addon") {
+    const addonPricing = retailPricing(retailPrice);
+    return {
+      ...addonPricing,
+      retailUnitPricePaisa:
+        addonPricing.retailUnitPricePaisa != null
+          ? addonPricing.retailUnitPricePaisa
+          : toPaisa(retailPrice),
+      flashSale: null,
+      flashSaleTitle: "",
+      flashPercent: 0,
+    };
+  }
+
   let wholesale = null;
   if (!forceRetail) {
     wholesale = await resolveWholesaleLine({
@@ -337,6 +371,12 @@ async function refreshCartPricing(req, cart, storeId) {
       continue;
     }
 
+    // Keep the denormalized add-on title in sync if the admin edited it.
+    if (context.addon && item.title !== context.addonTitle) {
+      item.title = context.addonTitle;
+      changed = true;
+    }
+
     try {
       const pricing = await quoteLine({
         storeId,
@@ -458,8 +498,93 @@ async function shippingQuote(req, res) {
  * ------------------------------------------------------------------ */
 async function addItem(req, res) {
   const storeId = storeIdOf(req);
-  const { productId, variationId, swatchId } = req.body || {};
-  const quantity = Math.max(1, Number(req.body.quantity) || 1);
+  const body = req.body || {};
+
+  // Matching add-on line: { kind: "addon", parentProductId, addonId, quantity }.
+  // Title + price are ALWAYS re-read from Product.addons[_id] on the server.
+  // The parent product is auto-added (retail, qty 1) if it isn't already in
+  // the cart — the spec's "one click from the product page" flow.
+  if (body.kind === "addon") {
+    const parentProductId = body.parentProductId || body.productId;
+    const addonId = body.addonId;
+    const quantity = Math.max(1, Number(body.quantity) || 1);
+    if (!parentProductId || !mongoose.isValidObjectId(parentProductId)) {
+      return res.status(400).json({ message: "Valid product id lagbe" });
+    }
+    if (!addonId || !mongoose.isValidObjectId(addonId)) {
+      return res.status(400).json({ message: "Valid addon id lagbe" });
+    }
+    const map = await getSettingsMap();
+    if (String(map.matching_addons_enabled) === "false") {
+      return res.status(400).json({ message: "Matching add-ons feature bondho" });
+    }
+    const product = await Product.findOne({ _id: parentProductId, store: storeId });
+    if (!product) return res.status(404).json({ message: "Product pawa jayni" });
+    const row = (product.addons || []).find((a) => String(a._id) === String(addonId));
+    if (!row) return res.status(404).json({ message: "Addon pawa jayni" });
+
+    const cart = await getOrCreateCart(req);
+
+    // Re-clicking the same add-on raises the existing line instead of
+    // stacking duplicates of it.
+    const sameAddon = cart.items.find(
+      (i) => i.kind === "addon" && String(i.addonId) === String(addonId)
+    );
+
+    // Ensure the parent product is in the cart. If not, add a plain retail line
+    // with qty 1 first so the add-on never stands alone.
+    const hasParent = cart.items.some(
+      (i) => String(i.product) === String(product._id) && i.kind !== "addon"
+    );
+    if (!hasParent) {
+      const flashSales = await loadLiveFlashSales(storeId);
+      const parentPrice = product.salePrice || product.regularPrice || product.price || 0;
+      const parentPricing = await quoteLine({
+        storeId,
+        userId: req.user && req.user.id,
+        item: { product: product._id, variation: null, quantity: 1 },
+        retailPrice: parentPrice,
+        product,
+        flashSales,
+      });
+      const parentLine = {
+        product: product._id,
+        variation: null,
+        swatch: null,
+        kind: "product",
+        image: (product.images && product.images[0]) || "",
+        title: product.title || product.name || "",
+        quantity: 1,
+      };
+      applyPricing(parentLine, parentPricing);
+      cart.items.push(parentLine);
+    }
+
+    const totalQty = (sameAddon ? Number(sameAddon.quantity) || 0 : 0) + quantity;
+    const addonPricing = await quoteLine({
+      storeId,
+      userId: req.user && req.user.id,
+      item: { kind: "addon", product: product._id, addonId: row._id, quantity: totalQty },
+      retailPrice: Number(row.price) || 0,
+    });
+    const addonLine = sameAddon || cart.items.create({
+      product: product._id,
+      variation: null,
+      swatch: null,
+      kind: "addon",
+      addonId: row._id,
+      image: "",
+    });
+    addonLine.title = row.title;
+    addonLine.quantity = totalQty;
+    applyPricing(addonLine, addonPricing);
+    if (!sameAddon) cart.items.push(addonLine);
+    await cart.save();
+    return res.status(201).json({ items: cart.items });
+  }
+
+  const { productId, variationId, swatchId } = body;
+  const quantity = Math.max(1, Number(body.quantity) || 1);
 
   if (!productId || !mongoose.isValidObjectId(productId)) {
     return res.status(400).json({ message: "Valid product id lagbe" });
@@ -510,7 +635,9 @@ async function addItem(req, res) {
     product: product._id,
     variation: variationId || null,
     swatch: swatchId || null,
+    kind: "product",
     image,
+    title: product.title || product.name || "",
     unitPrice: pricing.unitPrice,
     unitPricePaisa: pricing.unitPricePaisa,
     retailUnitPricePaisa: pricing.retailUnitPricePaisa,
@@ -625,6 +752,22 @@ async function removeItem(req, res) {
   const item = cart.items.id(req.params.itemId);
   if (!item) return res.status(404).json({ message: "Cart item pawa jayni" });
   item.deleteOne();
+  // Cascade: if the parent product no longer has a non-addon line in the cart,
+  // its matching add-on rows must go too — an add-on without its product is
+  // meaningless.
+  if (item.kind !== "addon") {
+    const parentStillInCart = cart.items.some(
+      (i) => i.kind !== "addon" && String(i.product) === String(item.product)
+    );
+    if (!parentStillInCart) {
+      // Collect first: deleteOne() splices cart.items, so removing while
+      // iterating lets the next sibling slip past.
+      const orphans = cart.items.filter(
+        (other) => other.kind === "addon" && String(other.product) === String(item.product)
+      );
+      orphans.forEach((other) => other.deleteOne());
+    }
+  }
   await cart.save();
   res.json({ items: cart.items });
 }
@@ -705,6 +848,17 @@ async function createOrder(req, res) {
     }
   }
 
+  // ---- website order protection (blacklist / rate limits / duplicates) ----
+  const customerIp = String(req.ip || "").slice(0, 64);
+  const protection = await evaluateProtection({
+    storeId,
+    phone: customer.phone,
+    ip: customerIp,
+    address: customer.address,
+    settings: map,
+  });
+  if (protection.reject) return res.status(403).json({ message: protection.reject });
+
   // ---- payment method validation ----
   const payment = body.payment || {};
   const method = String(payment.method || body.paymentMethod || "").trim();
@@ -726,6 +880,16 @@ async function createOrder(req, res) {
   if (method === "cod") {
     if (!boolOf(map, "cod_enabled")) return res.status(400).json({ message: "Cash on delivery enable nei" });
     paymentLabel = "Cash on delivery";
+    // Optional COD SMS OTP — only enforceable when SMS can actually send;
+    // otherwise checkout proceeds normally (graceful skip).
+    if (boolOf(map, "protect_otp_enabled")) {
+      const sms = await SmsSetting.findOne({ store: storeId }).lean();
+      if (sms && sms.enabled && sms.otpEnabled && sms.apiKey) {
+        const otpCode = String(body.otpCode || payment.otpCode || "").trim();
+        const verdict = await verifyOtp(storeId, customer.phone, otpCode, "cod");
+        if (!verdict.ok) return res.status(400).json({ message: verdict.message, otpRequired: true });
+      }
+    }
   } else if (method.startsWith("mobile:")) {
     if (!boolOf(map, "mobile_banking_enabled")) return res.status(400).json({ message: "Mobile banking enable nei" });
     const name = nameAfter("mobile:");
@@ -875,6 +1039,7 @@ async function createOrder(req, res) {
 
   // Stage 1 — pre-check every line against live stock
   for (const item of cart.items) {
+    if (item.kind === "addon") continue; // add-ons are made to order, no stock
     const isVar = item.variation, isSwat = item.swatch;
     if (!isVar && !isSwat) continue;
     const Model = isVar ? ProductVariation : ProductSwatch;
@@ -887,6 +1052,7 @@ async function createOrder(req, res) {
   // Stage 2 — atomically decrement (guarded), with rollback if any line fails
   const decreased = [];
   for (const item of cart.items) {
+    if (item.kind === "addon") continue;
     if (item.variation || item.swatch) {
       const Model = item.variation ? ProductVariation : ProductSwatch;
       const target = item.variation || item.swatch;
@@ -946,6 +1112,9 @@ async function createOrder(req, res) {
     product: item.product,
     variation: item.variation,
     swatch: item.swatch,
+    kind: item.kind === "addon" ? "addon" : "product",
+    addonId: item.kind === "addon" ? item.addonId : null,
+    title: item.title || "",
     image: item.image,
     unitPrice: pricing.unitPrice,
     unitPricePaisa: pricing.unitPricePaisa,
@@ -1077,6 +1246,8 @@ async function createOrder(req, res) {
       totalAmount: fromPaisa(discountedItemsPaisa) + shippingAmount,
       status: "pending",
       paymentStatus: "pending",
+      customerIp,
+      protectionFlags: protection.flags,
       // stock was already decremented above — cancel/delete may restore it
       stockDeducted: true,
     });
@@ -1129,6 +1300,9 @@ async function createOrder(req, res) {
 
   // Email + SMS best-effort — fail korle order response block korbe na
   notifyOrderPlaced(order).catch(() => {});
+
+  // Courier fraud check async — checkout response er speed e kono probhab nei
+  queueOrderCheck(storeId, order._id);
 
   res.status(201).json(
     installmentRecords

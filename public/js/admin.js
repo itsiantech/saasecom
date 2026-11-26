@@ -75,7 +75,7 @@ const fmtLimit = (n) => (n === 0 ? "∞" : Number(n || 0).toLocaleString("en-IN"
     return;
   }
 
-  await Promise.all([loadStats(), loadPlans(), loadFeatures(), loadStores(), loadSaas(), loadTheme(), loadLanding(), loadPayments(), loadBillingSettings()]);
+  await Promise.all([loadStats(), loadPlans(), loadFeatures(), loadStores(), loadSaas(), loadTheme(), loadLanding(), loadPayments(), loadBillingSettings(), loadAddonsAdmin()]);
 })();
 
 /* ---------- feature registry (same list the backend enforces) ---------- */
@@ -995,6 +995,27 @@ function refreshAccessState() {
     "কার্যকর " + effective + " / " + features.length + " মডিউল · " + granted + " বাড়তি · " + blocked + " বন্ধ";
 }
 
+// per-store add-on switches — checked = ei dokane menu dekhabe
+function accessAddonHTML(s) {
+  const active = addonsList.filter((a) => a.status === "active");
+  if (!active.length) return "";
+  const disabled = new Set(s.disabledAddons || []);
+  return (
+    '<div class="access-group"><div class="fp-head"><span class="n">অ্যাড-অন</span></div>' +
+    active
+      .map(
+        (a) =>
+          '<label class="access-row" style="cursor:pointer;">' +
+          '<div class="nm"><b>' + esc(a.name) + "</b><small>" + esc(a.key) + " · v" + esc(a.version) + "</small></div>" +
+          '<input type="checkbox" data-addon="' + esc(a.key) + '"' + (disabled.has(a.key) ? "" : " checked") +
+          ' aria-label="' + esc(a.name) + '" style="width:16px;height:16px;accent-color:var(--gold);" />' +
+          "</label>"
+      )
+      .join("") +
+    "</div>"
+  );
+}
+
 function openStoreAccess(storeId) {
   const s = stores.find((row) => row._id === storeId);
   if (!s) return;
@@ -1028,7 +1049,7 @@ function openStoreAccess(storeId) {
         .join("");
       return '<div class="access-group"><div class="fp-head"><span class="n">' + esc(g.name) + "</span></div>" + rows + "</div>";
     })
-    .join("");
+    .join("") + accessAddonHTML(s);
 
   $("accessList").querySelectorAll("select").forEach((sel) => {
     sel.value = sel.dataset.mode;
@@ -1072,15 +1093,132 @@ $("accessSaveBtn").addEventListener("click", async () => {
       method: "PATCH",
       body: JSON.stringify({ granted, revoked }),
     });
+    const addonBoxes = $("accessList").querySelectorAll("input[data-addon]");
+    if (addonBoxes.length) {
+      const disabled = [];
+      addonBoxes.forEach((cb) => {
+        if (!cb.checked) disabled.push(cb.dataset.addon);
+      });
+      await api("/api/admin/stores/" + accessStoreId + "/addons", {
+        method: "PATCH",
+        body: JSON.stringify({ disabled }),
+      });
+    }
     toast("ফিচার অ্যাক্সেস আপডেট হয়েছে", "ok");
     closeAccessModal();
     await loadStores();
+    await loadAddonsAdmin();
   } catch (e) {
     $("accessMsg").textContent = e.message;
     $("accessMsg").className = "msg err";
   } finally {
     btn.disabled = false;
     btn.textContent = "সেভ করুন";
+  }
+});
+
+/* ---------- add-ons / plugins ---------- */
+let addonsList = [];
+
+async function loadAddonsAdmin() {
+  try {
+    addonsList = await api("/api/admin/addons");
+    renderAddons();
+  } catch (e) {
+    toast(e.message, "err");
+  }
+}
+
+function renderAddons() {
+  $("addonCount").textContent = addonsList.length + " টি অ্যাড-অন";
+  const tbody = $("addonBody");
+  if (!addonsList.length) {
+    tbody.innerHTML = '<tr><td colspan="5"><div class="empty">কোনো অ্যাড-অন নেই — zip আপলোড করুন</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = addonsList
+    .map((a) => {
+      const on = a.status === "active";
+      const icon = a.icon
+        ? '<img src="' + esc(a.icon) + '" alt="" style="width:22px;height:22px;object-fit:contain;border-radius:5px;flex:0 0 auto;" />'
+        : "";
+      return `
+      <tr>
+        <td><div class="p-name" style="display:flex;align-items:center;gap:8px;">${icon}<span>${esc(a.name)}</span></div>
+          <div class="muted" style="font-size:12px;">${esc(a.key)}${a.nameEn ? " · " + esc(a.nameEn) : ""}</div></td>
+        <td><span class="badge off">${esc(a.version)}</span></td>
+        <td>${on ? esc(String(a.enabledStores)) + " দোকানে" : "—"}</td>
+        <td><span class="badge ${on ? "on" : "off"}">${on ? "চালু" : "বন্ধ"}</span></td>
+        <td>
+          <div class="row-actions">
+            <a class="icon-btn" title="পেজ প্রিভিউ (নতুন ট্যাব)" href="${esc(a.entry)}" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+            </a>
+            <button class="icon-btn ${on ? "del" : "edit"}" title="${on ? "সব দোকানে বন্ধ করুন" : "চালু করুন"}" onclick="toggleAddon('${a.id}')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.36 6.64a9 9 0 1 1-12.72 0"/><path d="M12 2v10"/></svg>
+            </button>
+            <button class="icon-btn del" title="মুছে ফেলুন" onclick="deleteAddon('${a.id}')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+            </button>
+          </div>
+        </td>
+      </tr>`;
+    })
+    .join("");
+}
+
+async function toggleAddon(id) {
+  const a = addonsList.find((x) => x.id === id);
+  if (!a) return;
+  try {
+    await api("/api/admin/addons/" + id, {
+      method: "PATCH",
+      body: JSON.stringify({ status: a.status === "active" ? "disabled" : "active" }),
+    });
+    toast(a.status === "active" ? "অ্যাড-অন বন্ধ হয়েছে" : "অ্যাড-অন চালু হয়েছে", "ok");
+    await loadAddonsAdmin();
+  } catch (e) {
+    toast(e.message, "err");
+  }
+}
+
+async function deleteAddon(id) {
+  const a = addonsList.find((x) => x.id === id);
+  if (!a) return;
+  if (!confirm('"' + a.name + '" মুছে ফেলবেন? সব দোকানের মেনু থেকে সরে যাবে, ফাইলও ডিলিট হবে।')) return;
+  try {
+    await api("/api/admin/addons/" + id, { method: "DELETE" });
+    toast("অ্যাড-অন মুছে ফেলা হয়েছে", "ok");
+    await loadAddonsAdmin();
+  } catch (e) {
+    toast(e.message, "err");
+  }
+}
+
+$("addonZipInput").addEventListener("change", async (e) => {
+  const file = e.target.files && e.target.files[0];
+  e.target.value = "";
+  if (!file) return;
+  const label = $("addonUploadLabel");
+  label.textContent = "আপলোড হচ্ছে...";
+  label.style.pointerEvents = "none";
+  try {
+    const form = new FormData();
+    form.append("zip", file);
+    const res = await fetch("/api/admin/addons/upload", {
+      method: "POST",
+      headers: { Authorization: "Bearer " + token },
+      body: form,
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok) throw new Error((data && data.message) || "আপলোড ব্যর্থ হয়েছে");
+    toast('"' + data.name + '" আপলোড হয়েছে', "ok");
+    await loadAddonsAdmin();
+  } catch (err) {
+    toast(err.message, "err");
+  } finally {
+    label.textContent = "+ আপলোড (zip)";
+    label.style.pointerEvents = "";
   }
 });
 

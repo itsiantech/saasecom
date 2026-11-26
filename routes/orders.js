@@ -16,6 +16,8 @@ const { changeOrderStatus, OrderStatusError } = require("../services/orderStatus
 const { restoreOrderStock } = require("../services/orderStock");
 const { requireFeature } = require("../lib/features");
 const { sendOrder, CourierError } = require("../services/courierService");
+const { checkOrderNow } = require("../services/fraudCheck");
+const { writeAudit } = require("../lib/audit");
 
 // tenant context chara Query gulo filter-hinno hoye sob dokan er order fenle
 const guard = [requireTenant, auth, requireAdmin, requireFeature("orders")];
@@ -269,6 +271,48 @@ router.post("/:id/courier", guard, async (req, res) => {
     if (err instanceof CourierError) return res.status(err.status).json({ message: err.message });
     console.error("courier send:", err.message);
     res.status(500).json({ message: "Courier e pathate parlam na" });
+  }
+});
+
+// courier fraud re-check (admin) — force bypasses the 6h phone cache
+router.post("/:id/fraud-check", guard, async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return res.status(404).json({ message: "Order pawa jayni" });
+    }
+    const fraud = await checkOrderNow(req.storeId, req.params.id, { force: true });
+    if (!fraud) {
+      return res.status(400).json({ message: "Courier fraud check settings e on kora nei" });
+    }
+    res.json({ ok: true, fraud });
+  } catch (err) {
+    console.error("fraud re-check:", err.message);
+    res.status(500).json({ message: "Fraud check cholche na ekhon" });
+  }
+});
+
+// admin phone confirmation mark (admin) — courier result never auto-blocks
+router.post("/:id/call-done", guard, async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return res.status(404).json({ message: "Order pawa jayni" });
+    }
+    const order = await Order.findOne({ _id: req.params.id, store: req.storeId });
+    if (!order) return res.status(404).json({ message: "Order pawa jayni" });
+    if (!order.fraud) order.fraud = {};
+    order.fraud.callDoneAt = new Date();
+    await order.save();
+    await writeAudit({
+      store: req.storeId,
+      user: req.user && req.user.id,
+      action: "order.call_done",
+      entity: "Order",
+      entityId: String(order._id),
+      newValue: { callDoneAt: order.fraud.callDoneAt },
+    });
+    res.json({ ok: true, callDoneAt: order.fraud.callDoneAt });
+  } catch (err) {
+    res.status(500).json({ message: "Call done mark kora jayni" });
   }
 });
 

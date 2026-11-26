@@ -93,6 +93,18 @@ const installmentPolicySchema = new mongoose.Schema(
   { _id: false }
 );
 
+// ---- Matching add-ons: cushion / porda etc. sold alongside the main product.
+// Embedded on purpose — these are customized items, not real catalog products,
+// so they never appear in category/reports-by-product lists and have no stock. ----
+const productAddonSchema = new mongoose.Schema(
+  {
+    title: { type: String, required: true, trim: true, maxlength: 80 },
+    price: { type: Number, default: 0, min: 0 },
+    sortOrder: { type: Number, default: 0 },
+  },
+  { _id: true }
+);
+
 const productSchema = new mongoose.Schema(
   {
     // ---- core (kept for backward compatibility with the old product routes) ----
@@ -126,6 +138,9 @@ const productSchema = new mongoose.Schema(
     // ---- feature flags (driven by the Super Settings toggles) ----
     hasVariations: { type: Boolean, default: false },
     hasSwatches: { type: Boolean, default: false },
+
+    // ---- Matching add-ons (title+price only; feature-gated by matching_addons_enabled) ----
+    addons: { type: [productAddonSchema], default: [] },
 
     // ---- International Import Mode (default undefined so normal products stay untouched) ----
     internationalConfig: { type: internationalConfigSchema, default: undefined },

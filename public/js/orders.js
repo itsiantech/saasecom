@@ -57,7 +57,7 @@ function initialLimit() {
 const state = {
   tab: "all",
   search: "",
-  advanced: { category: "", sku: "", payment: "", courier: "", from: "", to: "" },
+  advanced: { category: "", sku: "", payment: "", courier: "", risk: "", from: "", to: "" },
   categories: [],
   page: 1,
   limit: initialLimit(),
@@ -219,6 +219,15 @@ function advHtml() {
         <option value="unpaid" ${a.payment === "unpaid" ? "selected" : ""}>Unpaid</option>
       </select>`)}
       ${f("olAdvCourier", "Courier", `<input id="olAdvCourier" type="text" value="${esc(a.courier)}" placeholder="Courier name" />`)}
+      ${f("olAdvRisk", "Fraud risk", `<select id="olAdvRisk">
+        <option value="" ${!a.risk ? "selected" : ""}>All risk levels</option>
+        <option value="low" ${a.risk === "low" ? "selected" : ""}>Low risk</option>
+        <option value="medium" ${a.risk === "medium" ? "selected" : ""}>Medium risk</option>
+        <option value="high" ${a.risk === "high" ? "selected" : ""}>High risk</option>
+        <option value="new" ${a.risk === "new" ? "selected" : ""}>New customer</option>
+        <option value="unavailable" ${a.risk === "unavailable" ? "selected" : ""}>Unavailable</option>
+        <option value="unchecked" ${a.risk === "unchecked" ? "selected" : ""}>Not checked yet</option>
+      </select>`)}
       ${f("olAdvFrom", "From date", `<input id="olAdvFrom" type="date" value="${esc(a.from)}" />`)}
       ${f("olAdvTo", "To date", `<input id="olAdvTo" type="date" value="${esc(a.to)}" />`)}
     </div>
@@ -242,6 +251,7 @@ function renderAdvPanel() {
       sku: el("olAdvSku").value.trim(),
       payment: el("olAdvPayment").value,
       courier: el("olAdvCourier").value.trim(),
+      risk: el("olAdvRisk").value,
       from: el("olAdvFrom").value,
       to: el("olAdvTo").value,
     };
@@ -252,7 +262,7 @@ function renderAdvPanel() {
   });
 
   el("olAdvReset").addEventListener("click", () => {
-    state.advanced = { category: "", sku: "", payment: "", courier: "", from: "", to: "" };
+    state.advanced = { category: "", sku: "", payment: "", courier: "", risk: "", from: "", to: "" };
     state.page = 1;
     markAdvApplied();
     renderAdvPanel();
@@ -274,6 +284,7 @@ function advParams(searchParams) {
   if (a.sku) searchParams.set("sku", a.sku);
   if (a.payment) searchParams.set("payment", a.payment);
   if (a.courier) searchParams.set("courier", a.courier);
+  if (a.risk) searchParams.set("risk", a.risk);
   if (a.from) searchParams.set("from", a.from);
   if (a.to) searchParams.set("to", a.to);
 }
@@ -351,6 +362,30 @@ function headerFor(col) {
   }
 }
 
+const RISK_BADGES = {
+  low: ["Low risk", "low"],
+  medium: ["Medium risk", "medium"],
+  high: ["High risk", "high"],
+  new: ["New customer", "new"],
+  unavailable: ["Unavailable", "new"],
+};
+
+function riskBadgeHtml(fraud) {
+  const f = fraud || {};
+  if (f.status === "checking") return `<span class="ol-risk-badge checking" title="Courier API te check cholche">Checking…</span>`;
+  const found = RISK_BADGES[f.riskLevel];
+  if (!found) return "";
+  const pct = f.combinedPercent != null ? ` · ${f.combinedPercent}% success` : "";
+  return `<span class="ol-risk-badge ${found[1]}" title="Courier fraud check${pct}">${found[0]}${f.combinedPercent != null ? ` · ${f.combinedPercent}%` : ""}</span>`;
+}
+
+function protectionFlagHtml(flags) {
+  const list = Array.isArray(flags) ? flags : [];
+  if (!list.length) return "";
+  const reasons = list.map((x) => x.reason || x.rule).join("; ");
+  return `<span class="ol-risk-flag" title="${esc(reasons)}">⚠ ${list.length} flag</span>`;
+}
+
 function cellHtml(o, col) {
   switch (col) {
     case "checkbox":
@@ -363,7 +398,8 @@ function cellHtml(o, col) {
       return `<span style="color:var(--muted);font-size:12.5px;">${fmtDate(o.createdAt)}</span>`;
     case "customer":
       return `<div>${esc(o.customerName || "—")}</div><div style="font-size:12.5px;color:var(--muted);">${esc(o.customerPhone || "—")}</div>
-        ${state.modes.international && o.country ? `<span class="ol-country-chip">${esc(o.country)}</span>` : ""}`;
+        ${state.modes.international && o.country ? `<span class="ol-country-chip">${esc(o.country)}</span>` : ""}
+        <div class="ol-risk-row">${riskBadgeHtml(o.fraud)}${protectionFlagHtml(o.protectionFlags)}</div>`;
     case "products": {
       const first = o.items && o.items[0];
       if (!first) return "—";
@@ -917,6 +953,80 @@ async function openOrder(id) {
   }
 }
 
+const RISK_ACTIONS = {
+  low: "Low risk — স্বাভাবিকভাবে প্রসেস করুন।",
+  medium: "Medium risk — ফোনে কনফার্ম করুন অথবা অল্প অগ্রিম (advance) নিন।",
+  high: "High risk — সম্পূর্ণ অগ্রিম নিন অথবা অর্ডারটি হোল্ড করুন।",
+  new: "নতুন কাস্টমার — কোনো ইতিহাস নেই, স্বাভাবিকভাবে প্রসেস করুন।",
+  unavailable: "ডেটা পাওয়া যায়নি — ফোনে কনফার্ম করে নিন।",
+};
+
+function ratingLabel(r) {
+  const s = String(r || "").replace(/_customer$/, "").replace(/_/g, " ");
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) : "—";
+}
+
+function courierFraudCardHtml(title, result) {
+  let body;
+  if (!result) {
+    body = `<p class="od-note-empty">OFF — ei courier theke check kora hoyni.</p>`;
+  } else if (result.error) {
+    body = `<p class="od-note-empty">${esc(result.error)}</p>`;
+  } else if (result.total != null) {
+    const total = Number(result.total) || 0;
+    const success = Number(result.success) || 0;
+    const cancel = Number(result.cancel) || 0;
+    const rate = total > 0 ? Math.round((success / total) * 1000) / 10 : null;
+    body = `<dl class="od-kv">
+      <div><dt>Success</dt><dd>${success}</dd></div>
+      <div><dt>Cancel</dt><dd>${cancel}</dd></div>
+      <div><dt>Total</dt><dd>${total}</dd></div>
+      <div><dt>Success rate</dt><dd>${rate != null ? rate + "%" : "—"}</dd></div>
+    </dl>${result.rating ? `<p class="od-note-empty">Rating: ${esc(ratingLabel(result.rating))}</p>` : ""}`;
+  } else if (result.rating) {
+    body = `<dl class="od-kv"><div><dt>Rating</dt><dd>${esc(ratingLabel(result.rating))}</dd></div></dl>
+      <p class="od-note-empty">Parcel count ei response e nei.</p>`;
+  } else {
+    body = `<p class="od-note-empty">Data nei.</p>`;
+  }
+  return `<section class="od-card od-fraud-courier"><h4>${title}</h4>${body}</section>`;
+}
+
+function fraudSectionHtml(o) {
+  const f = o.fraud || {};
+  const flags = Array.isArray(o.protectionFlags) ? o.protectionFlags : [];
+  const checking = f.status === "checking";
+  const badge = checking
+    ? `<span class="ol-risk-badge checking">Checking…</span>`
+    : riskBadgeHtml(f);
+  const action = RISK_ACTIONS[f.riskLevel] || "";
+  return `
+    <section class="od-card od-fraud">
+      <div class="od-fraud-head">
+        <h4>Courier fraud check</h4>
+        <div class="od-fraud-head-side">
+          ${badge}
+          <button type="button" class="btn-ghost od-fraud-btn" id="odFraudRecheck" ${checking ? "disabled" : ""}>Re-check</button>
+        </div>
+      </div>
+      ${checking ? `<p class="od-note-empty">Courier API te check cholche — kichu khon por abar dekhun.</p>` : ""}
+      ${f.checkedAt ? `<p class="od-fraud-meta">Checked: ${esc(fmtDateTime(f.checkedAt))}${f.combinedPercent != null ? ` · Combined success rate: <b>${f.combinedPercent}%</b>` : ""}</p>` : ""}
+      ${!f.status && !f.checkedAt ? `<p class="od-note-empty">Ekhono check hoyni — Settings → Courier fraud check ON thakle check hobe.</p>` : ""}
+      <div class="od-fraud-couriers">
+        ${courierFraudCardHtml("Steadfast", f.steadfast)}
+        ${courierFraudCardHtml("Pathao", f.pathao)}
+      </div>
+      ${action ? `<p class="od-fraud-action ${esc(f.riskLevel || "")}">${esc(action)}</p>` : ""}
+      ${flags.length ? `<div class="od-fraud-flags"><b>Protection flags:</b><ul>${flags.map((x) => `<li>${esc(x.reason || x.rule)}${x.at ? ` <span class="od-fraud-meta">(${esc(fmtDateTime(x.at))})</span>` : ""}</li>`).join("")}</ul></div>` : ""}
+      <div class="od-fraud-actions">
+        <button type="button" class="btn-ghost od-fraud-btn" id="odCallDone" ${f.callDoneAt ? "disabled" : ""}>${f.callDoneAt ? "Call done ✓" : "Mark call done"}</button>
+        <button type="button" class="btn-ghost od-fraud-btn od-fraud-danger" id="odBlacklistCustomer">Blacklist customer</button>
+        ${f.callDoneAt ? `<span class="od-fraud-meta">Call done: ${esc(fmtDateTime(f.callDoneAt))}</span>` : ""}
+      </div>
+      <p class="od-note-empty">Courier result diye order auto-block ba cancel hoy na — siddhanto apnar.</p>
+    </section>`;
+}
+
 function renderDetail(o) {
   const root = el("odRoot");
   if (!root) return;
@@ -935,6 +1045,7 @@ function renderDetail(o) {
             ${thumbHtml(it.image)}
             <div>
               <b>${esc(it.name)}</b>
+              ${it.kind === "addon" ? `<span class="od-item-kind">Matching add-on${it.parentName ? ` of ${esc(it.parentName)}` : ""}</span>` : ""}
               ${it.sku ? `<span>SKU: ${esc(it.sku)}</span>` : ""}
               ${it.buildToken ? `<span style="color:#0e7490;font-weight:600;">PC Build · ${esc(it.buildToken)}</span>` : ""}
             </div>
@@ -997,6 +1108,8 @@ function renderDetail(o) {
         </dl>
       </section>
     </div>
+
+    ${fraudSectionHtml(o)}
 
     <div class="od-main">
       <section class="od-card od-items">
@@ -1090,6 +1203,91 @@ function renderDetail(o) {
       toast(err.message, "err");
     }
   });
+
+  const recheckBtn = el("odFraudRecheck");
+  if (recheckBtn) {
+    recheckBtn.addEventListener("click", async () => {
+      recheckBtn.disabled = true;
+      recheckBtn.textContent = "Checking…";
+      try {
+        const res = await api("/api/orders/" + o.id + "/fraud-check", { method: "POST" });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.message || "Fraud check hoyni");
+        o.fraud = data.fraud || o.fraud;
+        toast("Fraud check complete", "ok");
+        renderDetail(o);
+      } catch (err) {
+        toast(err.message, "err");
+        recheckBtn.disabled = false;
+        recheckBtn.textContent = "Re-check";
+      }
+    });
+  }
+
+  const callDoneBtn = el("odCallDone");
+  if (callDoneBtn) {
+    callDoneBtn.addEventListener("click", async () => {
+      try {
+        const res = await api("/api/orders/" + o.id + "/call-done", { method: "POST" });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.message || "Save hoyni");
+        if (!o.fraud) o.fraud = {};
+        o.fraud.callDoneAt = new Date().toISOString();
+        toast("Call done mark kora hoyeche", "ok");
+        renderDetail(o);
+      } catch (err) {
+        toast(err.message, "err");
+      }
+    });
+  }
+
+  const blacklistBtn = el("odBlacklistCustomer");
+  if (blacklistBtn) {
+    blacklistBtn.addEventListener("click", async () => {
+      const phone = (o.customer && o.customer.phone) || "";
+      if (!phone) return toast("Customer phone nei", "err");
+      const ok = await window.confirmDialog({
+        title: "Customer blacklist korben?",
+        text: `"${phone}" number ti blacklist e jabe — ei number theke ar order neoya hobe na.`,
+        okLabel: "Blacklist",
+      });
+      if (!ok) return;
+      try {
+        const res = await api("/api/blacklist", {
+          method: "POST",
+          body: JSON.stringify({ type: "phone", value: phone, reason: "Order " + (o.orderNumber || o.id) + " theke blacklist" }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.message || "Blacklist hoyni");
+        toast("Customer blacklist hoyeche", "ok");
+      } catch (err) {
+        toast(err.message, "err");
+      }
+    });
+  }
+
+  // checking obosthay auto-refresh (courier check async — result pore ashe)
+  if (o.fraud && o.fraud.status === "checking") {
+    let tries = 0;
+    const poll = async () => {
+      tries += 1;
+      const root = el("odRoot");
+      if (!root || !root.isConnected || tries > 6) return;
+      try {
+        const res = await api("/api/orders/" + o.id + "/detail");
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.order) {
+          const fresh = data.order.fraud || {};
+          if (fresh.status !== "checking") {
+            renderDetail(data.order);
+            return;
+          }
+        }
+      } catch { /* silent */ }
+      setTimeout(poll, 4000);
+    };
+    setTimeout(poll, 4000);
+  }
 }
 
 /* ===================== FOOTER / PAGINATION ===================== */

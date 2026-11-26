@@ -34,6 +34,7 @@
         <a href="#stats" class="active">ড্যাশবোর্ড</a>
         <a href="#plans">প্ল্যান</a>
         <a href="#stores">দোকানসমূহ</a>
+        <a href="#addons">অ্যাড-অন</a>
         <a href="#payments">পেমেন্ট</a>
         <a href="#billing">পেমেন্ট সেটিংস</a>
         <a href="#settings">সেটিংস</a>
@@ -110,6 +111,27 @@
             <tbody id="storeBody"></tbody>
           </table>
         </div>
+      </section>
+
+      <!-- add-ons / plugins -->
+      <section class="panel" id="addons">
+        <div class="panel-head">
+          <div>
+            <h3>অ্যাড-অন / প্লাগিন</h3>
+            <p class="count" id="addonCount">0 টি অ্যাড-অন</p>
+          </div>
+          <label class="btn-add" for="addonZipInput" id="addonUploadLabel">+ আপলোড (zip)</label>
+          <input id="addonZipInput" type="file" accept=".zip,application/zip,application/x-zip-compressed" hidden />
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>অ্যাড-অন</th><th>ভার্সন</th><th>চালু আছে</th><th>স্ট্যাটাস</th><th>অ্যাকশন</th></tr>
+            </thead>
+            <tbody id="addonBody"></tbody>
+          </table>
+        </div>
+        <p class="billing-hint" style="margin-top:12px;">zip-এর রুটে <b>manifest.json</b> থাকতে হবে — <code>{ "key": "my-addon", "name": "নাম", "version": "1.0.0", "entry": "index.html", "icon": "icon.png" }</code>। entry একটি HTML পেজ; ড্যাশবোর্ডে sandboxed iframe-এ চলে, সার্ভারে কোনো কোড চলে না। একই key আবার আপলোড করলে প্যাকেজ আপডেট হয়। কোন দোকানে চলবে তা “দোকানসমূহ → ফিচার অ্যাক্সেস” থেকে ঠিক করুন।</p>
       </section>
 
       <!-- platform payments -->
@@ -497,7 +519,7 @@
   <div class="toast" id="toast"></div>
 
   <script src="/js/platform-brand.js?v=1"></script>
-  <script src="/js/admin.js?v=20"></script>
+  <script src="/js/admin.js?v=22"></script>
   <script src="/js/landing-admin.js?v=2"></script>
 </body>
 </html>

@@ -2,7 +2,7 @@ const { hostKind } = require("../lib/hostKind");
 
 // Superadmin UI — the only HTML the panel host (api.*) may serve.
 const ADMIN_PAGES = new Set(["/admin-login.html", "/admin.html"]);
-const ASSET_PREFIXES = ["/css/", "/js/", "/uploads/", "/img/", "/fonts/"];
+const ASSET_PREFIXES = ["/css/", "/js/", "/uploads/", "/addons/", "/img/", "/fonts/"];
 const ASSET_FILES = new Set(["/favicon.ico", "/favicon.svg", "/robots.txt", "/manifest.json"]);
 
 function isAsset(path) {

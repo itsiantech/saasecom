@@ -145,9 +145,13 @@ async function createReview(req, res, next) {
 // is published. Cost/supplier fields are never selected.
 function publicOrderItem(item) {
   const product = item.product && typeof item.product === "object" ? item.product : null;
+  const isAddon = item.kind === "addon";
   return {
     product: product ? product._id : item.product,
-    name: (product && product.name) || "",
+    // Matching add-ons keep their own title on the line; the parent product
+    // still owns the catalog link.
+    name: (isAddon && item.title) || (product && product.name) || "",
+    kind: isAddon ? "addon" : "product",
     slug: product && product.status === "published" ? product.slug || "" : "",
     image: item.image || "",
     quantity: item.quantity,

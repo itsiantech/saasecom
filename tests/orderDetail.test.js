@@ -63,6 +63,8 @@ test("items are shaped with name/sku/image/price/qty/total", () => {
   assert.deepEqual(d.items[0], {
     productId: null,
     name: "Wallet",
+    kind: "product",
+    parentName: "",
     sku: "W-1",
     image: "a.jpg",
     unitPrice: 500,
@@ -74,6 +76,22 @@ test("items are shaped with name/sku/image/price/qty/total", () => {
   assert.equal(d.itemsTotal, 1250);
   assert.equal(d.shippingAmount, 60);
   assert.equal(d.orderTotal, 1310);
+});
+
+test("add-on lines carry their own title and point at the parent product", () => {
+  const d = shapeOrderDetail({
+    ...legacyOrder,
+    items: [
+      { kind: "product", unitPrice: 500, quantity: 1, product: { title: "Chador", sku: "C-1", images: [] } },
+      { kind: "addon", addonId: "a1", title: "Cushion cover", unitPrice: 150, quantity: 2, product: { title: "Chador" } },
+    ],
+  });
+  assert.equal(d.items[0].kind, "product");
+  assert.equal(d.items[0].parentName, "");
+  assert.equal(d.items[1].name, "Cushion cover");
+  assert.equal(d.items[1].kind, "addon");
+  assert.equal(d.items[1].parentName, "Chador");
+  assert.equal(d.items[1].total, 300);
 });
 
 test("itemsTotal falls back to line maths when order total is missing", () => {

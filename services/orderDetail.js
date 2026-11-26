@@ -51,9 +51,14 @@ function shapeOrderDetail(order, opts = {}) {
   const legacyAddress = fullAddress(order);
   const items = (order.items || []).map((it) => {
     const p = it.product || {};
+    const isAddon = it.kind === "addon";
     return {
       productId: p._id || null,
-      name: p.title || p.name || it.name || "Product",
+      // Matching add-ons carry their own title on the line; never rename them
+      // back to the parent product's name.
+      name: isAddon ? it.title || "Addon" : p.title || p.name || it.name || "Product",
+      kind: isAddon ? "addon" : "product",
+      parentName: isAddon ? p.title || p.name || "" : "",
       sku: p.sku || it.sku || "",
       image: it.image || (Array.isArray(p.images) && p.images[0]) || "",
       unitPrice: Number(it.unitPrice) || 0,
@@ -86,6 +91,17 @@ function shapeOrderDetail(order, opts = {}) {
       status: order.courierStatus || "",
       sentAt: order.courierSentAt || null,
     },
+    customerIp: order.customerIp || "",
+    fraud: {
+      status: (order.fraud && order.fraud.status) || "",
+      riskLevel: (order.fraud && order.fraud.riskLevel) || "",
+      combinedPercent: order.fraud && order.fraud.combinedPercent != null ? order.fraud.combinedPercent : null,
+      steadfast: (order.fraud && order.fraud.steadfast) || null,
+      pathao: (order.fraud && order.fraud.pathao) || null,
+      checkedAt: (order.fraud && order.fraud.checkedAt) || null,
+      callDoneAt: (order.fraud && order.fraud.callDoneAt) || null,
+    },
+    protectionFlags: (order.protectionFlags || []).map((f) => ({ rule: f.rule, reason: f.reason, at: f.at })),
     customer: {
       id: order.customer || null,
       name: order.customerName || "",

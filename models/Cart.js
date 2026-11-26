@@ -2,11 +2,18 @@ const mongoose = require("mongoose");
 
 // A cart line item. `variation` and `swatch` are mutually exclusive; the chosen
 // one holds its own image/price, and its own stock is reduced at checkout.
+// `kind: "addon"` rows are Matching add-ons — `product` still points to the
+// parent product, `addonId` matches an entry in Product.addons[_id]. Their
+// price and title are always re-read from the parent product on the server.
 const cartItemSchema = new mongoose.Schema(
   {
     product: { type: mongoose.Schema.Types.ObjectId, ref: "Product", required: true },
     variation: { type: mongoose.Schema.Types.ObjectId, ref: "ProductVariation", default: null },
     swatch: { type: mongoose.Schema.Types.ObjectId, ref: "ProductSwatch", default: null },
+    kind: { type: String, enum: ["product", "addon"], default: "product" },
+    addonId: { type: mongoose.Schema.Types.ObjectId, default: null },
+    // denormalized so the cart/invoice can show it without loading Product
+    title: { type: String, default: "" },
     image: { type: String, default: "" },
     // Legacy BDT mirror + the exact paisa amount used by wholesale pricing.
     unitPrice: { type: Number, required: true },

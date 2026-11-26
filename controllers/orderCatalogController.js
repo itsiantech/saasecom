@@ -20,6 +20,7 @@ const { changeOrderStatus, OrderStatusError } = require("../services/orderStatus
 const { restoreOrderStock } = require("../services/orderStock");
 const { shapeOrderDetail } = require("../services/orderDetail");
 const { courierListInfo } = require("../services/courierService");
+const { queueOrderCheck } = require("../services/fraudCheck");
 
 function storeOf(req) {
   if (req.store && req.store._id) return req.store._id;
@@ -53,6 +54,7 @@ function readAdvanced(req) {
     sku: String(q.sku || "").trim(),
     payment: ["paid", "partial", "unpaid"].includes(q.payment) ? q.payment : "",
     courier: String(q.courier || "").trim(),
+    risk: String(q.risk || "").trim(),
     from: String(q.from || "").trim(),
     to: String(q.to || "").trim(),
   };
@@ -165,6 +167,12 @@ async function list(req, res, next) {
         courierTrackingCode: o.courierTrackingCode || "",
         courierStatus: o.courierStatus || "",
         courierSentAt: o.courierSentAt || null,
+        fraud: {
+          status: (o.fraud && o.fraud.status) || "",
+          riskLevel: (o.fraud && o.fraud.riskLevel) || "",
+          combinedPercent: o.fraud && o.fraud.combinedPercent != null ? o.fraud.combinedPercent : null,
+        },
+        protectionFlags: (o.protectionFlags || []).map((f) => ({ rule: f.rule, reason: f.reason })),
         installment: partialActive && o.paymentMode === "installment" && inst && inst.total
           ? { current: Math.min(inst.paid + 1, inst.total), total: inst.total }
           : null,
@@ -215,6 +223,12 @@ async function detail(req, res, next) {
       .populate("items.product", "title name sku images price")
       .lean();
     if (!order) return res.status(404).json({ message: "Order pawa jayni" });
+
+    // Unchecked order khulle fraud check async chole (feature off hole skip)
+    const fraud = order.fraud || {};
+    if (!fraud.checkedAt && fraud.status !== "checking") {
+      queueOrderCheck(storeOf(req), order._id);
+    }
 
     const latest = await OrderStatusHistory.findOne({ order: order._id })
       .sort({ createdAt: -1 })

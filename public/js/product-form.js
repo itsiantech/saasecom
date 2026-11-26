@@ -22,6 +22,7 @@
     attribute: { name: "", terms: [] },
     variationData: {}, // { [term]: { image, regularPrice, salePrice, stock } }
     swatches: [], // { id, name, price, stock, images: [] }
+    addons: [], // { id, title, price } — Matching add-ons (see Settings > Matching add-ons)
     gallery: [], // product images; [0] is the storefront cover
     specValues: {}, // { [specKey]: string | boolean-as-string | string[] }
     tiers: { __product__: [] }, // { [term|__product__]: [{ minQty, maxQty, price }] }
@@ -491,6 +492,73 @@
     g.innerHTML = sw.images.map((src) => `<div class="pf-img-slot"><img src="${esc(src)}" alt=""></div>`).join("");
   }
 
+  /* ---------------- matching add-ons ---------------- */
+  function setAddonError(msg) {
+    const el = $("pfAddonError");
+    el.textContent = msg || "";
+    el.classList.toggle("show", !!msg);
+  }
+
+  function addAddon() {
+    const title = $("pfAddonTitle").value.trim();
+    const priceRaw = $("pfAddonPrice").value.trim();
+    if (!title) { setAddonError("Enter a title"); $("pfAddonTitle").focus(); return; }
+    if (title.length > 80) { setAddonError("Title max 80 characters"); return; }
+    if (!priceRaw) { setAddonError("Enter a price"); $("pfAddonPrice").focus(); return; }
+    const price = Number(priceRaw);
+    if (!Number.isFinite(price) || price < 0) { setAddonError("Enter a valid price"); return; }
+    setAddonError("");
+    state.addons.push({ id: "", title, price });
+    $("pfAddonTitle").value = "";
+    $("pfAddonPrice").value = "";
+    $("pfAddonTitle").focus();
+    renderAddons();
+    markDirty();
+  }
+
+  function renderAddons() {
+    const wrap = $("pfAddonsList");
+    if (!state.addons.length) {
+      wrap.innerHTML = '<p class="pf-addons-empty">No items linked yet.</p>';
+      return;
+    }
+    wrap.innerHTML = state.addons
+      .map(
+        (row, idx) => `<div class="pf-addon-row">
+          <span class="pf-addon-title">${esc(row.title)}</span>
+          <input class="pf-addon-price" type="number" min="0" step="0.01" data-addon-price="${idx}" value="${esc(row.price)}" />
+          <button type="button" class="pf-addon-remove" data-addon-remove="${idx}" title="Remove" aria-label="Remove">&times;</button>
+        </div>`
+      )
+      .join("");
+    bindAddonList(wrap);
+  }
+
+  // Delegated once: re-rendering replaces the nodes, so per-row listeners would
+  // keep firing with stale indexes when two rows are removed back to back.
+  function bindAddonList(wrap) {
+    if (wrap.dataset.addonBound) return;
+    wrap.dataset.addonBound = "1";
+    wrap.addEventListener("input", (e) => {
+      const inp = e.target.closest("input[data-addon-price]");
+      if (!inp || !wrap.contains(inp)) return;
+      const row = state.addons[Number(inp.dataset.addonPrice)];
+      if (!row) return;
+      const n = Number(inp.value);
+      row.price = Number.isFinite(n) && n >= 0 ? n : 0;
+      markDirty();
+    });
+    wrap.addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-addon-remove]");
+      if (!btn || !wrap.contains(btn)) return;
+      const idx = Number(btn.dataset.addonRemove);
+      if (!state.addons[idx]) return;
+      state.addons.splice(idx, 1);
+      renderAddons();
+      markDirty();
+    });
+  }
+
   /* ---------------- featured, image gallery, video ---------------- */
   function renderGallery() {
     const wrap = $("pfGallery");
@@ -739,6 +807,7 @@
   function applySettings(s) {
     $("attributesCard").hidden = !s.productAttributesEnabled;
     $("swatchesCard").hidden = !s.productSwatchesEnabled;
+    $("pfAddonsCard").hidden = !s.matchingAddonsEnabled;
   }
 
   /* ---------------- retail EMI override (installments module) ---------------- */
@@ -898,6 +967,10 @@
         images: s.images,
       }));
 
+    const addons = state.addons
+      .filter((a) => a.title && Number.isFinite(Number(a.price)) && Number(a.price) >= 0)
+      .map((a) => ({ id: a.id || undefined, title: a.title, price: Number(a.price) || 0 }));
+
     return {
       title: $("pfTitle").value.trim(),
       description: $("pfDesc").innerHTML,
@@ -919,6 +992,7 @@
       tags: state.tags,
       attributes,
       swatches,
+      addons,
       specs: collectSpecs(),
     };
   }
@@ -980,6 +1054,7 @@
     state.attribute = { name: "", terms: [] };
     state.variationData = {};
     state.swatches = [];
+    state.addons = [];
     state.gallery = [];
     state.specValues = {};
     state.tiers = { __product__: [] };
@@ -1002,6 +1077,9 @@
     $("pfTermInput").value = "";
     $("pfPerTerm").checked = false;
     $("pfTagInput").value = "";
+    $("pfAddonTitle").value = "";
+    $("pfAddonPrice").value = "";
+    setAddonError("");
     $("newCatName").value = "";
     $("createCategoryForm").hidden = true;
     document.querySelector('[data-error="pfTitle"]').classList.remove("show");
@@ -1012,6 +1090,7 @@
     renderTermChips();
     renderVariationTable();
     renderSwatches();
+    renderAddons();
     renderGallery();
     renderVideoPreview();
     renderTiers();
@@ -1080,6 +1159,12 @@
       images: s.images || [],
     }));
 
+    state.addons = (data.addons || []).map((a) => ({
+      id: a.id || "",
+      title: a.title || "",
+      price: Number(a.price) || 0,
+    }));
+
     state.tiers = { __product__: [] };
     (data.tierSets || []).forEach((set) => {
       const key = set.term || "__product__";
@@ -1096,6 +1181,7 @@
     renderTermChips();
     renderVariationTable();
     renderSwatches();
+    renderAddons();
     renderGallery();
     renderVideoPreview();
     renderTiers();
@@ -1116,6 +1202,7 @@
     renderTags();
     renderTermChips();
     renderSwatches();
+    renderAddons();
     renderGallery();
     renderTiers();
     renderSpecs();
@@ -1151,6 +1238,7 @@
         __attribute: state.attribute,
         __variation: state.variationData,
         __swatches: state.swatches,
+        __addons: state.addons,
         __specs: state.specValues,
         __tiers: state.tiers,
         __tierTarget: state.tierTarget,
@@ -1165,6 +1253,7 @@
         state.attribute = values.__attribute || { name: "", terms: [] };
         state.variationData = values.__variation || {};
         state.swatches = Array.isArray(values.__swatches) ? values.__swatches : [];
+        state.addons = Array.isArray(values.__addons) ? values.__addons : [];
         state.specValues = values.__specs && typeof values.__specs === "object" ? values.__specs : {};
         state.tiers = values.__tiers || { __product__: [] };
         state.tierTarget = values.__tierTarget || "__product__";
@@ -1175,6 +1264,7 @@
         renderTermChips();
         renderVariationTable();
         renderSwatches();
+        renderAddons();
         renderGallery();
         renderTiers();
         renderVideoPreview();
@@ -1213,6 +1303,13 @@
   });
   $("pfPerTerm").addEventListener("change", () => { renderVariationTable(); markDirty(); });
   $("addSwatchBtn").addEventListener("click", addSwatch);
+  $("pfAddonAddBtn").addEventListener("click", addAddon);
+  $("pfAddonTitle").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); addAddon(); }
+  });
+  $("pfAddonPrice").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); addAddon(); }
+  });
   $("addGalleryBtn").addEventListener("click", () => $("pfGalleryFile").click());
   $("pfGalleryFile").addEventListener("change", async () => {
     for (const f of $("pfGalleryFile").files) {
@@ -1248,6 +1345,7 @@
     const next = {
       productAttributesEnabled: String(s.attributes_enabled !== undefined ? s.attributes_enabled : true) !== "false",
       productSwatchesEnabled: String(s.swatches_enabled !== undefined ? s.swatches_enabled : true) !== "false",
+      matchingAddonsEnabled: String(s.matching_addons_enabled !== undefined ? s.matching_addons_enabled : true) !== "false",
     };
     if (state.meta) state.meta.settings = next;
     applySettings(next);

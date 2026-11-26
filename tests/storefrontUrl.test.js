@@ -12,7 +12,10 @@ const { storefrontUrl } = require("../lib/storefrontUrl");
 let mongo;
 
 before(async () => {
-  mongo = await MongoMemoryServer.create();
+  // 72 test files spawn mongod in parallel under `node --test` — the 10s default
+  // launchTimeout flakes when the box is busy. Match the pattern used by
+  // landingBranding/landingContent.
+  mongo = await MongoMemoryServer.create({ instance: { launchTimeout: 120000 } });
   await mongoose.connect(mongo.getUri("storefront_url"));
   await Settings.init();
   await Settings.create({ key: "platformDomain", value: "localtest.me" });

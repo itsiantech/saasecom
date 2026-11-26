@@ -35,7 +35,12 @@ function storeIdOf(req) {
 
 const SUPER_KEYS = ["productAttributesEnabled", "productSwatchesEnabled"];
 // Settings page (Settings > Product settings) er nirdishto keys
-const PRODUCT_SETTING_KEYS = ["attributes_enabled", "swatches_enabled", ...SUPER_KEYS];
+const PRODUCT_SETTING_KEYS = [
+  "attributes_enabled",
+  "swatches_enabled",
+  "matching_addons_enabled",
+  ...SUPER_KEYS,
+];
 
 async function getSettings(storeId) {
   const docs = await Settings.find({ key: { $in: keysForStore(storeId, PRODUCT_SETTING_KEYS) } }).lean();
@@ -48,6 +53,7 @@ async function getSettings(storeId) {
   return {
     productAttributesEnabled: attr !== "false",
     productSwatchesEnabled: sw !== "false",
+    matchingAddonsEnabled: map.matching_addons_enabled !== "false",
   };
 }
 
@@ -239,6 +245,29 @@ function safeVideoUrl(raw) {
   }
 }
 
+// Matching add-ons — admin only ever supplies { title, price }; we keep the
+// _id stable for rows already on the product so existing cart lines that
+// reference an add-on by id do not silently retarget.
+function sanitizeAddons(input, existing) {
+  if (!Array.isArray(input)) return [];
+  const keepIds = new Set(
+    (existing || []).map((row) => String(row && (row._id || row.id) || ""))
+  );
+  const out = [];
+  for (const raw of input) {
+    if (!raw || typeof raw !== "object") continue;
+    const title = String(raw.title || "").trim().slice(0, 80);
+    if (!title) continue;
+    const price = Number(raw.price);
+    if (!Number.isFinite(price) || price < 0) continue;
+    const row = { title, price, sortOrder: out.length };
+    const id = String(raw.id || raw._id || "");
+    if (id && keepIds.has(id) && mongoose.isValidObjectId(id)) row._id = id;
+    out.push(row);
+  }
+  return out;
+}
+
 async function buildProduct(storeId, payload, existing) {
   const data = {
     title: String(payload.title || "").trim(),
@@ -269,6 +298,10 @@ async function buildProduct(storeId, payload, existing) {
   // keep the legacy `name`/`price` fields in sync
   data.name = data.title;
   data.price = data.regularPrice;
+  // undefined = client did not send addons, leave stored array alone.
+  if (payload.addons !== undefined) {
+    data.addons = sanitizeAddons(payload.addons, existing && existing.addons);
+  }
 
   // undefined means "leave existing specs alone"; the form always sends a map
   if (payload.specs !== undefined) {
@@ -534,6 +567,15 @@ async function getOne(req, res) {
 
   res.json({
     product,
+    addons: (product.addons || [])
+      .slice()
+      .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
+      .map((row) => ({
+        id: String(row._id),
+        title: row.title,
+        price: row.price,
+        sortOrder: row.sortOrder || 0,
+      })),
     variations,
     swatches,
     tags: productTags.map((t) => t.tag),

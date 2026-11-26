@@ -1,10 +1,12 @@
 const express = require("express");
 const router = express.Router();
+const mongoose = require("mongoose");
 const Product = require("../models/Product");
 const { auth, requireAdmin } = require("../middleware/auth");
 const requireTenant = require("../middleware/requireTenant");
 const { sanitizeRichText } = require("../lib/richText");
 const { requireFeature } = require("../lib/features");
+const { getSettingsMap } = require("../controllers/settingsController");
 
 // ei panel api gulo shudhu oei dokan er malik er (public catalog /api/public + /api/storefront e chole)
 const guard = [requireTenant, auth, requireAdmin];
@@ -51,6 +53,29 @@ router.get("/:id", guard, async (req, res) => {
     const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).json({ message: "Product pawa jayni" });
     res.json(product);
+  } catch (err) {
+    res.status(400).json({ message: "Invalid id" });
+  }
+});
+
+// Matching add-ons — PUBLIC: the storefront vanilla component hits this from
+// the product page. Returns [] when the store has the feature OFF or the
+// product doesn't exist (so the section just hides). requireTenant keeps the
+// query scoped to the current store; no auth needed for shoppers.
+router.get("/:id/addons", requireTenant, async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id)) return res.json([]);
+    const map = await getSettingsMap();
+    if (String(map.matching_addons_enabled) === "false") return res.json([]);
+    const product = await Product.findOne({ _id: req.params.id, store: req.storeId })
+      .select("addons")
+      .lean();
+    if (!product || !Array.isArray(product.addons)) return res.json([]);
+    const rows = product.addons
+      .slice()
+      .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
+      .map((row) => ({ id: String(row._id), title: row.title, price: Number(row.price) || 0 }));
+    res.json(rows);
   } catch (err) {
     res.status(400).json({ message: "Invalid id" });
   }

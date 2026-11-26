@@ -18,9 +18,9 @@
   <link rel="stylesheet" href="/css/installments.css?v=1" />
   <link rel="stylesheet" href="/css/retail-installments.css?v=1" />
   <link rel="stylesheet" href="/css/product-catalog.css?v=1" />
-  <link rel="stylesheet" href="/css/order-catalog.css?v=3" />
+  <link rel="stylesheet" href="/css/order-catalog.css?v=5" />
   <link rel="stylesheet" href="/css/marketing.css?v=2" />
-  <link rel="stylesheet" href="/css/hero-slider.css?v=3" />
+  <link rel="stylesheet" href="/css/hero-slider.css?v=4" />
   <link rel="stylesheet" href="/css/customers.css?v=1" />
   <link rel="stylesheet" href="/css/suppliers.css?v=2" />
   <link rel="stylesheet" href="/css/reports.css?v=2" />
@@ -94,6 +94,10 @@
         <a href="#" class="nav-item" data-view="customers" id="navCustomers">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           Customers
+        </a>
+        <a href="#" class="nav-item" data-view="blacklist" id="navBlacklist">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg>
+          Blacklist
         </a>
         <div class="nav-group" id="navGroupSuppliers">
           <div class="nav-parent-row">
@@ -894,6 +898,28 @@
               <p class="pf-note">Gallery: one swatch can hold more than one image. Use the first as the cart image.</p>
             </div>
 
+            <!-- 5b. Matching add-ons (Settings > Matching add-ons toggle) -->
+            <div class="pf-card" id="pfAddonsCard" hidden>
+              <div class="pf-card-head">
+                <h3>Matching add-ons <span class="hint">Link cushion, porda or other items</span></h3>
+              </div>
+              <p class="pf-note" style="margin-top:8px;">Add-ons are shown on the product page under "Same design e pabe". Customers can add them to the cart with one click — they do not have stock.</p>
+              <div class="pf-addons-quick">
+                <div class="pf-field">
+                  <label for="pfAddonTitle">Title</label>
+                  <input id="pfAddonTitle" type="text" maxlength="80" placeholder="e.g. Cushion cover (same design)" />
+                </div>
+                <div class="pf-field">
+                  <label for="pfAddonPrice">Price (৳)</label>
+                  <input id="pfAddonPrice" type="number" min="0" step="0.01" placeholder="0.00" />
+                </div>
+                <button class="pf-btn-sm" id="pfAddonAddBtn" type="button">+ Add item</button>
+              </div>
+              <p class="pf-error" id="pfAddonError" role="alert"></p>
+              <div class="pf-addons-list" id="pfAddonsList"></div>
+              <p class="pf-note">Prices are read again on the server when the customer adds an add-on to the cart — always save before publishing.</p>
+            </div>
+
             <!-- 6. Wholesale quantity tiers (only while wholesale mode is ON) -->
             <div class="pf-card" id="pfTiersCard" hidden>
               <div class="pf-card-head"><h3>Wholesale quantity tiers <span class="hint">Quantity → unit price</span></h3></div>
@@ -1045,6 +1071,9 @@
             <button class="settings-menu-item" data-pane="server-tracking" type="button">Server side tracking <span class="off-badge" data-tracking-off hidden>Off</span></button>
             <div class="settings-menu-group">Courier</div>
             <button class="settings-menu-item" data-pane="courier-api" type="button">Courier API <span class="off-badge" data-courier-off hidden>Off</span></button>
+            <button class="settings-menu-item" data-pane="fraud-check" type="button">Courier fraud check <span class="off-badge" data-fraud-off hidden>Off</span></button>
+            <div class="settings-menu-group">Protection</div>
+            <button class="settings-menu-item" data-pane="protection" type="button">Order protection</button>
             <div class="settings-menu-group">Notifications</div>
             <button class="settings-menu-item" data-pane="email" type="button">Email settings</button>
             <button class="settings-menu-item" data-pane="invoice" type="button">Invoice settings</button>
@@ -1156,6 +1185,13 @@
                 <div class="pf-toggle-row">
                   <div><strong>Image swatches</strong><p>Show the Image swatches section on Add Product</p></div>
                   <label class="pf-switch"><input type="checkbox" id="setSwatches" /><span class="slider"></span></label>
+                </div>
+                <div class="pf-toggle-row">
+                  <div>
+                    <strong>Matching add-ons</strong>
+                    <p>Show "Matching add-ons" on Add Product and the "Same design e pabe" section on every product page</p>
+                  </div>
+                  <label class="pf-switch"><input type="checkbox" id="setMatchingAddons" /><span class="slider"></span></label>
                 </div>
               </div>
             </section>
@@ -2489,6 +2525,143 @@
               </div>
             </section>
 
+            <!-- ===== COURIER FRAUD CHECK ===== -->
+            <section class="settings-pane" data-pane="fraud-check">
+              <div class="pf-card">
+                <div class="pf-card-head">
+                  <h3>Courier fraud check</h3>
+                  <label class="pf-switch" title="Enable / disable"><input type="checkbox" id="fraudCheckEnabled" aria-label="Enable courier fraud check" /><span class="slider"></span></label>
+                </div>
+                <div class="settings-body">
+                  <p class="pf-note" id="fraudStatus">Fraud check OFF — order er risk check hobe na.</p>
+                  <p class="pf-note">Notun order place hole (ba admin order open korle) customer er phone number Steadfast / Pathao er official fraud API te check hoy — success / cancel / total parcel count diye risk level (Low / Medium / High / New) dekhano hoy. <strong>Courier result diye order kokhono auto-block ba cancel hoy na</strong> — siddhanto admin er.</p>
+                  <p class="pf-note">Credential alada kore dite hobe na — <strong>Courier API</strong> pane e je encrypted credential save kora ache, setai use hoy. Sekhane credential na thakle age Courier API pane e diye Save korun.</p>
+                  <h4 class="settings-subhead">Risk thresholds</h4>
+                  <div class="pf-grid-2">
+                    <div class="pf-field">
+                      <label for="fraudLowFrom">Low risk from (%)</label>
+                      <input id="fraudLowFrom" type="number" min="1" max="100" placeholder="80" />
+                    </div>
+                    <div class="pf-field">
+                      <label for="fraudHighBelow">High risk below (%)</label>
+                      <input id="fraudHighBelow" type="number" min="1" max="100" placeholder="50" />
+                    </div>
+                  </div>
+                  <p class="pf-note">Success rate ≥ Low threshold → <strong>Low</strong> (green), &lt; High threshold → <strong>High</strong> (red), majhamajhi → <strong>Medium</strong> (yellow). History na thakle <strong>New</strong>. High threshold obosshoi Low threshold er cheye choto hote hobe.</p>
+                </div>
+              </div>
+
+              <div class="pf-card">
+                <div class="pf-card-head">
+                  <h3>Steadfast fraud check</h3>
+                  <label class="pf-switch" title="Enable / disable"><input type="checkbox" id="fraudSteadfastEnabled" aria-label="Enable Steadfast fraud check" /><span class="slider"></span></label>
+                </div>
+                <div class="settings-body">
+                  <p class="pf-note">Steadfast er official fraud check API theke total parcel, delivered ar cancelled count ana hoy. Courier API pane er Steadfast <strong>API Key + Secret Key</strong> use hoy.</p>
+                  <div class="sst-actions">
+                    <button class="pf-btn-sm" type="button" id="fraudSteadfastTestBtn">Test Connection</button>
+                    <span class="sst-result" id="fraudSteadfastResult"></span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="pf-card">
+                <div class="pf-card-head">
+                  <h3>Pathao fraud check</h3>
+                  <label class="pf-switch" title="Enable / disable"><input type="checkbox" id="fraudPathaoEnabled" aria-label="Enable Pathao fraud check" /><span class="slider"></span></label>
+                </div>
+                <div class="settings-body">
+                  <p class="pf-note">Pathao er official customer rating API theke rating (excellent / good / risky / new) ana hoy; count thakle setao use hoy. Courier API pane er Pathao <strong>Client ID / Secret / Username / Password</strong> use hoy. <strong>Sandbox e customer history nei</strong> — live credential lagbe.</p>
+                  <div class="sst-actions">
+                    <button class="pf-btn-sm" type="button" id="fraudPathaoTestBtn">Test Connection</button>
+                    <span class="sst-result" id="fraudPathaoResult"></span>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- ===== ORDER PROTECTION ===== -->
+            <section class="settings-pane" data-pane="protection">
+              <div class="pf-card">
+                <div class="pf-card-head"><h3>Order rate limit</h3></div>
+                <div class="settings-body">
+                  <p class="pf-note">Ek phone number ba ek IP theke nirdishto somoye koto order allow hobe. Default: per phone 3, per IP 5 (24 ghontay). Action <strong>Flag</strong> hole order hobe kintu admin list e flag dekhabe; <strong>Reject</strong> hole checkout thekei order bondho hobe.</p>
+                  <div class="pf-grid-2">
+                    <div class="pf-field">
+                      <label for="protectRatePhoneMax">Max orders per phone</label>
+                      <input id="protectRatePhoneMax" type="number" min="0" max="100" placeholder="3" />
+                    </div>
+                    <div class="pf-field">
+                      <label for="protectRateIpMax">Max orders per IP</label>
+                      <input id="protectRateIpMax" type="number" min="0" max="100" placeholder="5" />
+                    </div>
+                  </div>
+                  <div class="pf-grid-2">
+                    <div class="pf-field">
+                      <label for="protectRateWindowHours">Window (hours)</label>
+                      <input id="protectRateWindowHours" type="number" min="1" max="168" placeholder="24" />
+                    </div>
+                    <div class="pf-field">
+                      <label for="protectRateAction">Action</label>
+                      <select id="protectRateAction">
+                        <option value="flag">Flag only (order hobe)</option>
+                        <option value="reject">Reject automatically</option>
+                      </select>
+                    </div>
+                  </div>
+                  <p class="pf-note">0 dile oi limit off. Blacklist e thaka phone / IP / address theke order shob shomoy reject hoy.</p>
+                </div>
+              </div>
+
+              <div class="pf-card">
+                <div class="pf-card-head">
+                  <h3>Duplicate order detection</h3>
+                  <label class="pf-switch" title="Enable / disable"><input type="checkbox" id="protectDuplicateEnabled" aria-label="Enable duplicate order detection" /><span class="slider"></span></label>
+                </div>
+                <div class="settings-body">
+                  <p class="pf-note">Ekoi address e kom somoye onek alada naam / phone theke order ashle fake order er pattern dhora hoy.</p>
+                  <div class="pf-grid-2">
+                    <div class="pf-field">
+                      <label for="protectDuplicateWindowMinutes">Window (minutes)</label>
+                      <input id="protectDuplicateWindowMinutes" type="number" min="5" max="1440" placeholder="60" />
+                    </div>
+                    <div class="pf-field">
+                      <label for="protectDuplicateMinOrders">Min distinct orders to flag</label>
+                      <input id="protectDuplicateMinOrders" type="number" min="2" max="50" placeholder="3" />
+                    </div>
+                  </div>
+                  <div class="pf-field">
+                    <label for="protectDuplicateAction">Action</label>
+                    <select id="protectDuplicateAction">
+                      <option value="flag">Flag only (order hobe)</option>
+                      <option value="reject">Reject automatically</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div class="pf-card">
+                <div class="pf-card-head">
+                  <h3>COD order SMS OTP</h3>
+                  <label class="pf-switch" title="Enable / disable"><input type="checkbox" id="protectOtpEnabled" aria-label="Enable COD SMS OTP" /><span class="slider"></span></label>
+                </div>
+                <div class="settings-body">
+                  <p class="pf-note">ON korle COD checkout e customer er phone e SMS OTP pathano hobe — code verify na hole order hobe na. Default OFF.</p>
+                  <p class="pf-note">Kaj korte lagbe: <strong>COD payment ON</strong> + <strong>Phone / SMS settings</strong> e provider enabled + SMS OTP enabled + API key set. Checkout e privacy line dekhano hoy: "To verify your order, your phone number is checked with delivery partners and our records."</p>
+                </div>
+              </div>
+
+              <div class="pf-card">
+                <div class="pf-card-head"><h3>Blacklist</h3></div>
+                <div class="settings-body">
+                  <p class="pf-note">Blacklist e thaka phone / address / IP theke order neoya bondho. Order detail thekeo customer blacklist kora jay; shob change audit log e thake.</p>
+                  <div class="sst-actions">
+                    <button class="pf-btn-sm" type="button" id="protectionBlacklistBtn">Blacklist manage korun</button>
+                  </div>
+                </div>
+              </div>
+            </section>
+
             <!-- ===== EMAIL / SMTP ===== -->
             <section class="settings-pane" data-pane="email">
               <div class="pf-card">
@@ -3583,6 +3756,22 @@
         <div id="custRoot"></div>
       </section><!-- /#view-customers -->
 
+      <!-- ===================== BLACKLIST VIEW ===================== -->
+      <section class="view" id="view-blacklist" hidden>
+        <div class="topbar">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <button class="menu-btn" aria-label="Menu">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+            <div>
+              <h1>Blacklist</h1>
+              <p class="crumb">Blocked phones, addresses &amp; IPs · checkout theke order reject hoy</p>
+            </div>
+          </div>
+        </div>
+        <div id="blRoot"></div>
+      </section><!-- /#view-blacklist -->
+
       <!-- ===================== SUPPLIERS VIEW ===================== -->
       <section class="view" id="view-suppliers" hidden>
         <div class="topbar">
@@ -4315,20 +4504,22 @@
   <script src="/js/store-hint.js?v=1"></script>
   <script src="/js/api-session.js?v=2"></script>
   <script src="/js/platform-brand.js?v=1"></script>
-  <script src="/js/dashboard.js?v=20"></script>
+  <script src="/js/dashboard-addons.js?v=1"></script>
+  <script src="/js/dashboard.js?v=22"></script>
   <script src="/js/overview.js?v=1"></script>
   <script src="/js/form-guard.js?v=2"></script>
   <script src="/js/categories.js"></script>
   <script src="/js/brands.js"></script>
-  <script src="/js/product-form.js?v=2"></script>
-  <script src="/js/settings-dashboard.js?v=19"></script>
+  <script src="/js/product-form.js?v=4"></script>
+  <script src="/js/settings-dashboard.js?v=21"></script>
   <script src="/js/installments-admin.js?v=1"></script>
   <script src="/js/retail-installments-admin.js?v=1"></script>
-  <script src="/js/orders.js?v=4"></script>
+  <script src="/js/orders.js?v=6"></script>
   <script src="/js/product-catalog.js?v=1"></script>
   <script src="/js/marketing.js?v=3"></script>
   <script src="/js/hero-slider.js?v=3"></script>
   <script src="/js/customers.js?v=1"></script>
+  <script src="/js/blacklist.js?v=1"></script>
   <script src="/js/suppliers.js?v=4"></script>
   <script src="/js/reports.js?v=2"></script>
   <script src="/js/inventory.js?v=1"></script>

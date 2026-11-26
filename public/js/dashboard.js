@@ -89,6 +89,8 @@ function switchView(viewName) {
     if (window.orderCatalog) window.orderCatalog.open();
   } else if (viewName === "customers") {
     if (window.customerPage) window.customerPage.open();
+  } else if (viewName === "blacklist") {
+    if (window.blacklistPage) window.blacklistPage.open();
   } else if (viewName === "suppliers") {
     if (window.supplierPage) window.supplierPage.open();
   } else if (viewName === "supplier-history") {
@@ -149,6 +151,8 @@ function switchView(viewName) {
     if (window.accountsPage) window.accountsPage.open("voids");
   } else if (viewName === "accounts-export") {
     if (window.accountsPage) window.accountsPage.open("export");
+  } else if (viewName.indexOf("addon-") === 0) {
+    if (window.dashboardAddons) window.dashboardAddons.open(viewName.slice(6));
   }
 }
 
@@ -164,6 +168,7 @@ const VIEW_MODULES = {
   brands: "brands",
   orders: "orders",
   "order-detail": "orders",
+  blacklist: "orders",
   customers: "customers",
   suppliers: "supplierPortal",
   "supplier-history": "supplierPortal",
@@ -378,6 +383,7 @@ let me = null;
   loadStoreInfo();
   loadSiteSettings();
   loadPromotionStatus();
+  if (window.dashboardAddons) window.dashboardAddons.load();
   await loadProducts();
 })();
 

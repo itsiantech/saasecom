@@ -755,8 +755,18 @@ test("Dhaka midnight decides the report day and status hooks rebuild that day", 
     actor: { id: state.adminB._id, name: "Second Admin" },
   });
 
-  // reportHooks debounces for 2s before rebuilding the affected day.
-  await new Promise((resolve) => setTimeout(resolve, 3000));
+  // reportHooks debounces for 2s before rebuilding the affected day, and the
+  // rebuild itself is async. Under parallel `node --test` load a fixed 3s sleep
+  // is not enough — poll until the day's rollup actually reflects the change.
+  const rollupStart = Date.now();
+  let rollup = await ReportDaily.findOne({ store: state.storeB._id, date: state.d1 }).lean();
+  while (
+    (!rollup || rollup.salesPaisa !== 16100 || rollup.ordersCount !== 2) &&
+    Date.now() - rollupStart < 30000
+  ) {
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    rollup = await ReportDaily.findOne({ store: state.storeB._id, date: state.d1 }).lean();
+  }
 
   const afterHook = await get(
     `/api/admin/reports/sales/summary?${periodQuery(state.d1, state.d1)}`,
@@ -764,7 +774,6 @@ test("Dhaka midnight decides the report day and status hooks rebuild that day", 
     state.storeB._id
   );
   assert.deepEqual([afterHook.body.sales, afterHook.body.ordersPlaced], [161, 2]);
-  const rollup = await ReportDaily.findOne({ store: state.storeB._id, date: state.d1 }).lean();
   assert.equal(rollup.salesPaisa, 16100);
   assert.equal(rollup.ordersCount, 2);
 });

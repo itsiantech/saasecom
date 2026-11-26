@@ -73,6 +73,13 @@ function applyOrderAdvanced(query, advanced, productIds) {
 
   if (advanced.courier) query.courierName = new RegExp(escapeRegex(advanced.courier), "i");
 
+  // Courier fraud risk filter; "unchecked" = no result yet (legacy orders too)
+  if (["low", "medium", "high", "new", "unavailable"].includes(advanced.risk)) {
+    query["fraud.riskLevel"] = advanced.risk;
+  } else if (advanced.risk === "unchecked") {
+    query["fraud.riskLevel"] = { $in: ["", null] };
+  }
+
   const range = {};
   if (advanced.from) {
     const d = new Date(advanced.from);

@@ -118,6 +118,81 @@
 .ol-pay-badge.partial { background: rgba(210, 153, 34, 0.16); color: var(--gold); }
 .ol-pay-badge.unpaid { background: rgba(248, 113, 113, 0.12); color: #f87171; }
 
+/* courier fraud risk badge (order list + detail) */
+.ol-risk-row { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.ol-risk-row:empty { display: none; }
+.ol-risk-badge {
+  display: inline-block;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.ol-risk-badge.low { background: rgba(63, 185, 80, 0.14); color: #3fb950; }
+.ol-risk-badge.medium { background: rgba(210, 153, 34, 0.16); color: var(--gold); }
+.ol-risk-badge.high { background: rgba(248, 113, 113, 0.14); color: #f87171; }
+.ol-risk-badge.new { background: rgba(148, 163, 184, 0.16); color: #94a3b8; }
+.ol-risk-badge.checking { background: rgba(148, 163, 184, 0.16); color: #94a3b8; animation: olRiskPulse 1.2s ease-in-out infinite; }
+@keyframes olRiskPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+.ol-risk-flag {
+  display: inline-block;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(210, 153, 34, 0.16);
+  color: var(--gold);
+  cursor: help;
+}
+
+/* order detail — fraud check card */
+.od-fraud { margin-top: 16px; }
+.od-fraud-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.od-fraud-head h4 { margin: 0; }
+.od-fraud-head-side { display: flex; align-items: center; gap: 8px; }
+.od-fraud-btn { font-size: 12.5px; padding: 5px 12px; }
+.od-fraud-danger { color: #f87171; border-color: rgba(248, 113, 113, 0.4); }
+.od-fraud-meta { font-size: 12px; color: var(--muted); margin: 6px 0 0; }
+.od-fraud-couriers { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 12px; }
+.od-fraud-courier { margin: 0; }
+.od-fraud-courier h4 { font-size: 13px; }
+.od-fraud-action { margin: 12px 0 0; font-size: 13px; font-weight: 600; padding: 8px 12px; border-radius: 8px; background: rgba(148, 163, 184, 0.1); }
+.od-fraud-action.low { background: rgba(63, 185, 80, 0.1); color: #3fb950; }
+.od-fraud-action.medium { background: rgba(210, 153, 34, 0.12); color: var(--gold); }
+.od-fraud-action.high { background: rgba(248, 113, 113, 0.1); color: #f87171; }
+.od-fraud-flags { margin-top: 12px; font-size: 13px; }
+.od-fraud-flags ul { margin: 6px 0 0; padding-left: 18px; }
+.od-fraud-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+
+/* blacklist page */
+.bl-add-card { margin-bottom: 16px; }
+.bl-toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+.bl-toolbar select {
+  border: 1px solid var(--line-soft);
+  background: var(--panel);
+  color: var(--text);
+  font-size: 13px;
+  border-radius: 8px;
+  padding: 6px 9px;
+}
+.bl-type-chip {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.16);
+  color: #94a3b8;
+}
+.bl-type-chip.phone { background: rgba(248, 113, 113, 0.12); color: #f87171; }
+.bl-type-chip.address { background: rgba(210, 153, 34, 0.16); color: var(--gold); }
+.bl-type-chip.ip { background: rgba(96, 165, 250, 0.14); color: #60a5fa; }
+.bl-value { font-family: monospace; font-size: 13px; word-break: break-all; }
+
 /* status select */
 .ol-status-select {
   border: 1px solid var(--line-soft);
@@ -398,4 +473,15 @@
   .od-item { gap: 8px; }
   .od-item > div { min-width: 0; }
   .od-item b { overflow-wrap: anywhere; }
+}
+
+/* Matching add-on item chip inside the order detail table */
+.od-item-kind {
+  display: inline-block !important;
+  margin-top: 4px !important;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px !important;
+  background: rgba(212, 175, 55, 0.12);
+  color: #d4af37;
 }

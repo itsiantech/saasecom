@@ -50,6 +50,11 @@ const orderSchema = new mongoose.Schema(
       product: { type: mongoose.Schema.Types.ObjectId, ref: "Product", required: true },
       variation: { type: mongoose.Schema.Types.ObjectId, ref: "ProductVariation", default: null },
       swatch: { type: mongoose.Schema.Types.ObjectId, ref: "ProductSwatch", default: null },
+      // "addon" lines are Matching add-ons: `product` = parent product id, `addonId`
+      // matches Product.addons[_id], no stock, title/price snapshotted from the parent.
+      kind: { type: String, enum: ["product", "addon"], default: "product" },
+      addonId: { type: mongoose.Schema.Types.ObjectId, default: null },
+      title: { type: String, default: "" },
       image: { type: String, default: "" },
       unitPrice: { type: Number, default: 0 },
       // Wholesale snapshot: exact tier price at the time the order was placed.
@@ -104,6 +109,22 @@ const orderSchema = new mongoose.Schema(
     courierTrackingCode: { type: String, default: "" },
     courierStatus: { type: String, default: "" },
     courierSentAt: { type: Date, default: null },
+    // ---- Courier fraud check + website order protection (additive; old orders keep defaults) ----
+    customerIp: { type: String, default: "" },
+    fraud: {
+      status: { type: String, enum: ["", "checking", "done"], default: "" },
+      riskLevel: { type: String, enum: ["", "low", "medium", "high", "new", "unavailable"], default: "" },
+      combinedPercent: { type: Number, default: null },
+      // per-courier { success, cancel, total } counts, { rating }, or { error }
+      steadfast: { type: mongoose.Schema.Types.Mixed, default: null },
+      pathao: { type: mongoose.Schema.Types.Mixed, default: null },
+      checkedAt: { type: Date, default: null },
+      callDoneAt: { type: Date, default: null },
+    },
+    protectionFlags: {
+      type: [{ rule: String, reason: String, at: { type: Date, default: Date.now } }],
+      default: [],
+    },
     status: {
       type: String,
       // legacy: confirmed | shipped | delivered ; new set: processing | on_the_way |
@@ -129,5 +150,8 @@ orderSchema.index(
   { store: 1, idempotencyKey: 1 },
   { unique: true, partialFilterExpression: { idempotencyKey: { $gt: "" } } }
 );
+// protection rate limits count recent orders per phone / per IP
+orderSchema.index({ store: 1, customerPhone: 1, createdAt: -1 });
+orderSchema.index({ store: 1, customerIp: 1, createdAt: -1 });
 
 module.exports = mongoose.model("Order", orderSchema);

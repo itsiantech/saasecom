@@ -35,6 +35,7 @@ app.use("/api/subscriptions", require("./routes/subscriptions"));
 app.use("/api/billing", require("./routes/billing"));
 app.use("/api/orders", require("./routes/orders"));
 app.use("/api/customers", require("./routes/customers"));
+app.use("/api/blacklist", require("./routes/blacklist"));
 // Isolated module: a supplier load failure must never stop the app from booting.
 try {
   app.use("/api/suppliers", require("./routes/suppliers"));
@@ -102,6 +103,7 @@ app.use("/api/promotions", require("./routes/promotions"));
 app.use("/api/flash-sales", require("./routes/flashSales"));
 app.use("/api/coupons", require("./routes/coupons"));
 app.use("/api/hero-slides", require("./routes/heroSlides"));
+app.use("/api/addons", require("./routes/addons"));
 // ---- tenant host (amar-dokan.platform.com ba dokan.com) — ekhane storefront ar store panel cholbe
 const { resolveHostStore } = require("./lib/hostStore");
 const { storefrontUrl } = require("./lib/storefrontUrl");
@@ -163,6 +165,31 @@ app.use((req, res, next) => {
   if (req.path === "/" && /^[a-z0-9][a-z0-9-]{0,62}$/.test(slug)) return res.redirect(302, "/" + slug);
   next();
 });
+
+// Add-on pages are untrusted uploads: every file carries a sandbox CSP, so
+// even a directly opened page runs with an opaque origin (no cookies/storage).
+app.use(
+  "/addons",
+  (_req, res, next) => {
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader(
+      "Content-Security-Policy",
+      "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src *; frame-ancestors 'self'; sandbox allow-scripts allow-forms allow-popups allow-modals"
+    );
+    next();
+  },
+  express.static(path.join(__dirname, "storage", "addons"), {
+    index: false,
+    redirect: false,
+    dotfiles: "deny",
+    fallthrough: false,
+  }),
+  // central handler fs-errors ke multer bhabe 400 dey — ekhane nijer 404
+  (err, _req, res, _next) => {
+    const missing = err.code === "ENOENT" || err.status === 404;
+    res.status(missing ? 404 : err.status || 500).json({ message: missing ? "ফাইল পাওয়া যায়নি" : err.message });
+  }
+);
 
 // Uploaded files are untrusted: never let a browser sniff them into HTML/JS,
 // and sandbox anything that is opened directly.
