@@ -259,6 +259,11 @@
     $("pcDone").hidden = false;
 
     const pending = payment.status === "pending";
+    const rejected = payment.status === "rejected";
+    const icon = $("pcDoneIcon");
+    icon.textContent = rejected ? "✕" : "✓";
+    icon.classList.toggle("bad", rejected);
+    $("pcDoneTitle").textContent = rejected ? "পেমেন্ট সম্পন্ন হয়নি" : "পেমেন্ট জমা হয়েছে";
     $("pcDoneLine").innerHTML =
       "ইনভয়েস <b>" + esc(payment.invoiceNo) + "</b> · " +
       (payment.status === "approved"
@@ -286,6 +291,9 @@
     $("pcDoneText").textContent = text;
     $("pcDoneInvoice").href = payment.invoiceUrl;
     if (pending) $("pcDoneInvoice").textContent = "ইনভয়েস ডাউনলোড";
+    const retry = $("pcDoneRetry");
+    retry.hidden = !rejected;
+    if (rejected && planSlug) retry.href = "/plan-checkout.html?plan=" + encodeURIComponent(planSlug);
   }
 
   /* ----------------------------------------------------------- paygate */

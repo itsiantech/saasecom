@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/plan-checkout.css?v=4" />
+  <link rel="stylesheet" href="/css/plan-checkout.css?v=5" />
   <link rel="stylesheet" href="/css/shop-address.css?v=1" />
 </head>
 <body>
@@ -89,12 +89,13 @@
     </div>
 
     <section class="pc-card pc-done" id="pcDone" hidden>
-      <div class="pc-check">✓</div>
-      <h1>পেমেন্ট জমা হয়েছে</h1>
+      <div class="pc-check" id="pcDoneIcon">✓</div>
+      <h1 id="pcDoneTitle">পেমেন্ট জমা হয়েছে</h1>
       <p class="pc-lede" id="pcDoneLine"></p>
       <p class="pc-lede pc-muted" id="pcDoneText"></p>
       <div class="pc-done-actions">
         <a class="pc-btn" id="pcDoneInvoice" target="_blank" rel="noopener">ইনভয়েস দেখুন</a>
+        <a class="pc-btn ghost" id="pcDoneRetry" href="/plan-checkout.html" hidden>আবার পেমেন্ট করুন</a>
         <a class="pc-btn ghost" href="/portal.html">প্যানেলে ফিরুন</a>
       </div>
     </section>
@@ -103,6 +104,6 @@
   <script src="/js/platform-brand.js?v=1"></script>
   <script src="/js/shop-address.js?v=1"></script>
   <script src="/js/shop-address-field.js?v=1"></script>
-  <script src="/js/plan-checkout.js?v=3"></script>
+  <script src="/js/plan-checkout.js?v=4"></script>
 </body>
 </html>

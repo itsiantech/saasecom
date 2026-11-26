@@ -158,6 +158,9 @@ h1, h2 { margin: 0; font-weight: 600; }
   display: grid; place-items: center; font-size: 28px; color: var(--ok);
   border: 1px solid rgba(72, 211, 159, 0.45); background: rgba(72, 211, 159, 0.1);
 }
+.pc-check.bad {
+  color: var(--danger); border-color: rgba(240, 138, 118, 0.45); background: rgba(240, 138, 118, 0.1);
+}
 .pc-done h1 { font-size: 24px; }
 .pc-done .pc-lede { margin-top: 10px; }
 .pc-done-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 8px; }
