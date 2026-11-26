@@ -1,7 +1,8 @@
 const mongoose = require("mongoose");
 
 // Platform subscription payment (SaaS billing) — not a storefront order payment.
-// A store is created or upgraded only when a super admin approves this row.
+// Approval (superadmin click, or a verified PayGate webhook) is the only place a
+// store gets created or upgraded.
 const platformPaymentSchema = new mongoose.Schema(
   {
     invoiceNo: { type: String, required: true, unique: true },
@@ -18,8 +19,19 @@ const platformPaymentSchema = new mongoose.Schema(
     cycle: { type: String, default: "1m" },
     months: { type: Number, default: 1 },
     durationDays: { type: Number, default: 30 },
-    method: { type: String, enum: ["bkash", "nagad", "bank", "qr"], required: true },
+    method: { type: String, enum: ["bkash", "nagad", "bank", "qr", "paygate"], required: true },
     methodLabel: { type: String, default: "" },
+    // "paygate" = hosted bKash/Nagad checkout, approved automatically once
+    // PayGate has matched the payment SMS. Manual rows leave it empty.
+    gateway: { type: String, enum: ["", "paygate"], default: "" },
+    paygateId: { type: String, default: "", index: true },
+    paygateCheckoutUrl: { type: String, default: "" },
+    paygateStatus: { type: String, default: "" },
+    paygateDeviceType: { type: String, enum: ["", "bkash", "nagad"], default: "" },
+    paygatePaidAt: { type: Date, default: null },
+    // evt_ id of the success event that settled this row — proof of which
+    // delivery approved it when PayGate retries the same payment.
+    paygateEventId: { type: String, default: "", index: true },
     senderNumber: { type: String, default: "", trim: true },
     trxid: { type: String, default: "", trim: true, maxlength: 40 },
     // method:trxid lowercase — unique index stops the same transaction being claimed twice.

@@ -1738,7 +1738,7 @@ function renderPayments(counts) {
         </td>
         <td class="pay-amount">৳ ${num(row.amount)}</td>
         <td class="pay-method">${esc(row.methodLabel || row.method)}
-          <small>${esc(row.trxid || "—")}</small>
+          <small>${row.gateway === "paygate" ? "PayGate · " : ""}${esc(row.trxid || "—")}</small>
         </td>
         <td>
           <span class="badge ${st.cls}">${esc(st.label)}</span>
@@ -1911,26 +1911,30 @@ function billingCard(m, data) {
 
 function billingApiCard(api) {
   const on = Boolean(api.enabled);
-  const field = (key, label, value, placeholder) =>
+  const field = (key, label, value, placeholder, hint) =>
     '<div class="field"><label>' + esc(label) + "</label>" +
-    '<input type="text" data-api="' + key + '" value="' + esc(value) + '" placeholder="' + esc(placeholder || "") + '" spellcheck="false" /></div>';
+    '<input type="text" data-api="' + key + '" value="' + esc(value) + '" placeholder="' + esc(placeholder || "") + '" spellcheck="false" />' +
+    (hint ? '<p class="billing-hint">' + esc(hint) + "</p>" : "") +
+    "</div>";
 
   return (
     '<div class="bm-card api' + (on ? " on" : "") + '" data-card="api">' +
-      '<div class="bm-head"><h4><span class="bm-dot"></span>API পেমেন্ট গেটওয়ে (ফেজ ২)</h4>' +
+      '<div class="bm-head"><h4><span class="bm-dot"></span>PayGate (bKash / Nagad অটো)</h4>' +
         '<label class="switch"><input type="checkbox" data-method="api"' + (on ? " checked" : "") + ' /><span class="slider"></span></label>' +
       "</div>" +
       '<div class="bm-fields">' +
+        '<p class="billing-hint">কাস্টমার PayGate-এর হোস্টেড পেজ থেকে টাকা পাঠালে SMS মিলিয়ে পেমেন্ট নিজেই অনুমোদিত হয় — TRXID লিখতে হয় না।</p>' +
+        field("baseUrl", "PayGate ঠিকানা", api.baseUrl, "https://pay.amarbazaar.bd") +
         '<div class="bm-2">' +
-          field("provider", "গেটওয়ে", api.provider, "bkash / sslcommerz") +
-          '<div class="field"><label>মোড</label><select data-api="sandbox" style="width:100%;background:var(--panel);border:1px solid var(--line-soft);border-radius:9px;padding:10px 12px;color:var(--text);font-size:13.5px;">' +
-            '<option value="1"' + (api.sandbox !== false ? " selected" : "") + ">Sandbox</option>" +
-            '<option value="0"' + (api.sandbox === false ? " selected" : "") + ">Live</option>" +
-          "</select></div>" +
+          field("publicKey", "Public key (pk_…)", api.publicKey, "••••", "চেকআউট তৈরি করতে লাগে") +
+          field("secretKey", "Webhook secret (whsec_…)", api.secretKey, "••••", "ওয়েবুক স্বাক্ষর যাচাই করতে লাগে") +
         "</div>" +
-        '<div class="bm-2">' +
-          field("publicKey", "Public / App key", api.publicKey, "••••") +
-          field("secretKey", "Secret key", api.secretKey, "••••") +
+        '<div class="field"><label>Webhook URL — PayGate app-এ এটি বসান</label>' +
+          '<div class="bm-2" style="align-items:center;">' +
+            '<input type="text" id="bmWebhookUrl" value="' + esc(location.origin + "/api/webhooks/paygate") + '" readonly spellcheck="false" />' +
+            '<button type="button" class="btn ghost" id="bmWebhookCopy">কপি</button>' +
+          "</div>" +
+          '<p class="billing-hint">প্যানেলটি যে ঠিকানায় খোলা আছে সেই দোকান-ঠিকানা এখানে বসে; মূল প্ল্যাটফর্ম ঠিকানাটিই দিন।</p>' +
         "</div>" +
         '<div class="field"><label>নোট</label><textarea data-api="note">' + esc(api.note || "") + "</textarea></div>" +
       "</div>" +
@@ -1951,6 +1955,18 @@ function renderBilling(settings) {
     BILLING_CARDS.map((m) => billingCard(m, settings[m.id] || {})).join("") + billingApiCard(settings.api || {});
   const file = $("bmQrFile");
   if (file) file.addEventListener("change", uploadQr);
+  const copyHook = $("bmWebhookCopy");
+  if (copyHook) {
+    copyHook.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText($("bmWebhookUrl").value);
+        copyHook.textContent = "✓";
+        setTimeout(() => (copyHook.textContent = "কপি"), 1400);
+      } catch {
+        billingNote("কপি করা যায়নি — লিংকটি হাতে কপি করুন", "err");
+      }
+    });
+  }
 }
 
 function collectBilling() {
@@ -1962,10 +1978,11 @@ function collectBilling() {
     defaultGraceDays: Number.isFinite(grace) ? Math.min(90, Math.max(0, Math.round(grace))) : 7,
     api: {
       enabled: Boolean(document.querySelector('[data-method="api"]').checked),
-      sandbox: document.querySelector('[data-api="sandbox"]').value !== "0",
+      provider: "paygate",
+      sandbox: false,
     },
   };
-  ["provider", "publicKey", "secretKey", "note"].forEach((key) => {
+  ["baseUrl", "publicKey", "secretKey", "note"].forEach((key) => {
     out.api[key] = document.querySelector('[data-api="' + key + '"]').value;
   });
 

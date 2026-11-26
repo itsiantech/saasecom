@@ -65,14 +65,14 @@
               <label for="pcSender">যে নম্বর থেকে টাকা পাঠিয়েছেন</label>
               <input id="pcSender" inputmode="numeric" placeholder="01XXXXXXXXX" autocomplete="off" />
             </div>
-            <div class="pc-field">
+            <div class="pc-field" id="pcTrxWrap">
               <label for="pcTrx">TRXID</label>
               <input id="pcTrx" placeholder="যেমন: 9F7A2K1P" autocomplete="off" spellcheck="false" />
             </div>
           </div>
           <p class="pc-error" id="pcError" hidden></p>
           <button class="pc-btn" id="pcSubmit" type="button">পেমেন্ট জমা দিন</button>
-          <p class="pc-hint">জমা দেওয়ার পর অ্যাডমিন TRXID যাচাই করবেন। অনুমোদন হলে দোকান / প্যাকেজ স্বয়ংক্রিয়ভাবে চালু হয়ে যাবে।</p>
+          <p class="pc-hint" id="pcSubmitHint">জমা দেওয়ার পর অ্যাডমিন TRXID যাচাই করবেন। অনুমোদন হলে দোকান / প্যাকেজ স্বয়ংক্রিয়ভাবে চালু হয়ে যাবে।</p>
         </div>
       </section>
 

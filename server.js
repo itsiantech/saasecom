@@ -21,6 +21,10 @@ app.get("/api/health", (req, res) => {
 // live shop-address check — onboarding has no store yet, so this must skip tenant resolution
 app.use("/api", require("./routes/shopAddress"));
 
+// PayGate posts signed payment events here from its own host — no shop host, so
+// it must be mounted before tenant resolution rejects host-less requests.
+app.use("/api/webhooks", require("./routes/paygateWebhook"));
+
 // public storefront resolves its own store by slug, so it mounts before tenant middleware
 app.use("/api/storefront", require("./routes/storefront"));
 app.use("/api/public", require("./routes/publicApi"));
@@ -32,6 +36,9 @@ app.use("/api/stores", require("./routes/stores"));
 app.use("/api/plans", require("./routes/plans"));
 app.use("/api/admin", require("./routes/admin"));
 app.use("/api/subscriptions", require("./routes/subscriptions"));
+// Mounted before /api/billing so the PayGate paths win regardless of what the
+// manual-billing router grows later.
+app.use("/api/billing/paygate", require("./routes/billingPaygate"));
 app.use("/api/billing", require("./routes/billing"));
 app.use("/api/orders", require("./routes/orders"));
 app.use("/api/customers", require("./routes/customers"));

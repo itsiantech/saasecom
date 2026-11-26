@@ -6,19 +6,42 @@ const Plan = require("../models/Plan");
 const PlatformPayment = require("../models/PlatformPayment");
 const { auth } = require("../middleware/auth");
 const billing = require("../lib/platformBilling");
+const paygate = require("../lib/paygate");
 const planCycles = require("../lib/planCycles");
 const { assertShopName } = require("../lib/shopAddress");
 const { buildPlatformInvoiceHtml } = require("../lib/platformInvoice");
 const landingBranding = require("../lib/landingBranding");
 
-// public: checkout page kon kon manual method dekhabe (kono key jay na)
+// Shudhu manual method er row gulo jay — tar sathe PayGate hosted checkout
+// cholle seta ekta "gateway" row (kono account number nei, checkout e redirect kore)
+function paygateMethod(configured) {
+  if (!configured) return null;
+  return {
+    id: "paygate",
+    label: "বিকাশ / নগদ — অনলাইন",
+    detail: "অটো যাচাই",
+    number: "",
+    accountName: "",
+    instructions:
+      "PayGate-এর নিরাপদ পেজে বিকাশ/নগদ অ্যাপ থেকে টাকা পাঠালে SMS মিলিয়ে আপনার দোকান স্বয়ংক্রিয়ভাবে চালু হয়ে যাবে — TRXID লিখতে হবে না।",
+    needsSender: true,
+    gateway: true,
+  };
+}
+
+// public: checkout page kon kon payment method dekhabe (kono key jay na)
 router.get("/methods", async (req, res) => {
   try {
     const settings = await billing.loadSettings();
+    const config = await paygate.getConfig();
+    const methods = billing.publicMethods(settings);
+    const gateway = paygateMethod(config.configured);
+    if (gateway) methods.unshift(gateway);
     res.json({
       manualEnabled: settings.manualEnabled,
-      methods: billing.publicMethods(settings),
-      apiEnabled: settings.api.enabled,
+      methods,
+      apiEnabled: config.configured,
+      paygateEnabled: config.configured,
     });
   } catch (err) {
     res.status(500).json({ message: err.message });

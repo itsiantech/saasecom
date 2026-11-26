@@ -16,6 +16,8 @@
   const qs = new URLSearchParams(location.search);
   const planSlug = String(qs.get("plan") || "").toLowerCase();
   const storeId = String(qs.get("store") || "");
+  // PayGate ফেরত আসা পেজ — ?pp= থাকলে শুধু পেমেন্টের ফলাফল দেখানো হয়
+  const ppId = String(qs.get("pp") || "");
 
   const esc = (s) =>
     String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -52,6 +54,7 @@
     if (!res.ok) {
       const err = new Error((data && data.message) || "Request fail korlo");
       err.data = data;
+      err.status = res.status;
       throw err;
     }
     return data;
@@ -77,6 +80,13 @@
   let addressField = null;
   let platformDomain = "";
   let cycleKey = "1m";
+
+  // HTML-এ লেখা ম্যানুয়াল-মেথড টেক্সট, gateway method বেছে নিলে বদলায়
+  const STATIC_TEXT = {
+    senderLabel: $("pcSenderWrap").querySelector("label").textContent,
+    hint: $("pcSubmitHint").textContent,
+    submit: $("pcSubmit").textContent,
+  };
 
   // server sends the cycle list with each plan; this mirrors it for a stale cache
   const FALLBACK_CYCLES = [
@@ -144,7 +154,9 @@
     $("pcNoMethods").hidden = true;
     box.innerHTML = methods
       .map((m) => {
-        const detail = m.id === "bank" ? (m.bankName || "ব্যাংক অ্যাকাউন্ট") : m.id === "qr" ? "স্ক্যান করে পেমেন্ট" : m.number || "";
+        const detail = m.gateway
+          ? "অটো SMS যাচাই"
+          : m.id === "bank" ? (m.bankName || "ব্যাংক অ্যাকাউন্ট") : m.id === "qr" ? "স্ক্যান করে পেমেন্ট" : m.number || "";
         return (
           '<button class="pc-method" type="button" data-method="' + esc(m.id) + '">' +
             "<b>" + esc(m.label) + "</b><small>" + esc(detail) + "</small>" +
@@ -169,6 +181,16 @@
   function renderInstructions(m) {
     const parts = [];
     parts.push("<h3>" + esc(m.label) + "</h3>");
+
+    if (m.gateway) {
+      parts.push(
+        "<p><b>৳ " + num(cyclePrice()) + "</b> — বিকাশ বা নগদ অ্যাপ থেকে এই টাকটা পাঠালে আপনার ফোনের SMS মিলিয়ে পেমেন্টটি নিজেই যাচাই হয়ে যায়।</p>" +
+          "<p>TRXID লিখতে হবে না। নিচে আপনার পেমেন্ট নম্বর দিয়ে “পেমেন্ট পেজ খুলুন” চাপুন।</p>"
+      );
+      if (m.instructions) parts.push("<p>" + esc(m.instructions) + "</p>");
+      $("pcInstr").innerHTML = parts.join("");
+      return;
+    }
 
     if (m.id === "bank") {
       parts.push(copyRow("ব্যাংক", m.bankName));
@@ -218,7 +240,14 @@
 
     renderInstructions(selected);
     $("instrStep").hidden = false;
+    const gateway = Boolean(selected.gateway);
+    $("pcTrxWrap").hidden = gateway;
     $("pcSenderWrap").hidden = selected.needsSender === false;
+    $("pcSenderWrap").querySelector("label").textContent = gateway ? "যে নম্বর থেকে পেমেন্ট করবেন" : STATIC_TEXT.senderLabel;
+    $("pcSubmitHint").textContent = gateway
+      ? "পেমেন্ট পেজে টাকা পাঠালে SMS মিলিয়ে দোকান / প্যাকেজ স্বয়ংক্রিয়ভাবে চালু হয়ে যাবে — ট্যাবটি খোলা রাখুন।"
+      : STATIC_TEXT.hint;
+    $("pcSubmit").textContent = gateway ? "পেমেন্ট পেজ খুলুন" : STATIC_TEXT.submit;
     renderSummary();
     showError("");
     $("pcSender").focus();
@@ -243,6 +272,11 @@
       text = "পেমেন্ট গৃহীত। পরবর্তী বিল: " + fmtDate(payment.nextDueDate) + "।";
     } else if (payment.status === "rejected") {
       text = "পেমেন্ট বাতিল হয়েছে।" + (payment.rejectReason ? " কারণ: " + payment.rejectReason : "") + " আবার জমা দিতে পারেন।";
+    } else if (payment.gateway === "paygate") {
+      text =
+        "টাকা পাঠালে আপনার ফোনের SMS মিলিয়ে " +
+        (payment.kind === "existing" ? "আপনার প্যাকেজ" : "আপনার দোকান") +
+        " নিজেই চালু হয়ে যাবে। এই পেজটি কিছুক্ষণ খোলা রাখুন।";
     } else {
       text =
         "অ্যাডমিন TRXID মিলিয়ে দেখে অনুমোদন দিলে " +
@@ -254,8 +288,42 @@
     if (pending) $("pcDoneInvoice").textContent = "ইনভয়েস ডাউনলোড";
   }
 
+  /* ----------------------------------------------------------- paygate */
+  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  const PP_TRIES = 15;
+  const PP_EVERY_MS = 4000;
+
+  // PayGate থেকে ফেরা পেজ। webhook প্রায় আগেই পেমেন্ট মেলায়, তবু নিজেও জিজ্ঞেস
+  // করি — ৬০ সেকেন্ড পর্যন্ত।
+  async function showPaygateReturn(id) {
+    showDone({ id, invoiceNo: "—", status: "pending", kind: "new", gateway: "paygate", invoiceUrl: "#" });
+    let last = null;
+    for (let tryNo = 0; tryNo < PP_TRIES; tryNo++) {
+      try {
+        const data = await api("/api/billing/paygate/" + encodeURIComponent(id) + "/status");
+        const view = data && data.payment;
+        if (view) {
+          if (view.status !== "pending") {
+            showDone(view);
+            return view.status;
+          }
+          if (!last) showDone(view);
+          last = view;
+        }
+      } catch (err) {
+        if (err.status === 404) return fatal("পেমেন্টটি খুঁজে পাওয়া যায়নি — ল্যান্ডিং পেজ থেকে আবার শুরু করুন।");
+        if (err.status === 403) return fatal("এই পেমেন্ট দেখার অনুমতি নেই — ওই অ্যাকাউন্ট দিয়েই লগিন আছেন তো?");
+        // 401 api() নিজেই login page নিয়ে যায়; বাকি সব (network) — অপেক্ষা করি
+      }
+      await sleep(PP_EVERY_MS);
+    }
+    if (last) showDone(last);
+    return "pending";
+  }
+
   /* ---------------------------------------------------------------- boot */
   async function boot() {
+    if (ppId) return showPaygateReturn(ppId);
     if (!planSlug) return fatal("কোনো প্যাকেজ বাছা হয়নি — ল্যান্ডিং পেজ থেকে প্যাকেজ বেছে নিন।");
 
     let me;
@@ -342,6 +410,8 @@
   }
 
   /* -------------------------------------------------------------- submit */
+  const submitLabel = () => (selected && selected.gateway ? "পেমেন্ট পেজ খুলুন" : STATIC_TEXT.submit);
+
   $("pcSubmit").addEventListener("click", async () => {
     showError("");
     const btn = $("pcSubmit");
@@ -349,22 +419,18 @@
     if (!selected) return showError("পেমেন্ট মেথড বেছে নিন");
 
     const sender = $("pcSender").value.replace(/[\s-]/g, "");
-    const trxid = $("pcTrx").value.trim();
+    const gateway = Boolean(selected.gateway);
 
     if (selected.needsSender !== false && !/^01[3-9]\d{8}$/.test(sender)) {
       return showError("যে নম্বর থেকে টাকা পাঠিয়েছেন সেটি ১১ ডিজিটে লিখুন (যেমন 01712345678)");
     }
-    if (!/^[A-Za-z0-9-]{6,40}$/.test(trxid)) {
+    if (!gateway && !/^[A-Za-z0-9-]{6,40}$/.test($("pcTrx").value.trim())) {
       return showError("TRXID ঠিকভাবে লিখুন — ৬–৪০ অক্ষর, শুধু ইংরেজি অক্ষর/সংখ্যা");
     }
 
-    const body = {
-      planSlug: plan.slug,
-      cycle: cycleKey,
-      method: selected.id,
-      senderNumber: sender,
-      trxid,
-    };
+    const body = gateway
+      ? { planSlug: plan.slug, cycle: cycleKey, senderNumber: sender }
+      : { planSlug: plan.slug, cycle: cycleKey, method: selected.id, senderNumber: sender, trxid: $("pcTrx").value.trim() };
 
     if (!store) {
       const name = $("pcStoreName").value.trim();
@@ -381,15 +447,24 @@
       if (!available) {
         showError(addressField.message() || "এই ঠিকানাটি ব্যবহার করা যাচ্ছে না");
         btn.disabled = false;
-        btn.textContent = "পেমেন্ট জমা দিন";
+        btn.textContent = submitLabel();
         return;
       }
       body.storeName = $("pcStoreName").value.trim();
       body.storeSlug = addressField.value();
     }
 
-    btn.textContent = "জমা হচ্ছে...";
+    btn.textContent = gateway ? "পেমেন্ট পেজ খুলছি..." : "জমা হচ্ছে...";
     try {
+      if (gateway) {
+        const data = await api("/api/billing/paygate", { method: "POST", body: JSON.stringify(body) });
+        if (data && data.checkoutUrl) {
+          showDone(data.payment);
+          location.href = data.checkoutUrl;
+          return;
+        }
+        throw new Error("পেমেন্ট পেজের ঠিকানা পাওয়া যায়নি");
+      }
       const data = await api("/api/billing/payments", { method: "POST", body: JSON.stringify(body) });
       showDone(data.payment);
     } catch (err) {
@@ -399,7 +474,7 @@
       }
       showError(err.message);
       btn.disabled = false;
-      btn.textContent = "পেমেন্ট জমা দিন";
+      btn.textContent = submitLabel();
     }
   });
 

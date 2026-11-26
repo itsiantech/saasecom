@@ -626,7 +626,7 @@ router.get("/billing/payments", auth, requireSuperAdmin, async (req, res) => {
   const q = String(req.query.q || "").trim();
   if (q) {
     const rx = new RegExp(escapeRegex(q), "i");
-    filter.$or = [{ invoiceNo: rx }, { storeName: rx }, { trxid: rx }, { senderNumber: rx }];
+    filter.$or = [{ invoiceNo: rx }, { storeName: rx }, { trxid: rx }, { senderNumber: rx }, { paygateId: rx }];
   }
 
   const [rows, grouped] = await Promise.all([
