@@ -61,21 +61,22 @@
 
   function setLogo(branding, fallbackName) {
     const name = String(branding.title || fallbackName || "").trim();
-    $("taName").textContent = name || "Store";
+    const logo = $("taLogo");
+    const title = $("taName");
+
+    title.textContent = name || "Store";
     $("taFootName").textContent = name || "";
     document.title = (name || "Admin") + " — Admin";
 
-    const logo = $("taLogo");
-    const mark = $("taMark");
+    // One brand mark only: the store's logo when it has one, otherwise its name.
     if (branding.logo) {
       logo.src = branding.logo;
       logo.alt = name;
       logo.hidden = false;
-      mark.hidden = true;
+      title.hidden = true;
     } else {
       logo.hidden = true;
-      mark.hidden = false;
-      mark.textContent = (name.charAt(0) || "S").toUpperCase();
+      title.hidden = false;
     }
 
     if (branding.favicon) {

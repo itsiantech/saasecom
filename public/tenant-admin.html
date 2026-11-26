@@ -43,23 +43,13 @@
     .ta-brand {
       display: flex;
       align-items: center;
-      gap: 12px;
+      justify-content: center;
       min-height: 44px;
       margin-bottom: 6px;
     }
     .ta-brand img { max-height: 44px; max-width: 160px; display: block; }
-    .ta-mark {
-      width: 44px;
-      height: 44px;
-      border-radius: 10px;
-      display: grid;
-      place-items: center;
-      background: var(--ta-accent);
-      color: #fff;
-      font-weight: 700;
-      font-size: 20px;
-    }
-    .ta-name { font-size: 19px; font-weight: 700; line-height: 1.25; }
+    .ta-brand > [hidden] { display: none; }
+    .ta-name { font-size: 19px; font-weight: 700; line-height: 1.25; text-align: center; }
     .ta-sub { margin: 4px 0 18px; color: var(--ta-muted); font-size: 14px; }
     .ta-notice {
       margin: 0 0 16px;
@@ -142,7 +132,6 @@
     <div class="ta-body">
       <div class="ta-brand">
         <img id="taLogo" alt="" hidden />
-        <span id="taMark" class="ta-mark" hidden></span>
         <span id="taName" class="ta-name">&nbsp;</span>
       </div>
       <p class="ta-sub" data-bn="দোকান পরিচালনা করতে লগইন করুন" data-en="Sign in to manage your store">
@@ -171,6 +160,6 @@
       </div>
     </div>
   </main>
-  <script src="/js/tenant-admin.js?v=1"></script>
+  <script src="/js/tenant-admin.js?v=2"></script>
 </body>
 </html>
