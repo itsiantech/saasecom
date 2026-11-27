@@ -19,6 +19,7 @@ const SmsSetting = require("../models/SmsSetting");
 const InvoiceSetting = require("../models/InvoiceSetting");
 const User = require("../models/User");
 const Category = require("../models/Category");
+const Publisher = require("../models/Publisher");
 const Store = require("../models/Store");
 const { getStoreId } = require("../lib/tenantContext");
 const { scopedKey, isScopedKey, unscopeKey, keysForStore } = require("../lib/settingsScope");
@@ -469,7 +470,7 @@ function gatewayView(g) {
 
 async function buildAdminPayload() {
   const storeId = getStoreId();
-  const [settings, social, manual, areas, classes, intl, wd, cats, mobileManual, bankManual, gateways, fields,
+  const [settings, social, manual, areas, classes, intl, wd, cats, pubs, mobileManual, bankManual, gateways, fields,
     emailSetting, emailTemplates, smsSetting, invoiceSetting] =
     await Promise.all([
       getSettingsMap(),
@@ -480,6 +481,7 @@ async function buildAdminPayload() {
       ShippingInternational.find({}).sort({ sortOrder: 1 }).lean(),
       ShippingWeightDimension.find({}).sort({ sortOrder: 1 }).lean(),
       Category.find({}).sort({ order: 1 }).lean(),
+      Publisher.find({ status: "published", deletedAt: null }).select("name nameBn slug").sort({ name: 1 }).limit(500).lean(),
       PaymentMobileManual.find({}).sort({ sortOrder: 1 }).lean(),
       PaymentBankManual.find({}).sort({ sortOrder: 1 }).lean(),
       PaymentGateway.find({}).sort({ sortOrder: 1 }).lean(),
@@ -497,8 +499,14 @@ async function buildAdminPayload() {
     homeSections: parseSections(settings.home_category_sections),
     menu: buildMenu(settings.storefront_menu, {
       categories: cats.filter((row) => row.status !== "trashed" && !row.deletedAt),
+      publishers: pubs,
       language: "en",
     }),
+    // menu builder's Publishers tab — id + label only
+    menuPublishers: pubs.map((row) => ({
+      id: String(row._id),
+      name: row.name || row.nameBn || "",
+    })),
     social,
     shipping: { manual, areas, classes, intl, wd },
     categories: buildTree(cats),
@@ -601,11 +609,18 @@ async function adminSave(req, res) {
     allowedHomeCategories = owned.map((row) => String(row._id));
   }
   let allowedMenuCategories = null;
+  let allowedMenuPublishers = null;
   if (settings.storefront_menu !== undefined) {
-    const owned = await Category.find({ store: storeId, deletedAt: null, status: { $ne: "trashed" } })
-      .select("_id")
-      .lean();
+    const [owned, ownedPublishers] = await Promise.all([
+      Category.find({ store: storeId, deletedAt: null, status: { $ne: "trashed" } })
+        .select("_id")
+        .lean(),
+      Publisher.find({ store: storeId, deletedAt: null, status: { $ne: "trashed" } })
+        .select("_id")
+        .lean(),
+    ]);
     allowedMenuCategories = owned.map((row) => String(row._id));
+    allowedMenuPublishers = ownedPublishers.map((row) => String(row._id));
   }
   SETTING_KEYS.forEach((key) => {
     if (settings[key] === undefined) return;
@@ -617,7 +632,12 @@ async function adminSave(req, res) {
     if (key === "home_category_sections") {
       value = JSON.stringify(normalizeSections(value, allowedHomeCategories));
     } else if (key === "storefront_menu") {
-      value = JSON.stringify(normalizeMenu(value, { allowedCategoryIds: allowedMenuCategories }));
+      value = JSON.stringify(
+        normalizeMenu(value, {
+          allowedCategoryIds: allowedMenuCategories,
+          allowedPublisherIds: allowedMenuPublishers,
+        })
+      );
     } else if (BOOL_KEYS.includes(key)) value = value === true || value === "true" ? "true" : "false";
     else if (FIXED_KEYS.includes(key)) value = normalizeFixedValue(key, value);
     else if (key.startsWith("seo_")) value = normalizeSeoValue(key, value);

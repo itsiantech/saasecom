@@ -26,6 +26,7 @@
     { ref: "track-order", label: "Track order", path: "/track-order" },
     { ref: "wishlist", label: "Wishlist", path: "/wishlist" },
     { ref: "contact", label: "Contact", path: "/contact" },
+    { ref: "publishers", label: "Publishers", path: "/publishers" },
   ];
   const MENU_PAGE_BY_REF = new Map(MENU_PAGES.map((page) => [page.ref, page]));
   const MENU_MAX_DEPTH = 3;
@@ -82,6 +83,7 @@
     menuTab: "pages",
     menuLoaded: false,
     menuDirty: false,
+    menuPublishers: [],
     invoicePreviewMode: "retail",
     international: JSON.parse(JSON.stringify(INTERNATIONAL_DEFAULTS)),
     internationalLoaded: false,
@@ -974,6 +976,23 @@
     if (body) body.classList.toggle("is-off", !toggle.checked);
     const pane = document.querySelector('.settings-pane[data-pane="books"]');
     if (pane) pane.classList.toggle("is-locked", locked);
+
+    // menu builder's Publishers tab only makes sense while the module runs
+    const on = toggle.checked && !locked;
+    const pubTab = document.querySelector('[data-menu-tab="publishers"]');
+    if (pubTab) {
+      pubTab.hidden = !on;
+      if (!on && state.menuTab === "publishers") {
+        state.menuTab = "pages";
+        const pagesTab = document.querySelector('[data-menu-tab="pages"]');
+        document.querySelectorAll("[data-menu-tab]").forEach((tab) => {
+          const active = tab === pagesTab;
+          tab.classList.toggle("active", active);
+          tab.setAttribute("aria-selected", active ? "true" : "false");
+        });
+        renderMenuBuilder();
+      }
+    }
   }
 
   const booksToggle = $("booksModuleEnabled");
@@ -1376,10 +1395,18 @@
     return map;
   }
 
+  function menuPublisherLookup() {
+    return new Map((state.menuPublishers || []).map((row) => [String(row.id), row]));
+  }
+
   function menuNodeLabel(node, lookup) {
     if (node.type === "page") {
       const page = MENU_PAGE_BY_REF.get(String(node.ref));
       return page ? page.label : node.label || "Page removed";
+    }
+    if (node.type === "publisher") {
+      const publisher = menuPublisherLookup().get(String(node.ref));
+      return publisher ? publisher.name || "Untitled" : node.label || "Publisher removed";
     }
     const category = lookup.get(String(node.ref));
     return category ? category.name || "Untitled" : node.label || "Category removed";
@@ -1450,7 +1477,7 @@
     const out = [];
     raw.forEach((row) => {
       if (!row || typeof row !== "object") return;
-      const type = row.type === "page" || row.type === "category" ? row.type : null;
+      const type = row.type === "page" || row.type === "category" || row.type === "publisher" ? row.type : null;
       const ref = String(row.ref || "").trim();
       if (!type || !ref) return;
       if (type === "page" && !MENU_PAGE_BY_REF.has(ref)) return;
@@ -1489,6 +1516,10 @@
     mirrorMenu(true);
   }
 
+  function booksModuleOn() {
+    return String(state.settings.books_module_enabled) === "true";
+  }
+
   function menuSourceRows() {
     if (state.menuTab === "categories") {
       const rows = [];
@@ -1508,7 +1539,16 @@
       walk(state.categories, 0);
       return rows;
     }
-    return MENU_PAGES.map((page) => ({
+    if (state.menuTab === "publishers") {
+      return (state.menuPublishers || []).map((row) => ({
+        type: "publisher",
+        ref: String(row.id),
+        label: row.name || "Untitled",
+        meta: "Publisher",
+        depth: 0,
+      }));
+    }
+    return MENU_PAGES.filter((page) => page.ref !== "publishers" || booksModuleOn()).map((page) => ({
       type: "page",
       ref: page.ref,
       label: page.label,
@@ -1543,6 +1583,8 @@
       empty.hidden = rows.length > 0;
       empty.textContent = state.menuTab === "categories"
         ? "Kono category nei — age Categories page theke category banan."
+        : state.menuTab === "publishers"
+        ? "Kono publisher nei — Books → Publishers page theke প্রকাশনী banan."
         : "Kono page nei.";
     }
   }
@@ -1778,6 +1820,9 @@
         const page = MENU_PAGE_BY_REF.get(ref);
         if (!page) return;
         state.menu.push({ id: menuNewId(), type: "page", ref, children: [] });
+      } else if (type === "publisher") {
+        if (!menuPublisherLookup().has(String(ref))) return;
+        state.menu.push({ id: menuNewId(), type: "publisher", ref, children: [] });
       } else {
         const category = lookup.get(String(ref));
         if (!category) return;
@@ -1790,7 +1835,8 @@
 
   document.querySelectorAll("[data-menu-tab]").forEach((btn) => {
     btn.addEventListener("click", () => {
-      state.menuTab = btn.dataset.menuTab === "categories" ? "categories" : "pages";
+      const tab = btn.dataset.menuTab;
+      state.menuTab = tab === "categories" || tab === "publishers" ? tab : "pages";
       document.querySelectorAll("[data-menu-tab]").forEach((tab) => {
         const active = tab === btn;
         tab.classList.toggle("active", active);
@@ -4724,6 +4770,7 @@
     state.menu = menuFromDraft(Array.isArray(data.menu) ? data.menu : []);
     state.menuLoaded = Array.isArray(data.menu);
     state.menuDirty = false;
+    state.menuPublishers = Array.isArray(data.menuPublishers) ? data.menuPublishers : [];
     if (menuDraftInput) menuDraftInput.value = JSON.stringify(menuForSave(state.menu));
     state.shipping = {
       manual: (data.shipping && data.shipping.manual) || [],

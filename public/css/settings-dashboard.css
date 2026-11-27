@@ -737,6 +737,7 @@ body.mn-dragging { user-select: none; }
 }
 #view-settings .mn-badge.is-category { color: var(--gold); border-color: var(--line); background: var(--gold-soft); }
 #view-settings .mn-badge.is-page { color: #8bb8ff; border-color: rgba(139, 184, 255, 0.3); background: rgba(139, 184, 255, 0.08); }
+#view-settings .mn-badge.is-publisher { color: #6fd6c3; border-color: rgba(111, 214, 195, 0.3); background: rgba(111, 214, 195, 0.08); }
 #view-settings .mn-del {
   flex-shrink: 0;
   display: grid;

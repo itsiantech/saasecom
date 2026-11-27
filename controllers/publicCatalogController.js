@@ -1146,7 +1146,7 @@ async function listHome(req, res, next) {
 async function getStoreInfo(req, res, next) {
   try {
     const store = req.publicStore;
-    const [site, faviconDoc, settingsDoc, international, wholesale, social, map, menuCategories, access, books] = await Promise.all([
+    const [site, faviconDoc, settingsDoc, international, wholesale, social, map, menuCategories, menuPublishers, access, books] = await Promise.all([
       SiteSetting.findOne({ store: store._id }).lean(),
       ShopFavicon.findOne({ store: store._id }).lean(),
       StoreSettings.findOne({ storeId: store._id }).select("seo").lean(),
@@ -1156,6 +1156,9 @@ async function getStoreInfo(req, res, next) {
       getSettingsMap(),
       Category.find({ store: store._id, deletedAt: null, status: { $ne: "trashed" } })
         .select("_id name slug")
+        .lean(),
+      Publisher.find({ store: store._id, deletedAt: null, status: "published" })
+        .select("_id name nameBn slug")
         .lean(),
       featuresForStore(store),
       bookState(store._id),
@@ -1191,7 +1194,13 @@ async function getStoreInfo(req, res, next) {
         checkoutPopup: String(map.card_checkout_popup_enabled) !== "false",
       },
       social: social.map((row) => ({ name: row.name, icon: row.icon || "", url: row.url })),
-      menu: buildMenu(map.storefront_menu, { categories: menuCategories, language: store.language }),
+      // publisher menu items vanish with the module (decorate drops unknown refs)
+      menu: buildMenu(map.storefront_menu, {
+        categories: menuCategories,
+        publishers: books.active ? menuPublishers : [],
+        booksActive: books.active,
+        language: store.language,
+      }),
       googleSeo: buildGoogleSeo(map),
     });
   } catch (err) {

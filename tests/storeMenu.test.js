@@ -14,8 +14,12 @@ const Plan = require("../models/Plan");
 const Store = require("../models/Store");
 const User = require("../models/User");
 const Category = require("../models/Category");
+const Publisher = require("../models/Publisher");
 const Settings = require("../models/Settings");
 const SiteSetting = require("../models/SiteSetting");
+const Appearance = require("../models/Appearance");
+const { scopedKey } = require("../lib/settingsScope");
+const { clearBookCache } = require("../lib/bookModule");
 
 const state = {};
 
@@ -37,7 +41,8 @@ before(async () => {
   state.mongo = await MongoMemoryServer.create();
   await mongoose.connect(state.mongo.getUri("store_menu"));
   await Promise.all([
-    Plan.init(), Store.init(), User.init(), Category.init(), Settings.init(), SiteSetting.init(),
+    Plan.init(), Store.init(), User.init(), Category.init(), Publisher.init(), Settings.init(), SiteSetting.init(),
+    Appearance.init(),
   ]);
 
   const plan = await Plan.create({ name: "Free", slug: "free", price: 0, limits: { products: 0, orders: 0 } });
@@ -53,6 +58,16 @@ before(async () => {
     store: storeA._id, name: "Old", slug: "old", status: "trashed", deletedAt: new Date(),
   });
   state.foreign = await Category.create({ store: storeB._id, name: "Other store", slug: "other", status: "published" });
+
+  state.publisher = await Publisher.create({
+    store: storeA._id, name: "অন্যপ্রকাশ", slug: "anyaprokash", status: "published",
+  });
+  state.foreignPublisher = await Publisher.create({
+    store: storeB._id, name: "Foreign Press", slug: "foreign-press", status: "published",
+  });
+  state.trashedPublisher = await Publisher.create({
+    store: storeA._id, name: "Gone Press", slug: "gone-press", status: "trashed", deletedAt: new Date(),
+  });
 
   state.store = storeA;
   state.token = tokenFor(owner);
@@ -140,6 +155,101 @@ test("decorated menu resolves page labels/paths and category links in both langu
   const bengali = buildMenu(JSON.stringify(menu), { categories, language: "bn" });
   assert.equal(bengali[0].label, "শপ");
   assert.equal(bengali[0].children[0].label, "Fashion");
+});
+
+test("publishers join the menu as their own item type and resolve to /publisher/<slug>", () => {
+  const PUBLISHER_ID = "64b000000000000000000010";
+  const PUBLISHER_FOREIGN = "64b000000000000000000011";
+
+  const menu = normalizeMenu([
+    { type: "page", ref: "publishers" },
+    { type: "publisher", ref: PUBLISHER_ID },
+    { type: "publisher", ref: PUBLISHER_FOREIGN },
+    { type: "publisher", ref: "not-an-id" },
+  ], { allowedPublisherIds: [PUBLISHER_ID] });
+  assert.deepEqual(menu.map((row) => row.type + ":" + row.ref), [
+    "page:publishers",
+    "publisher:" + PUBLISHER_ID,
+  ], "foreign and malformed publisher refs are dropped");
+
+  const publishers = [{ _id: PUBLISHER_ID, name: "অন্যপ্রকাশ", slug: "anyaprokash" }];
+  const english = decorateMenu(menu, { publishers, language: "en" });
+  assert.equal(english[0].label, "Publishers");
+  assert.equal(english[0].path, "/publishers");
+  assert.equal(english[1].label, "অন্যপ্রকাশ");
+  assert.equal(english[1].path, "/publisher/anyaprokash");
+
+  const bengali = decorateMenu(menu, { publishers, language: "bn" });
+  assert.equal(bengali[0].label, "প্রকাশনী");
+  assert.equal(decorateMenu(menu, { publishers: [], language: "en" }).length, 1, "publisher item vanishes with the module");
+  assert.equal(
+    decorateMenu(menu, { publishers: [], booksActive: false, language: "en" }).length,
+    0,
+    "the publishers page also goes once the module is off"
+  );
+});
+
+test("settings save keeps owned publishers in the menu; public menu drops them while books are off", async () => {
+  const tree = [
+    { id: "m-home", type: "page", ref: "home", children: [
+      { id: "m-pub", type: "publisher", ref: String(state.publisher._id) },
+    ] },
+    { id: "m-pub-page", type: "page", ref: "publishers" },
+    { id: "m-foreign", type: "publisher", ref: String(state.foreignPublisher._id) },
+    { id: "m-trash", type: "publisher", ref: String(state.trashedPublisher._id) },
+  ];
+
+  const saved = await as("put", "/api/settings", {
+    settings: { storefront_menu: JSON.stringify(tree) },
+  });
+  assert.equal(saved.status, 200, JSON.stringify(saved.body));
+  const menu = saved.body.menu;
+  assert.deepEqual(menu.map((row) => row.id), ["m-home", "m-pub-page"]);
+  assert.equal(menu[0].children[0].label, "অন্যপ্রকাশ");
+  assert.equal(menu[0].children[0].path, "/publisher/anyaprokash");
+  assert.equal(menu[1].path, "/publishers");
+
+  const admin = await as("get", "/api/settings");
+  assert.equal(admin.status, 200, JSON.stringify(admin.body));
+  assert.ok(
+    admin.body.menuPublishers.some((row) => row.id === String(state.publisher._id)),
+    "menu builder gets the publisher picker list"
+  );
+  assert.ok(
+    !admin.body.menuPublishers.some((row) => row.id === String(state.trashedPublisher._id)),
+    "trashed publishers stay out of the picker"
+  );
+
+  const pub = await request(state.app)
+    .get("/api/public/store")
+    .set("x-store-slug", "shop-a");
+  assert.equal(pub.status, 200, JSON.stringify(pub.body));
+  assert.equal(pub.body.menu[0].children.length, 0, "publisher item is hidden while the book module is off");
+  assert.equal(pub.body.menu.length, 1, "the publishers page item is hidden too");
+});
+
+test("public menu shows the publisher item once the book module is live", async () => {
+  await Appearance.updateOne(
+    { store: state.store._id },
+    { $set: { "published.theme": "theme4" } },
+    { upsert: true }
+  );
+  await Store.updateOne(
+    { _id: state.store._id },
+    { $set: { featureOverrides: { granted: ["books"], revoked: [] } } }
+  );
+  const key = scopedKey(state.store._id, "books_module_enabled");
+  await Settings.updateOne({ key }, { $set: { key, value: "true" } }, { upsert: true });
+  clearBookCache(state.store._id);
+
+  const pub = await request(state.app)
+    .get("/api/public/store")
+    .set("x-store-slug", "shop-a");
+  assert.equal(pub.status, 200, JSON.stringify(pub.body));
+  assert.equal(pub.body.books.active, true);
+  assert.equal(pub.body.menu[0].children[0].label, "অন্যপ্রকাশ");
+  assert.equal(pub.body.menu[0].children[0].path, "/publisher/anyaprokash");
+  assert.equal(pub.body.menu[1].label, "প্রকাশনী");
 });
 
 test("settings save normalizes the menu and public store returns the resolved tree", async () => {
