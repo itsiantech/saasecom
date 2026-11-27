@@ -61,6 +61,7 @@ const {
   pathaoZones: courierPathaoZones,
 } = require("../services/courierSettings");
 const { featuresForStore } = require("../lib/features");
+const { clearBookCache, ensureBooksRoot, bookState } = require("../lib/bookModule");
 const { LENS_MODULE_KEY } = require("../lib/lensSettings");
 const { sendMail } = require("../lib/mailer");
 const { sendSms } = require("../lib/sms");
@@ -95,6 +96,7 @@ const SETTING_KEYS = [
   "attributes_enabled",
   "swatches_enabled",
   "matching_addons_enabled",
+  "books_module_enabled",
   "shipping_manual_enabled",
   "shipping_area_enabled",
   "shipping_class_enabled",
@@ -143,6 +145,7 @@ const BOOL_KEYS = [
   "attributes_enabled",
   "swatches_enabled",
   "matching_addons_enabled",
+  "books_module_enabled",
   "shipping_manual_enabled",
   "shipping_area_enabled",
   "shipping_class_enabled",
@@ -181,6 +184,7 @@ const DEFAULTS = {
   attributes_enabled: "true",
   swatches_enabled: "true",
   matching_addons_enabled: "true",
+  books_module_enabled: "false",
   shipping_manual_enabled: "true",
   shipping_area_enabled: "false",
   shipping_class_enabled: "false",
@@ -541,6 +545,7 @@ async function adminGet(req, res) {
   res.json({
     ...payload,
     access: await featuresForStore(req.store),
+    books: await bookState(storeId),
     stores,
     favicons: stores.map((s) => ({
       storeId: s._id,
@@ -567,6 +572,8 @@ async function adminSave(req, res) {
   if (!access.features.serverSideTracking) {
     TRACKING_KEYS.forEach((key) => delete settings[key]);
   }
+  // the book module toggle is only editable when the package ships the module
+  if (!access.features.books) delete settings.books_module_enabled;
 
   const current = await getSettingsMap();
   const seoError = googleSeoError(settings);
@@ -634,6 +641,12 @@ async function adminSave(req, res) {
   if (ops.length) await Settings.bulkWrite(ops);
   if (trackingSave.ops.length) await Settings.bulkWrite(trackingSave.ops);
   if (courierSave.ops.length) await Settings.bulkWrite(courierSave.ops);
+  if (settings.books_module_enabled !== undefined) {
+    clearBookCache(storeId);
+    // Switching the module on plants the protected Books root the genres live under.
+    const booksWanted = settings.books_module_enabled === true || String(settings.books_module_enabled) === "true";
+    if (!boolOf(current, "books_module_enabled") && booksWanted) await ensureBooksRoot(storeId);
+  }
   if (Object.keys(branding).length) {
     await SiteSetting.updateOne({ store: storeId }, { $set: branding }, { upsert: true });
   }

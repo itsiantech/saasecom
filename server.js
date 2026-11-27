@@ -111,6 +111,12 @@ app.use("/api/flash-sales", require("./routes/flashSales"));
 app.use("/api/coupons", require("./routes/coupons"));
 app.use("/api/hero-slides", require("./routes/heroSlides"));
 app.use("/api/addons", require("./routes/addons"));
+// Isolated module: book / ebook back office must never stop the app from booting.
+try {
+  app.use("/api/books", require("./routes/books"));
+} catch (err) {
+  console.error("Books module mount failed:", err.message);
+}
 // ---- tenant host (amar-dokan.platform.com ba dokan.com) — ekhane storefront ar store panel cholbe
 const { resolveHostStore } = require("./lib/hostStore");
 const { storefrontUrl } = require("./lib/storefrontUrl");

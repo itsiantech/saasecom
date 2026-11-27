@@ -38,6 +38,7 @@ const planSchema = new mongoose.Schema(
       reports: { type: Boolean },
       productBuilder: { type: Boolean },
       whiteLabelAdmin: { type: Boolean },
+      books: { type: Boolean },
     },
     active: { type: Boolean, default: true },
     order: { type: Number, default: 0 },

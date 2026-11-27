@@ -13,6 +13,10 @@ const Plan = require("../models/Plan");
 const Store = require("../models/Store");
 const User = require("../models/User");
 const Appearance = require("../models/Appearance");
+const Settings = require("../models/Settings");
+const Category = require("../models/Category");
+const { findTheme } = require("../lib/themeCatalog");
+const { scopedKey } = require("../lib/settingsScope");
 
 const state = {};
 
@@ -201,4 +205,27 @@ test("appearance is per store: another store starts from theme defaults", async 
   assert.equal(res.status, 200);
   assert.equal(res.body.published.tokens.colorPrimary, "#e1251b");
   assert.equal(res.body.revisions.length, 0);
+});
+
+test("the Book Theme is book-first and publishing it switches the books module on", async () => {
+  const theme = findTheme("theme4");
+  assert.ok(theme, "theme4 must be discovered from the storefront themes folder");
+  assert.equal(theme.label, "Book Theme");
+  assert.equal(theme.bookFirst, true);
+  assert.deepEqual(theme.moduleSupport.books, ["product", "pages"]);
+
+  const saved = await admin("put", "/api/appearance/draft", { theme: "theme4", tokens: {} });
+  assert.equal(saved.status, 200, JSON.stringify(saved.body));
+
+  const published = await admin("post", "/api/appearance/publish");
+  assert.equal(published.status, 200, JSON.stringify(published.body));
+  assert.equal(published.body.published.theme, "theme4");
+
+  const key = scopedKey(state.store._id, "books_module_enabled");
+  const row = await Settings.findOne({ key }).lean();
+  assert.equal(row && row.value, "true", "publishing the Book Theme turns the module on");
+
+  const root = await Category.findOne({ store: state.store._id, systemType: "book", parent: null }).lean();
+  assert.ok(root, "the protected Books root is planted with the module");
+  assert.equal(root.slug, "books");
 });

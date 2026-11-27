@@ -3,6 +3,7 @@ const Category = require("../models/Category");
 const Product = require("../models/Product");
 const ProductCategory = require("../models/ProductCategory");
 const { getStoreId } = require("../lib/tenantContext");
+const { bookState, assertRootEditable, assertNoRoot } = require("../lib/bookModule");
 const {
   escapeRegex,
   slugify,
@@ -86,6 +87,8 @@ async function list(req, res) {
 
   const { status, search, tree } = req.query;
   const filter = { store: storeId };
+  const booksState = await bookState(storeId).catch(() => ({ active: false }));
+  const booksActive = booksState.active === true;
 
   if (status && ["draft", "published", "trashed"].includes(status)) filter.status = status;
   if (search) {
@@ -138,10 +141,12 @@ async function list(req, res) {
     ...c,
     productCount: (pcSets.get(c._id.toString()) || new Set()).size,
     childrenCount: ccMap.get(c._id.toString()) || 0,
+    // the Books root is system-owned while the module is on: no delete, no move
+    locked: c.systemType === "book" && booksActive,
   }));
 
-  if (tree === "true") return res.json({ tree: buildTree(enriched), counts });
-  res.json({ categories: enriched, counts });
+  if (tree === "true") return res.json({ tree: buildTree(enriched), counts, books: booksState });
+  res.json({ categories: enriched, counts, books: booksState });
 }
 
 /* ------------------------------------------------------------------ *
@@ -242,6 +247,7 @@ async function create(req, res) {
   const category = await Category.create({
     store: storeId,
     name,
+    nameBn: typeof body.nameBn === "string" ? body.nameBn : "",
     slug,
     parent: parentInfo.parent,
     ancestors: parentInfo.ancestors,
@@ -266,7 +272,19 @@ async function update(req, res) {
   const body = req.body || {};
   let parentChanged = false;
 
+  // The edit form always posts parent/slug, so compare before guarding — an
+  // unchanged save of the Books root must still work (name, image, status).
+  const parentIdOf = (raw) => (raw && mongoose.isValidObjectId(raw) ? String(raw) : "");
+  const wantsMove =
+    (body.parent !== undefined && parentIdOf(body.parent) !== String(category.parent || "")) ||
+    (body.slug !== undefined && slugify(body.slug) !== category.slug);
+  if (wantsMove) await assertRootEditable(storeId, category._id, "move");
+  if (body.status === "trashed" && category.status !== "trashed") {
+    await assertRootEditable(storeId, category._id, "trash");
+  }
+
   if (body.name !== undefined) category.name = String(body.name);
+  if (body.nameBn !== undefined) category.nameBn = String(body.nameBn);
 
   // Slug stays manually editable; if the user changes it we re-check uniqueness.
   if (body.slug !== undefined) {
@@ -339,6 +357,7 @@ async function reorder(req, res) {
     if (!category) continue;
 
     const newParent = parent && mongoose.isValidObjectId(parent) ? parent : null;
+    if (String(category.parent || "") !== String(newParent || "")) await assertRootEditable(storeId, category._id, "move");
 
     // Determine the new parent/ancestors. `newParent === null` means "move to root",
     // so we must clear the parent/ancestors/level explicitly (not just skip the block).
@@ -391,6 +410,7 @@ async function bulk(req, res) {
 
   switch (action) {
     case "trash": {
+      await assertNoRoot(storeId, list, "trash");
       const affected = await softTrashMany(Category, storeId, list);
       return res.json({ ok: true, affected });
     }
@@ -413,6 +433,7 @@ async function bulk(req, res) {
       return res.json({ ok: true });
     }
     case "permanent": {
+      await assertNoRoot(storeId, list, "permanent");
       const affected = await permanentDeleteMany(Category, Product, storeId, list);
       return res.json({ ok: true, affected });
     }
@@ -430,6 +451,7 @@ async function softDelete(req, res) {
   const storeId = storeIdOf(req);
   const exists = await Category.exists({ store: storeId, _id: req.params.id });
   if (!exists) return res.status(404).json({ message: "Category pawa jayni" });
+  await assertRootEditable(storeId, req.params.id, "trash");
   const affected = await softTrashMany(Category, storeId, [req.params.id]);
   res.json({ ok: true, affected });
 }
@@ -446,6 +468,7 @@ async function permanentDelete(req, res) {
   const storeId = storeIdOf(req);
   const exists = await Category.exists({ store: storeId, _id: req.params.id });
   if (!exists) return res.status(404).json({ message: "Category pawa jayni" });
+  await assertRootEditable(storeId, req.params.id, "permanent");
   const affected = await permanentDeleteMany(Category, Product, storeId, [req.params.id]);
   res.json({ ok: true, affected });
 }

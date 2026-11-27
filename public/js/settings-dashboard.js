@@ -931,6 +931,76 @@
   }
 
   /* ------------------------------------------------------------------ *
+   * Book / Ebook module
+   * ------------------------------------------------------------------ */
+  const BOOKS_SHORTCUTS = [
+    { btn: "booksGoAuthors", view: "authors" },
+    { btn: "booksGoPublishers", view: "publishers" },
+    { btn: "booksGoGenres", view: "book-genres" },
+  ];
+  BOOKS_SHORTCUTS.forEach((row) => {
+    const btn = $(row.btn);
+    if (!btn) return;
+    btn.addEventListener("click", () => {
+      const nav = document.querySelector('.nav-item[data-view="' + row.view + '"]');
+      if (nav) nav.click();
+    });
+  });
+
+  function booksLocked() {
+    return !!state.access && !!state.access.features && state.access.features.books === false;
+  }
+
+  function applyBooksEnabled() {
+    const toggle = $("booksModuleEnabled");
+    if (!toggle) return;
+    const locked = booksLocked();
+    toggle.disabled = locked;
+    const badge = document.querySelector("[data-books-off]");
+    if (badge) badge.hidden = toggle.checked || locked;
+    const lockBadge = document.querySelector("[data-books-locked]");
+    if (lockBadge) lockBadge.hidden = !locked;
+    const planNote = $("booksPlanNote");
+    if (planNote) planNote.hidden = !locked;
+    const status = $("booksStatus");
+    if (status) {
+      status.textContent = locked
+        ? "Book module প্যাকেজে নেই — store টি Pro plan-এ নিলে এই switch চলবে।"
+        : toggle.checked
+        ? "Book module ON — Authors / Publishers / Genres মেনু আর Add Product ফর্মে Book details কার্ড চলবে।"
+        : "Book module OFF — লেখক, প্রকাশক ও genre সব ডেটা অটুট থাকবে; শুধু স্ক্রিন আর storefront-এর বই অংশ লুকিয়ে যাবে।";
+    }
+    const body = $("booksBody");
+    if (body) body.classList.toggle("is-off", !toggle.checked);
+    const pane = document.querySelector('.settings-pane[data-pane="books"]');
+    if (pane) pane.classList.toggle("is-locked", locked);
+  }
+
+  const booksToggle = $("booksModuleEnabled");
+  if (booksToggle) {
+    booksToggle.addEventListener("change", async () => {
+      if (booksToggle.checked) {
+        const ok = await window.confirmDialog({
+          title: "Book / Ebook module চালু করবেন?",
+          text: "Storefront-এ বইয়ের পেজ, লেখক-প্রকাশক তালিকা ও genre ফিল্টার যোগ হবে; Add Product ফর্মে Book details কার্ড আসবে। ইবুক ফরম্যাট শুধু নিজের বা লেখকের লিখিত অনুমতি থাকা ফাইল আপলোড করবেন — অবৈধ কপি দিলে দোকান বন্ধ হতে পারে।",
+          okLabel: "চালু করুন",
+          okClass: "btn-gold",
+        });
+        if (!ok) {
+          booksToggle.checked = false;
+          applyBooksEnabled();
+          return;
+        }
+      }
+      state.settings.books_module_enabled = booksToggle.checked ? "true" : "false";
+      applyBooksEnabled();
+      if (window.bookModule) window.bookModule.clearCache();
+      renderBooksNote();
+      markDirty();
+    });
+  }
+
+  /* ------------------------------------------------------------------ *
    * Home page category sections
    * ------------------------------------------------------------------ */
   const HOME_MODE_LABELS = { slider: "Slider", drag: "Drag", grid: "Grid" };
@@ -4433,6 +4503,35 @@
     applyFraudEnabled();
   }
 
+  function renderBooksNote() {
+    const note = $("booksThemeNote");
+    if (!note || !window.bookModule) return;
+    window.bookModule
+      .state()
+      .then((s) => {
+        if (!s || !s.plan) {
+          note.textContent = "আপনার প্যাকেজে Book / Ebook module নেই — আপগ্রেড করলে এই স্ক্রিন চালু হবে।";
+        } else if (!s.supported) {
+          note.textContent =
+            "সতর্কতা: এখনের theme (" +
+            (s.theme || "—") +
+            ") বইয়ের পেজ রেন্ডার করে না। Storefront-এ বই দেখাতে Style Settings থেকে book-support করা theme নিন — লেখক/প্রকাশক ডেটা ততদিন সংরক্ষিত থাকবে।";
+        } else {
+          note.textContent = "Theme '" + s.theme + "' বইয়ের এই surface(গুলো) দেখায়: " + (s.levels || []).join(", ") + ".";
+        }
+      })
+      .catch(() => {
+        note.textContent = "Module state পড়া যায়নি — page reload করলে আবার চেষ্টা হবে।";
+      });
+  }
+
+  function renderBooks() {
+    const toggle = $("booksModuleEnabled");
+    if (toggle) toggle.checked = String(state.settings.books_module_enabled) === "true";
+    applyBooksEnabled();
+    renderBooksNote();
+  }
+
   function renderProtection() {
     Object.entries(PROTECT_TOGGLES).forEach(([id, key]) => {
       const el = $(id);
@@ -4452,11 +4551,13 @@
     { pane: "wholesale", key: "wholesale" },
     { pane: "partial", key: "partialPayment" },
     { pane: "server-tracking", key: "serverSideTracking" },
+    { pane: "books", key: "books" },
   ];
   const ACCESS_LABELS = {
     wholesale: "হোলসেল মোড",
     partialPayment: "আংশিক পেমেন্ট",
     serverSideTracking: "সার্ভার ট্র্যাকিং",
+    books: "বই / ইবুক",
     supplierPortal: "সাপ্লায়ার লগইন",
     customDomain: "কাস্টম ডোমেইন",
     analytics: "অ্যানালিটিক্স",
@@ -4466,6 +4567,11 @@
     if (!state.access || !state.access.features) return true; // old response → don't hide anything
     return state.access.features[key] === true;
   }
+
+  // Locked panes normally vanish. The book module stays listed and reads as
+  // locked instead — owners search for it by name, and a missing row looks like a
+  // broken panel rather than a package limit.
+  const LOCKABLE_PANES = new Set(["books"]);
 
   function applyAccessUi() {
     const box = $("settingsAccess");
@@ -4477,12 +4583,14 @@
       const on = featureAllowed(key);
       const btn = document.querySelector(`#settingsMenu .settings-menu-item[data-pane="${pane}"]`);
       const paneEl = document.querySelector(`.settings-panes .settings-pane[data-pane="${pane}"]`);
-      if (btn) btn.hidden = !on;
+      const hidden = !on && !LOCKABLE_PANES.has(pane);
+      if (btn) btn.hidden = hidden;
       if (paneEl) {
-        paneEl.hidden = !on;
-        if (!on) paneEl.classList.remove("active");
+        paneEl.hidden = hidden;
+        if (hidden) paneEl.classList.remove("active");
       }
     });
+    applyBooksEnabled();
     const wholesaleGroup = document.querySelector('#settingsMenu [data-group="wholesale"]');
     if (wholesaleGroup) wholesaleGroup.hidden = !featureAllowed("wholesale");
     const trackingGroup = document.querySelector('#settingsMenu [data-group="tracking"]');
@@ -4492,7 +4600,7 @@
 
     if (!box) return;
     const access = state.access;
-    const keys = ["wholesale", "partialPayment", "serverSideTracking", "supplierPortal"];
+    const keys = ["wholesale", "partialPayment", "serverSideTracking", "books", "supplierPortal"];
     const chips = keys
       .map((key) => {
         const on = access.features[key] === true;
@@ -4579,6 +4687,7 @@
     renderTracking();
     renderCourier();
     renderFraud();
+    renderBooks();
     renderProtection();
 
     Object.keys(TOGGLE_ID).forEach((key) => applyEnabled(key));

@@ -22,6 +22,7 @@
   <link rel="stylesheet" href="/css/marketing.css?v=2" />
   <link rel="stylesheet" href="/css/hero-slider.css?v=4" />
   <link rel="stylesheet" href="/css/customers.css?v=1" />
+  <link rel="stylesheet" href="/css/books.css?v=3" />
   <link rel="stylesheet" href="/css/suppliers.css?v=2" />
   <link rel="stylesheet" href="/css/reports.css?v=2" />
   <link rel="stylesheet" href="/css/inventory.css?v=1" />
@@ -87,6 +88,31 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
           Brands
         </a>
+        <div class="nav-group" id="navGroupBooks" hidden>
+          <div class="nav-parent-row">
+            <a href="#" class="nav-item" data-view="authors" id="navBooks">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h7a2 2 0 0 1 2 2v14a2 2 0 0 0-2-2H4V4z"/><path d="M20 4h-7a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h7V4z"/></svg>
+              Books
+            </a>
+            <button class="nav-toggle" type="button" aria-expanded="true" aria-controls="booksSubmenu" aria-label="Toggle Books submenu">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+          </div>
+          <div class="nav-sub" id="booksSubmenu">
+            <a href="#" class="nav-item" data-view="authors">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+              Authors
+            </a>
+            <a href="#" class="nav-item" data-view="publishers">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M5 21V8l7-4 7 4v13"/><path d="M10 21v-5h4v5"/></svg>
+              Publishers
+            </a>
+            <a href="#" class="nav-item" data-view="book-genres">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.6 13.4L13 21l-9-9V4h8l8.6 8.6a1.4 1.4 0 0 1 0 1.8z"/><circle cx="7.5" cy="7.5" r="1.3"/></svg>
+              Genres
+            </a>
+          </div>
+        </div>
         <a href="#" class="nav-item" data-view="orders">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2l.6 3H3.6L3 8h2.1L3.6 22h16.8L18.9 8H21l-.6-3h-3L16.8 2z"/><path d="M9 12h6M9 16h6"/></svg>
           Orders
@@ -836,6 +862,92 @@
               <div id="pfSpecFields" class="pf-spec-fields"></div>
             </div>
 
+            <!-- 4a. Book details (Book / Ebook module ON hole dekhabe) -->
+            <div class="pf-card" id="pfBookCard" hidden>
+              <div class="pf-card-head"><h3>Book details <span class="hint">লেখক · প্রকাশক · ISBN · format</span></h3></div>
+              <div id="pfBookGate"></div>
+              <p class="pf-note" style="margin-top:8px;">Genre আলাদা field না — <strong>Categories</strong> section-এর <em>Books</em> sub-category গুলোই genre, সেগুলো এখানেই select korun. Empty field save hoy na.</p>
+
+              <div class="pf-field">
+                <label for="pfBookAuthorSearch">Author(s) <span class="hint">২০ জন পর্যন্ত — প্রথমজন main author</span></label>
+                <div class="bk-picker">
+                  <input id="pfBookAuthorSearch" type="search" autocomplete="off" placeholder="লেখকের নাম লিখুন…" aria-label="Search authors" />
+                  <button class="pf-btn-sm" id="pfBookAuthorNew" type="button">+ Create new</button>
+                  <div class="bk-suggest" id="pfBookAuthorSuggest" hidden></div>
+                </div>
+                <div class="bk-chips" id="pfBookAuthors"></div>
+              </div>
+
+              <div class="pf-field">
+                <label for="pfBookPublisherSearch">Publisher</label>
+                <div class="bk-picker">
+                  <input id="pfBookPublisherSearch" type="search" autocomplete="off" placeholder="প্রকাশকের নাম লিখুন…" aria-label="Search publishers" />
+                  <button class="pf-btn-sm" id="pfBookPublisherNew" type="button">+ Create new</button>
+                  <div class="bk-suggest" id="pfBookPublisherSuggest" hidden></div>
+                </div>
+                <div class="bk-chips" id="pfBookPublisherChips"></div>
+              </div>
+
+              <div class="pf-grid-2">
+                <div class="pf-field">
+                  <label for="pfBookIsbn">ISBN</label>
+                  <input id="pfBookIsbn" type="text" maxlength="20" placeholder="978-… / 10-digit" />
+                  <span class="bk-hint" id="pfBookIsbnHint"></span>
+                </div>
+                <div class="pf-field">
+                  <label for="pfBookEdition">Edition</label>
+                  <input id="pfBookEdition" type="text" maxlength="40" placeholder="e.g. 2nd" />
+                </div>
+                <div class="pf-field">
+                  <label for="pfBookTranslator">Translator</label>
+                  <input id="pfBookTranslator" type="text" maxlength="160" />
+                </div>
+                <div class="pf-field">
+                  <label for="pfBookEditor">Editor</label>
+                  <input id="pfBookEditor" type="text" maxlength="160" />
+                </div>
+                <div class="pf-field">
+                  <label for="pfBookYear">Publication year</label>
+                  <input id="pfBookYear" type="number" min="800" max="2200" />
+                </div>
+                <div class="pf-field">
+                  <label for="pfBookPages">Pages</label>
+                  <input id="pfBookPages" type="number" min="0" max="100000" />
+                </div>
+                <div class="pf-field">
+                  <label for="pfBookLanguage">Language</label>
+                  <input id="pfBookLanguage" type="text" maxlength="40" placeholder="বাংলা / English" />
+                </div>
+                <div class="pf-field">
+                  <label for="pfBookBinding">Binding</label>
+                  <select id="pfBookBinding">
+                    <option value="">—</option>
+                    <option value="paperback">Paperback</option>
+                    <option value="hardcover">Hardcover</option>
+                    <option value="helical">Helical</option>
+                    <option value="pdf">PDF</option>
+                    <option value="epub">EPUB</option>
+                    <option value="audiobook">Audiobook</option>
+                    <option value="boxed">Boxed set</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="pf-field">
+                <label>Available formats</label>
+                <div class="bk-formats-row" id="pfBookFormats">
+                  <label class="bk-fmt"><input type="checkbox" value="print" /> Print</label>
+                  <label class="bk-fmt ebook"><input type="checkbox" value="ebook" /> Ebook</label>
+                  <label class="bk-fmt audio"><input type="checkbox" value="audio" /> Audio book</label>
+                </div>
+                <p class="bk-card-note warn" id="pfBookEbookNote" hidden>
+                  ইবুক / অডিও শুধু নিজের বা লেখক-প্রকাশকের লিখিত অনুমতি থাকা ফাইলের দিন। অবৈধ কপি থাকলে দোকান বন্ধ হতে পারে।
+                </p>
+                <p class="pf-note">Ebook file upload, signed download link ও “My Library” — module-এর পরের ধাপে যোগ হবে। Print ছাড়া শুধু digital format থাকলে product টি Digital হিসেবেই থাকবে (stock লাগবে না)।</p>
+              </div>
+              <p class="pf-error" id="pfBookError" role="alert"></p>
+            </div>
+
             <!-- 4b. Retail EMI override (installments module ON hole dekhabe) -->
             <div class="pf-card" id="pfInstallmentCard" hidden>
               <div class="pf-card-head"><h3>Retail EMI <span class="hint">Kisti / EMI for this product</span></h3></div>
@@ -1067,6 +1179,8 @@
             <button class="settings-menu-item" data-pane="marketing" type="button">Flash sales <span class="off-badge" data-flash-off hidden>Off</span></button>
             <div class="settings-menu-group">SEO</div>
             <button class="settings-menu-item" data-pane="google-seo" type="button">Google SEO <span class="off-badge" data-seo-off hidden>Off</span></button>
+            <div class="settings-menu-group" data-group="books">Book / Ebook</div>
+            <button class="settings-menu-item" data-pane="books" type="button">Book / Ebook module <span class="off-badge" data-books-off hidden>Off</span><span class="off-badge lock" data-books-locked hidden>প্যাকেজে নেই</span></button>
             <div class="settings-menu-group" data-group="tracking">Tracking</div>
             <button class="settings-menu-item" data-pane="server-tracking" type="button">Server side tracking <span class="off-badge" data-tracking-off hidden>Off</span></button>
             <div class="settings-menu-group">Courier</div>
@@ -2576,6 +2690,36 @@
                     <button class="pf-btn-sm" type="button" id="fraudPathaoTestBtn">Test Connection</button>
                     <span class="sst-result" id="fraudPathaoResult"></span>
                   </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- ===== BOOK / EBOOK MODULE ===== -->
+            <section class="settings-pane" data-pane="books">
+              <div class="pf-card">
+                <div class="pf-card-head">
+                  <h3>Book / Ebook module</h3>
+                  <label class="pf-switch" title="Enable / disable"><input type="checkbox" id="booksModuleEnabled" aria-label="Enable book / ebook module" /><span class="slider"></span></label>
+                </div>
+                <div class="settings-body" id="booksBody">
+                  <p class="pf-note" id="booksStatus">Book module OFF — লেখক, প্রকাশক ও genre সব ডেটা অটুট থাকবে; শুধু স্ক্রিন ও storefront-এর বই অংশ লুকিয়ে যাবে।</p>
+                  <p class="pf-note">চালু করলে: Sidebar-এ <strong>Books</strong> (Authors / Publishers / Genres), Add Product ফর্মে <strong>Book details</strong> কার্ড, আর storefront-এ theme যতটুকু support করে ততটুকু বই পেজ আসবে।</p>
+                  <p class="pf-note">Genre আলাদা taxonomy না — এগুলো <strong>Books</strong> নামের system category-র ভেতরের সাধারণ sub-category, তাই Categories পেজ থেকেও একইভাবে manage করা যায়। চালু করার সময় Books root (একটা থাকলে সেটিই adopt হবে) নিজে থেকে তৈরি হয়ে যাবে।</p>
+                  <p class="pf-note" id="booksThemeNote"></p>
+                  <p class="pf-note" id="booksPlanNote" hidden>আপনার প্যাকেজে Book / Ebook module নেই, তাই এই switch টি চালু করা যাবে না — platform থেকে store টি pro plan-এ নিলে Authors / Publishers / Genres স্ক্রিন ও Add Product এর Book details কার্ড খুলে যাবে।</p>
+                  <div class="sst-actions">
+                    <button class="pf-btn-sm" type="button" id="booksGoAuthors">Authors</button>
+                    <button class="pf-btn-sm" type="button" id="booksGoPublishers">Publishers</button>
+                    <button class="pf-btn-sm" type="button" id="booksGoGenres">Genres</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="pf-card">
+                <div class="pf-card-head"><h3>Copyright &amp; ebook files</h3></div>
+                <div class="settings-body">
+                  <p class="pf-note">Ebook / audio format শুধু সেই ফাইলেই দিন যা আপনার নিজের বা লেখক-প্রকাশকের লিখিত অনুমতিতে আছে। বন্ধ করলেই বইয়ের storefront অংশ লুকিয়ে যাবে, কিন্তু আপলোড করা ফাইল ও বিক্রির রেকর্ড মোছা হবে না।</p>
+                  <p class="pf-note">Ebook file upload, signed download link ও “My Library” — এই module-এর পরের ধাপে যোগ হচ্ছে।</p>
                 </div>
               </div>
             </section>
@@ -4208,6 +4352,54 @@
         <div id="builderRoot"></div>
       </section><!-- /#view-builder -->
 
+      <!-- ===================== AUTHORS VIEW ===================== -->
+      <section class="view" id="view-authors" hidden>
+        <div class="topbar">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <button class="menu-btn" data-menu aria-label="Menu">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+            <div>
+              <h1>Authors</h1>
+              <p class="crumb">লেখক · বইয়ের সাথে যুক্ত, সার্চ ও পেজিনেসহ</p>
+            </div>
+          </div>
+        </div>
+        <div id="authorRoot"></div>
+      </section><!-- /#view-authors -->
+
+      <!-- ===================== PUBLISHERS VIEW ===================== -->
+      <section class="view" id="view-publishers" hidden>
+        <div class="topbar">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <button class="menu-btn" data-menu aria-label="Menu">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+            <div>
+              <h1>Publishers</h1>
+              <p class="crumb">প্রকাশক · লোগো, যোগাযোগ ও বই সংখ্যা</p>
+            </div>
+          </div>
+        </div>
+        <div id="publisherRoot"></div>
+      </section><!-- /#view-publishers -->
+
+      <!-- ===================== BOOK GENRES VIEW ===================== -->
+      <section class="view" id="view-book-genres" hidden>
+        <div class="topbar">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <button class="menu-btn" data-menu aria-label="Menu">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+            <div>
+              <h1>Book Genres</h1>
+              <p class="crumb">Books category-র ভেতরের sub-category — Categories-এর shortcut</p>
+            </div>
+          </div>
+        </div>
+        <div id="genreRoot"></div>
+      </section><!-- /#view-book-genres -->
+
       <!-- ===================== FOOTER ===================== -->
       <footer class="dash-footer">
         <div class="footer-left">
@@ -4505,13 +4697,13 @@
   <script src="/js/api-session.js?v=3"></script>
   <script src="/js/platform-brand.js?v=1"></script>
   <script src="/js/dashboard-addons.js?v=1"></script>
-  <script src="/js/dashboard.js?v=22"></script>
+  <script src="/js/dashboard.js?v=25"></script>
   <script src="/js/overview.js?v=1"></script>
   <script src="/js/form-guard.js?v=2"></script>
   <script src="/js/categories.js"></script>
   <script src="/js/brands.js"></script>
-  <script src="/js/product-form.js?v=4"></script>
-  <script src="/js/settings-dashboard.js?v=21"></script>
+  <script src="/js/product-form.js?v=5"></script>
+  <script src="/js/settings-dashboard.js?v=23"></script>
   <script src="/js/installments-admin.js?v=1"></script>
   <script src="/js/retail-installments-admin.js?v=1"></script>
   <script src="/js/orders.js?v=6"></script>
@@ -4519,6 +4711,7 @@
   <script src="/js/marketing.js?v=3"></script>
   <script src="/js/hero-slider.js?v=3"></script>
   <script src="/js/customers.js?v=1"></script>
+  <script src="/js/books.js?v=5"></script>
   <script src="/js/blacklist.js?v=1"></script>
   <script src="/js/suppliers.js?v=4"></script>
   <script src="/js/reports.js?v=2"></script>

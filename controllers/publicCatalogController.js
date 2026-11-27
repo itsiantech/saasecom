@@ -7,6 +7,8 @@ const ProductCategory = require("../models/ProductCategory");
 const Brand = require("../models/Brand");
 const Attribute = require("../models/Attribute");
 const AttributeTerm = require("../models/AttributeTerm");
+const Author = require("../models/Author");
+const Publisher = require("../models/Publisher");
 const Review = require("../models/Review");
 const HeroSlide = require("../models/HeroSlide");
 const SiteSetting = require("../models/SiteSetting");
@@ -26,6 +28,8 @@ const { sanitizeRichText } = require("../lib/richText");
 const { buildMenu } = require("../lib/storeMenu");
 const { buildGoogleSeo } = require("../lib/googleSeo");
 const { featuresForStore } = require("../lib/features");
+const { bookState, getBooksRoot, genreIds } = require("../lib/bookModule");
+const { parsePage, pageMeta } = require("../lib/paginate");
 
 /* ------------------------------------------------------------------ *
  * Public catalog reads. Every query here is store-scoped BY HAND:
@@ -112,6 +116,360 @@ async function resolveFacetIds(Model, storeId, raw) {
     ...(slugs.length ? [{ slug: { $in: slugs } }] : []),
   ] })).select("_id").lean();
   return found.map((row) => row._id);
+}
+
+/* ------------------------------------------------------------------ *
+ * Book / Ebook module — public reads.
+ * The data endpoints answer while the owner's switch is on (plan +
+ * toggle); whether a surface is actually rendered is the theme's call
+ * and stays a frontend concern.
+ * ------------------------------------------------------------------ */
+
+const BOOK_FORMATS = ["print", "ebook", "audio"];
+
+function booksOff(res) {
+  return res.status(404).json({ message: "Book module ei dokane chalu nei" });
+}
+
+// author/publisher filters accept slug or raw id, comma separated, same
+// contract as category/brand. Unknown or foreign values must narrow to
+// nothing — never "ignore the filter".
+async function resolvePeopleIds(Model, storeId, raw) {
+  const parts = String(raw || "")
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .slice(0, 12);
+  if (!parts.length) return [];
+
+  const oids = parts.map(objectIdOr).filter(Boolean);
+  const slugs = parts.filter((v) => !mongoose.isValidObjectId(v)).map((v) => v.toLowerCase());
+  const rows = await Model.find({
+    store: storeId,
+    status: "published",
+    $or: [
+      ...(oids.length ? [{ _id: { $in: oids } }] : []),
+      ...(slugs.length ? [{ slug: { $in: slugs } }] : []),
+    ],
+  })
+    .select("_id")
+    .lean();
+  return rows.map((row) => row._id);
+}
+
+function publicAuthorRow(row, bookCount) {
+  return {
+    id: row._id,
+    name: row.name || row.nameBn || "",
+    nameBn: row.nameBn || "",
+    slug: row.slug || String(row._id),
+    photo: row.photo || "",
+    country: row.country || "",
+    bookCount: bookCount || 0,
+  };
+}
+
+function publicPublisherRow(row, bookCount) {
+  return {
+    id: row._id,
+    name: row.name || row.nameBn || "",
+    nameBn: row.nameBn || "",
+    slug: row.slug || String(row._id),
+    logo: row.logo || "",
+    bookCount: bookCount || 0,
+  };
+}
+
+function publicBookBlock(details) {
+  if (!details || typeof details !== "object") return null;
+  const authors = (details.authors || [])
+    .filter((row) => row && row._id && (!row.status || row.status === "published"))
+    .map((row) => ({
+      id: row._id,
+      name: row.name || row.nameBn || "",
+      nameBn: row.nameBn || "",
+      slug: row.slug || String(row._id),
+      photo: row.photo || "",
+    }));
+  const pub = details.publisher;
+  const publisher = pub && pub._id && (!pub.status || pub.status === "published")
+    ? { id: pub._id, name: pub.name || pub.nameBn || "", nameBn: pub.nameBn || "", slug: pub.slug || String(pub._id), logo: pub.logo || "" }
+    : null;
+  return {
+    authors,
+    publisher,
+    translator: details.translator || "",
+    editor: details.editor || "",
+    isbn: details.isbn || "",
+    edition: details.edition || "",
+    publicationYear: details.publicationYear || null,
+    pages: details.pages || null,
+    language: details.language || "",
+    binding: details.binding || "",
+    formats: Array.isArray(details.formats) && details.formats.length ? details.formats : ["print"],
+  };
+}
+
+const BOOK_PEOPLE = {
+  author: {
+    Model: Author,
+    key: "authors",
+    one: "author",
+    refField: "bookDetails.authors",
+    fields: "name nameBn slug photo country status",
+  },
+  publisher: {
+    Model: Publisher,
+    key: "publishers",
+    one: "publisher",
+    refField: "bookDetails.publisher",
+    fields: "name nameBn slug logo status",
+  },
+};
+
+// Cover cards show the author line and format badge while the module is on.
+// Rows carry raw author ids (aggregate paths can't populate), so this joins
+// them in one batched read instead of per card.
+async function attachBookCards(storeId, rows, cards) {
+  if (!rows.length) return cards;
+  if (!(await bookState(storeId)).on) return cards;
+
+  const idSet = new Set();
+  rows.forEach((row) => (row.bookDetails?.authors || []).forEach((id) => idSet.add(String(id))));
+  const ids = [...idSet].map(objectIdOr).filter(Boolean);
+  const people = ids.length
+    ? await Author.find({ store: storeId, _id: { $in: ids }, status: "published" })
+        .select("name nameBn slug photo status")
+        .lean()
+    : [];
+  const byId = new Map(people.map((row) => [String(row._id), row]));
+
+  rows.forEach((row, index) => {
+    const card = cards[index];
+    if (!card) return;
+    const authors = (row.bookDetails?.authors || [])
+      .map((id) => byId.get(String(id)))
+      .filter(Boolean)
+      .map((person) => ({
+        id: person._id,
+        name: person.name || person.nameBn || "",
+        nameBn: person.nameBn || "",
+        slug: person.slug || String(person._id),
+        photo: person.photo || "",
+      }));
+    if (authors.length) card.authors = authors;
+    const formats = row.bookDetails?.formats;
+    if (Array.isArray(formats) && formats.length) card.formats = formats;
+  });
+  return cards;
+}
+
+// Storefront counts must only include published books — the admin counts
+// (lib/bookModule) intentionally include drafts, these must not.
+async function publishedCountsByField(storeId, field, ids) {
+  const clean = ids.map(objectIdOr).filter(Boolean);
+  const out = {};
+  if (!clean.length) return out;
+  const rows = await Product.aggregate([
+    { $match: { store: new mongoose.Types.ObjectId(String(storeId)), status: "published", [field]: { $in: clean } } },
+    { $unwind: `$${field}` },
+    { $match: { [field]: { $in: clean } } },
+    { $group: { _id: `$${field}`, n: { $addToSet: "$_id" } } },
+  ]);
+  rows.forEach((row) => {
+    out[String(row._id)] = (row.n || []).length;
+  });
+  return out;
+}
+
+async function publishedCountsByCategory(storeId, categoryIds) {
+  const clean = categoryIds.map(objectIdOr).filter(Boolean);
+  if (!clean.length) return {};
+
+  const storeOid = new mongoose.Types.ObjectId(String(storeId));
+  const [legacy, joins] = await Promise.all([
+    Product.aggregate([
+      { $match: { store: storeOid, status: "published", categories: { $in: clean } } },
+      { $unwind: "$categories" },
+      { $match: { categories: { $in: clean } } },
+      { $group: { _id: "$categories", n: { $addToSet: "$_id" } } },
+    ]),
+    ProductCategory.aggregate([
+      { $match: { store: storeOid, category: { $in: clean } } },
+      { $lookup: { from: "products", localField: "product", foreignField: "_id", as: "productDoc" } },
+      { $unwind: "$productDoc" },
+      { $match: { "productDoc.store": storeOid, "productDoc.status": "published" } },
+      { $group: { _id: "$category", n: { $addToSet: "$product" } } },
+    ]),
+  ]);
+
+  const merged = new Map();
+  const add = (id, list) => {
+    const key = String(id);
+    if (!merged.has(key)) merged.set(key, new Set());
+    (list || []).forEach((row) => merged.get(key).add(String(row)));
+  };
+  legacy.forEach((row) => add(row._id, row.n));
+  joins.forEach((row) => add(row._id, row.n));
+  const out = {};
+  merged.forEach((set, key) => {
+    out[key] = set.size;
+  });
+  return out;
+}
+
+function peopleListHandler(kind) {
+  const cfg = BOOK_PEOPLE[kind];
+  return async function listPeople(req, res, next) {
+    try {
+      const store = req.publicStore;
+      if (!(await bookState(store._id)).on) return booksOff(res);
+
+      const { page, limit, skip } = parsePage(req.query, { defaultLimit: 24, maxLimit: 60 });
+      const filter = { store: store._id, status: "published" };
+      const search = String(req.query.q || "").trim().slice(0, 120);
+      if (search) {
+        const rx = new RegExp(escapeRegex(search), "i");
+        filter.$or = [{ name: rx }, { nameBn: rx }];
+      }
+      const sort = String(req.query.sort || "") === "-name" ? { name: -1 } : { name: 1 };
+
+      const total = await cfg.Model.countDocuments(filter);
+      const rows = total > page - 1
+        ? await cfg.Model.find(filter).select(cfg.fields).sort(sort).skip(skip).limit(limit).lean()
+        : [];
+      const counts = await publishedCountsByField(store._id, cfg.refField, rows.map((row) => String(row._id)));
+      const map = kind === "author" ? publicAuthorRow : publicPublisherRow;
+
+      res.json({
+        store: { id: store._id, name: store.name, slug: store.slug, currency: store.currency, language: store.language },
+        [cfg.key]: rows.map((row) => map(row, counts[String(row._id)])),
+        meta: pageMeta({ page, limit, total }),
+      });
+    } catch (err) {
+      next(err);
+    }
+  };
+}
+
+function peopleDetailHandler(kind) {
+  const cfg = BOOK_PEOPLE[kind];
+  return async function getPerson(req, res, next) {
+    try {
+      const store = req.publicStore;
+      if (!(await bookState(store._id)).on) return booksOff(res);
+
+      const key = String(req.params.slug || "").trim();
+      if (!key) return res.status(404).json({ message: "Pawa jayni" });
+      const filter = { store: store._id, status: "published", ...(objectIdOr(key) ? { _id: objectIdOr(key) } : { slug: key.toLowerCase() }) };
+      const row = await cfg.Model.findOne(filter).lean();
+      if (!row) return res.status(404).json({ message: "Pawa jayni" });
+
+      const { page, limit, skip } = parsePage(req.query, { defaultLimit: 12, maxLimit: 48 });
+      const bookFilter = baseFilter(store._id, { [cfg.refField]: row._id });
+      const total = await Product.countDocuments(bookFilter);
+      const books = total > page - 1
+        ? await Product.find(bookFilter)
+            .select("title name slug images price regularPrice salePrice stock soldCount hasVariations internationalConfig.sizes bookDetails")
+            .sort({ "bookDetails.publicationYear": -1, createdAt: -1 })
+            .skip(skip)
+            .limit(limit)
+            .lean()
+        : [];
+      const ratings = await ratingMapFor(store._id, books.map((book) => book._id));
+
+      const detail = kind === "author"
+        ? {
+            id: row._id,
+            name: row.name || row.nameBn || "",
+            nameBn: row.nameBn || "",
+            slug: row.slug || String(row._id),
+            photo: row.photo || "",
+            bio: row.bio || "",
+            bioBn: row.bioBn || "",
+            country: row.country || "",
+            birthYear: row.birthYear || null,
+            deathYear: row.deathYear || null,
+            links: (row.links || []).filter((link) => link && link.url),
+          }
+        : {
+            id: row._id,
+            name: row.name || row.nameBn || "",
+            nameBn: row.nameBn || "",
+            slug: row.slug || String(row._id),
+            logo: row.logo || "",
+            description: row.description || "",
+            descriptionBn: row.descriptionBn || "",
+            address: row.address || "",
+            phone: row.phone || "",
+            email: row.email || "",
+            website: row.website || "",
+          };
+
+      res.json({
+        store: { id: store._id, name: store.name, slug: store.slug, currency: store.currency, language: store.language },
+        [cfg.one]: detail,
+        books: await attachBookCards(
+          store._id,
+          books,
+          books.map((book) => {
+            const card = cardOf(book, false);
+            card.soldCount = book.soldCount || 0;
+            // shelf metadata for the author/publisher pages
+            card.formats = (book.bookDetails && book.bookDetails.formats) || [];
+            card.publicationYear = (book.bookDetails && book.bookDetails.publicationYear) || null;
+            return withRating(card, ratings, book._id);
+          })
+        ),
+        pagination: { page, limit, total, pages: Math.ceil(total / limit) || 1 },
+      });
+    } catch (err) {
+      next(err);
+    }
+  };
+}
+
+// Genre rail for the storefront: published categories under the Books
+// root only, with book counts, flat + tree.
+async function listBookGenres(req, res, next) {
+  try {
+    const store = req.publicStore;
+    if (!(await bookState(store._id)).on) return booksOff(res);
+
+    const root = await getBooksRoot(store._id);
+    if (!root) return res.json({ genres: [], tree: [] });
+
+    const ids = (await genreIds(store._id)).map(objectIdOr).filter(Boolean);
+    const rows = ids.length
+      ? await Category.find({
+          store: store._id,
+          _id: { $in: ids, $ne: root._id },
+          status: "published",
+          deletedAt: null,
+        })
+          .select("name nameBn slug parent level order image")
+          .sort({ order: 1, name: 1 })
+          .lean()
+      : [];
+    const counts = await publishedCountsByCategory(store._id, rows.map((row) => String(row._id)));
+
+    res.json({
+      root: { id: root._id, name: root.name, nameBn: root.nameBn || "", slug: root.slug },
+      genres: rows.map((row) => ({
+        id: row._id,
+        name: row.name || "",
+        nameBn: row.nameBn || "",
+        slug: row.slug || "",
+        parent: row.parent || null,
+        level: row.level || 0,
+        image: row.image || "",
+        bookCount: counts[String(row._id)] || 0,
+      })),
+      tree: buildTree(rows.map((row) => ({ ...row, children: undefined }))),
+    });
+  } catch (err) {
+    next(err);
+  }
 }
 
 /* ------------------------------------------------------------------ *
@@ -233,6 +591,33 @@ async function listProducts(req, res, next) {
       match.$and = [...(match.$and || []), { _id: { $in: matched } }];
     }
 
+    // book filters: author/publisher take slug or id, format takes print|ebook|audio.
+    // A module that is off, or a value that does not resolve, matches nothing.
+    const authorRaw = String(req.query.author || "").trim();
+    const publisherRaw = String(req.query.publisher || "").trim();
+    const formatRaw = String(req.query.format || "").trim();
+    const bookFilterEcho = {};
+    if (authorRaw || publisherRaw || formatRaw) {
+      const live = (await bookState(store._id)).on;
+      const authorIds = live && authorRaw ? await resolvePeopleIds(Author, store._id, authorRaw) : [];
+      const publisherIds = live && publisherRaw ? await resolvePeopleIds(Publisher, store._id, publisherRaw) : [];
+      const formats = live && formatRaw
+        ? formatRaw.split(",").map((part) => part.trim().toLowerCase()).filter((key) => BOOK_FORMATS.includes(key))
+        : [];
+      if (authorRaw) {
+        match["bookDetails.authors"] = { $in: authorIds };
+        bookFilterEcho.author = authorIds;
+      }
+      if (publisherRaw) {
+        match["bookDetails.publisher"] = { $in: publisherIds };
+        bookFilterEcho.publisher = publisherIds;
+      }
+      if (formatRaw) {
+        match["bookDetails.formats"] = { $in: formats.length ? formats : ["__none__"] };
+        bookFilterEcho.format = formats;
+      }
+    }
+
     const minPrice = Number(req.query.minPrice);
     const maxPrice = Number(req.query.maxPrice);
     const priceBounds = {};
@@ -250,7 +635,7 @@ async function listProducts(req, res, next) {
     if (req.query.featured === "1") match.isTopFeature = true;
     if (req.query.hotDeal === "1") match.isHotDeal = true;
 
-    const projection = "name title slug images price regularPrice salePrice stock categories brand soldCount moq isHotDeal isTopFeature hasVariations internationalConfig.sizes createdAt";
+    const projection = "name title slug images price regularPrice salePrice stock categories brand soldCount moq isHotDeal isTopFeature hasVariations internationalConfig.sizes createdAt bookDetails.authors bookDetails.formats";
     let rows;
     let total;
 
@@ -272,7 +657,7 @@ async function listProducts(req, res, next) {
         },
         { $sort: SORTS[sortKey] },
         { $facet: {
-          rows: [{ $skip: (page - 1) * limit }, { $limit: limit }, { $project: { name: 1, title: 1, slug: 1, images: 1, price: 1, regularPrice: 1, salePrice: 1, stock: 1, categories: 1, brand: 1, soldCount: 1, moq: 1, isHotDeal: 1, isTopFeature: 1, hasVariations: 1, "internationalConfig.sizes": 1, createdAt: 1, _effectivePrice: 1 } }],
+          rows: [{ $skip: (page - 1) * limit }, { $limit: limit }, { $project: { name: 1, title: 1, slug: 1, images: 1, price: 1, regularPrice: 1, salePrice: 1, stock: 1, categories: 1, brand: 1, soldCount: 1, moq: 1, isHotDeal: 1, isTopFeature: 1, hasVariations: 1, "internationalConfig.sizes": 1, createdAt: 1, _effectivePrice: 1, "bookDetails.authors": 1, "bookDetails.formats": 1 } }],
           count: [{ $count: "total" }],
         } },
       ];
@@ -299,9 +684,10 @@ async function listProducts(req, res, next) {
       ratingMapFor(store._id, rows.map((row) => row._id)),
     ]);
 
-    res.json({
-      store: { id: store._id, name: store.name, slug: store.slug, currency: store.currency, language: store.language },
-      products: rows.map((product) => {
+    const cards = await attachBookCards(
+      store._id,
+      rows,
+      rows.map((product) => {
         const card = cardOf(product, international.enabled);
         card.regularPrice = product.regularPrice || product.price || 0;
         card.salePrice = product.salePrice || 0;
@@ -320,9 +706,14 @@ async function listProducts(req, res, next) {
         }
         if (wholesale.enabled) card.wholesaleBadge = wholesale.badgeText;
         return withRating(card, ratings, product._id);
-      }),
+      })
+    );
+
+    res.json({
+      store: { id: store._id, name: store.name, slug: store.slug, currency: store.currency, language: store.language },
+      products: cards,
       pagination: { page, limit, total, pages: Math.ceil(total / limit) || 1 },
-      filters: { sort: sortKey, query, category: categoryIds, brand: brandIds, attrs: attrTermIds },
+      filters: { sort: sortKey, query, category: categoryIds, brand: brandIds, attrs: attrTermIds, ...bookFilterEcho },
     });
   } catch (err) {
     next(err);
@@ -474,6 +865,8 @@ async function getProduct(req, res, next) {
     const filter = baseFilter(store._id, objectIdOr(key) ? { _id: objectIdOr(key) } : { slug: key.toLowerCase() });
     const product = await Product.findOne(filter)
       .populate("brand", "name slug")
+      .populate("bookDetails.authors", "name nameBn slug photo status")
+      .populate("bookDetails.publisher", "name nameBn slug logo status")
       .lean();
     if (!product) return res.status(404).json({ message: "Product pawa jayni" });
 
@@ -490,7 +883,7 @@ async function getProduct(req, res, next) {
       : [];
     product.brand = product.brand || null;
 
-    const [international, wholesale, variations, tierRows, flashSales, reviews, related] = await Promise.all([
+    const [international, wholesale, variations, tierRows, flashSales, reviews, related, authorBooks] = await Promise.all([
       loadSettings(store._id),
       getWholesaleSettings(store._id),
       ProductVariation.find({ store: store._id, product: product._id })
@@ -501,6 +894,7 @@ async function getProduct(req, res, next) {
       loadLiveFlashSales(store._id),
       reviewSummary(store._id, product._id),
       findRelated(store._id, product, categoryIds),
+      sameAuthorBooks(store._id, product),
     ]);
 
     const basePrice = product.salePrice > 0 ? product.salePrice : product.regularPrice || product.price || 0;
@@ -511,9 +905,14 @@ async function getProduct(req, res, next) {
       basePaisa: toPaisa(basePrice),
     });
 
+    // book block only exists while the module is on; populated rows are
+    // already allow-listed (draft/trashed people are dropped inside)
+    const book = (await bookState(store._id)).on ? publicBookBlock(product.bookDetails) : null;
+
     res.json({
       store: { id: store._id, name: store.name, slug: store.slug, currency: store.currency, language: store.language },
       product: publicProduct(product),
+      book,
       flashSale: flash ? { ...publicFlashSale(flash.sale), price: fromPaisa(flash.pricePaisa), discountPaisa: flash.discountPaisa } : null,
       variations,
       tiers: tierRows.map((row) => ({ variation: row.variation || null, minQty: row.minQty, maxQty: row.maxQty, pricePaisa: row.pricePaisa })),
@@ -523,6 +922,7 @@ async function getProduct(req, res, next) {
       reviews: reviews.summary,
       myReviews: reviews.list,
       related,
+      authorBooks,
     });
   } catch (err) {
     next(err);
@@ -561,16 +961,51 @@ async function findRelated(storeId, product, categoryIds = []) {
       $or: [{ categories: { $in: categoryIds } }, { _id: { $in: joined } }],
     })
   )
-    .select("title name slug images price regularPrice salePrice stock soldCount hasVariations internationalConfig.sizes")
+    .select("title name slug images price regularPrice salePrice stock soldCount hasVariations internationalConfig.sizes bookDetails.authors bookDetails.formats")
     .sort({ soldCount: -1, createdAt: -1 })
     .limit(12)
     .lean();
   const ratings = await ratingMapFor(storeId, rows.map((row) => row._id));
-  return rows.map((row) => {
-    const card = cardOf(row, false);
-    card.soldCount = row.soldCount || 0;
-    return withRating(card, ratings, row._id);
-  });
+  return attachBookCards(
+    storeId,
+    rows,
+    rows.map((row) => {
+      const card = cardOf(row, false);
+      card.soldCount = row.soldCount || 0;
+      return withRating(card, ratings, row._id);
+    })
+  );
+}
+
+// More books by this product's first listed author — the "same author" rail
+// on the book product page. Silent unless the module is on.
+async function sameAuthorBooks(storeId, product, limit = 10) {
+  if (!(await bookState(storeId)).on) return [];
+  const authorIds = (product.bookDetails?.authors || [])
+    .filter((row) => row && row._id && (!row.status || row.status === "published"))
+    .map((row) => row._id);
+  if (!authorIds.length) return [];
+
+  const rows = await Product.find(
+    baseFilter(storeId, {
+      _id: { $ne: product._id },
+      "bookDetails.authors": { $in: authorIds },
+    })
+  )
+    .select("title name slug images price regularPrice salePrice stock soldCount hasVariations internationalConfig.sizes bookDetails.authors bookDetails.formats")
+    .sort({ "bookDetails.publicationYear": -1, createdAt: -1 })
+    .limit(limit)
+    .lean();
+
+  return attachBookCards(
+    storeId,
+    rows,
+    rows.map((row) => {
+      const card = cardOf(row, false);
+      card.soldCount = row.soldCount || 0;
+      return card;
+    })
+  );
 }
 
 async function listHeroSlides(req, res, next) {
@@ -601,7 +1036,7 @@ async function listFlashSales(req, res, next) {  try {
 }
 
 const HOME_SECTION_PROJECTION =
-  "name title slug images price regularPrice salePrice stock categories soldCount moq hasVariations internationalConfig.sizes";
+  "name title slug images price regularPrice salePrice stock categories soldCount moq hasVariations internationalConfig.sizes bookDetails.authors bookDetails.formats";
 
 function decoratedCard(product, ctx) {
   const card = cardOf(product, ctx.international.enabled);
@@ -673,11 +1108,16 @@ async function listHome(req, res, next) {
 
     const ratings = await ratingMapFor(store._id, productRows.flat().map((row) => row._id));
     const ctx = { international, wholesale, flashSales, ratings };
+    const flatRows = productRows.flat();
+    const flatCards = await attachBookCards(store._id, flatRows, flatRows.map((product) => decoratedCard(product, ctx)));
 
-    res.json({
-      // a category with nothing published is hidden, not shown empty
-      sections: picked
-        .map((row, index) => ({
+    let cursor = 0;
+    const sections = picked
+      .map((row, index) => {
+        const count = productRows[index].length;
+        const cards = flatCards.slice(cursor, cursor + count);
+        cursor += count;
+        return {
           id: row.id,
           mode: row.mode,
           columns: row.columns,
@@ -687,9 +1127,14 @@ async function listHome(req, res, next) {
             name: row.categoryDoc.name,
             slug: row.categoryDoc.slug || String(row.categoryDoc._id),
           },
-          products: productRows[index].map((product) => decoratedCard(product, ctx)),
-        }))
-        .filter((row) => row.products.length),
+          products: cards,
+        };
+      })
+      .filter((row) => row.products.length);
+
+    res.json({
+      // a category with nothing published is hidden, not shown empty
+      sections,
       flags,
       fixed,
     });
@@ -701,7 +1146,7 @@ async function listHome(req, res, next) {
 async function getStoreInfo(req, res, next) {
   try {
     const store = req.publicStore;
-    const [site, faviconDoc, settingsDoc, international, wholesale, social, map, menuCategories, access] = await Promise.all([
+    const [site, faviconDoc, settingsDoc, international, wholesale, social, map, menuCategories, access, books] = await Promise.all([
       SiteSetting.findOne({ store: store._id }).lean(),
       ShopFavicon.findOne({ store: store._id }).lean(),
       StoreSettings.findOne({ storeId: store._id }).select("seo").lean(),
@@ -713,6 +1158,7 @@ async function getStoreInfo(req, res, next) {
         .select("_id name slug")
         .lean(),
       featuresForStore(store),
+      bookState(store._id),
     ]);
     const seo = (settingsDoc && settingsDoc.seo) || {};
     res.json({
@@ -732,6 +1178,8 @@ async function getStoreInfo(req, res, next) {
       },
       international,
       features: access.features,
+      // nav hints for book-capable themes: the module is live somewhere
+      books: { active: books.active, levels: books.levels },
       wholesale: {
         enabled: access.features.wholesale === true && wholesale.enabled === true,
         badgeText: wholesale.badgeText,
@@ -762,4 +1210,9 @@ module.exports = {
   getProduct,
   listFlashSales,
   suggestions,
+  listAuthors: peopleListHandler("author"),
+  getAuthor: peopleDetailHandler("author"),
+  listPublishers: peopleListHandler("publisher"),
+  getPublisher: peopleDetailHandler("publisher"),
+  listBookGenres,
 };

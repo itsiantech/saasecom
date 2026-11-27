@@ -105,6 +105,30 @@ const productAddonSchema = new mongoose.Schema(
   { _id: true }
 );
 
+// ---- Book / Ebook metadata (default undefined so non-book products stay untouched) ----
+// Genres are NOT stored here: they are the category ids in Product.categories that live
+// under the protected "Books" root category.
+const bookDetailsSchema = new mongoose.Schema(
+  {
+    // ordered: index 0 = first-listed author
+    authors: { type: [{ type: mongoose.Schema.Types.ObjectId, ref: "Author" }], default: [] },
+    publisher: { type: mongoose.Schema.Types.ObjectId, ref: "Publisher", default: null },
+    translator: { type: String, default: "", trim: true, maxlength: 160 },
+    editor: { type: String, default: "", trim: true, maxlength: 160 },
+    isbn: { type: String, default: "", trim: true, uppercase: true, maxlength: 20 },
+    edition: { type: String, default: "", trim: true, maxlength: 40 },
+    publicationYear: { type: Number, default: null, min: 800, max: 2200 },
+    pages: { type: Number, default: null, min: 0 },
+    language: { type: String, default: "", trim: true, maxlength: 40 },
+    binding: { type: String, default: "", trim: true, maxlength: 40 },
+    formats: {
+      type: [{ type: String, enum: ["print", "ebook", "audio"] }],
+      default: ["print"],
+    },
+  },
+  { _id: false }
+);
+
 const productSchema = new mongoose.Schema(
   {
     // ---- core (kept for backward compatibility with the old product routes) ----
@@ -148,6 +172,9 @@ const productSchema = new mongoose.Schema(
     // ---- Retail EMI override (default undefined = inherit store/category) ----
     installment: { type: installmentPolicySchema, default: undefined },
 
+    // ---- Book / Ebook details (default undefined = not a book) ----
+    bookDetails: { type: bookDetailsSchema, default: undefined },
+
     // ---- Lens Selector opt-in for this frame (module itself is plan-gated) ----
     lensEnabled: { type: Boolean, default: false },
 
@@ -169,5 +196,14 @@ const productSchema = new mongoose.Schema(
 
 productSchema.plugin(require("../lib/tenantPlugin"));
 productSchema.plugin(require("../lib/planLimitPlugin"));
+
+// An ISBN is unique inside a store as soon as it is filled in. Documents without one
+// keep the field "" (or missing) and stay out of the index.
+productSchema.index(
+  { store: 1, "bookDetails.isbn": 1 },
+  { unique: true, partialFilterExpression: { "bookDetails.isbn": { $type: "string", $gt: "" } } }
+);
+productSchema.index({ store: 1, "bookDetails.authors": 1 });
+productSchema.index({ store: 1, "bookDetails.publisher": 1 });
 
 module.exports = mongoose.model("Product", productSchema);

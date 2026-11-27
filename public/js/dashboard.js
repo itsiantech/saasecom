@@ -89,6 +89,12 @@ function switchView(viewName) {
     if (window.orderCatalog) window.orderCatalog.open();
   } else if (viewName === "customers") {
     if (window.customerPage) window.customerPage.open();
+  } else if (viewName === "authors") {
+    if (window.bookPeople) window.bookPeople.open("authors");
+  } else if (viewName === "publishers") {
+    if (window.bookPeople) window.bookPeople.open("publishers");
+  } else if (viewName === "book-genres") {
+    if (window.bookGenres) window.bookGenres.open();
   } else if (viewName === "blacklist") {
     if (window.blacklistPage) window.blacklistPage.open();
   } else if (viewName === "suppliers") {
@@ -170,6 +176,9 @@ const VIEW_MODULES = {
   "order-detail": "orders",
   blacklist: "orders",
   customers: "customers",
+  authors: "books",
+  publishers: "books",
+  "book-genres": "books",
   suppliers: "supplierPortal",
   "supplier-history": "supplierPortal",
   "report-sales": "reports",
@@ -238,7 +247,39 @@ function applyStoreAccess(access) {
   if (addBtn) addBtn.hidden = !moduleOn("products");
   const viewAll = document.getElementById("viewAllProducts");
   if (viewAll) viewAll.hidden = !moduleOn("products");
+  applyBookNav();
 }
+
+// Books group: the plan feature and the owner's own switch together decide the
+// menu. A theme without book support keeps it (state.on stays true) because the
+// data screens are still useful — that gate only hides the storefront.
+function applyBookNav() {
+  const group = document.getElementById("navGroupBooks");
+  if (!group) return;
+  if (!moduleOn("books")) {
+    group.hidden = true;
+    return;
+  }
+  // books.js is parsed after this file, so an early probe has to wait for it
+  if (!window.bookModule) {
+    window.addEventListener("load", () => applyBookNav(), { once: true });
+    return;
+  }
+  window.bookModule
+    .state()
+    .then(function (s) {
+      group.hidden = !(s && s.on);
+    })
+    .catch(function () {
+      group.hidden = true;
+    });
+}
+
+// turning the module on/off in Settings must show or hide the menu right away
+window.addEventListener("settings:saved", function () {
+  if (window.bookModule) window.bookModule.clearCache();
+  applyBookNav();
+});
 
 // Navigation click handlers
 document.querySelectorAll(".nav-item").forEach((item) => {

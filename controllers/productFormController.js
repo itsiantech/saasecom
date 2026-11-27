@@ -13,6 +13,8 @@ const Brand = require("../models/Brand");
 const Settings = require("../models/Settings");
 const SpecDefinition = require("../models/SpecDefinition");
 const InstallmentOffer = require("../models/InstallmentOffer");
+const Author = require("../models/Author");
+const Publisher = require("../models/Publisher");
 const { getStoreId } = require("../lib/tenantContext");
 const { sanitizeRichText } = require("../lib/richText");
 const { scopedKey, isScopedKey, unscopeKey, keysForStore } = require("../lib/settingsScope");
@@ -22,6 +24,8 @@ const { normalizeTiers, clearTierCache } = require("../services/tierPricing");
 const { writeAudit } = require("../lib/audit");
 const { getWholesaleSettings } = require("../lib/wholesaleSettings");
 const { featuresForStore } = require("../lib/features");
+const { bookState } = require("../lib/bookModule");
+const { sanitizeBookDetails, productTypeForFormats } = require("../lib/bookDetails");
 const {
   getInstallmentSettings,
   sanitizeProductPolicy,
@@ -126,6 +130,7 @@ async function meta(req, res) {
   const catNames = new Map(cats.map((c) => [String(c._id), c.name]));
 
   const installment = await installmentMeta(req, storeId);
+  const books = await bookState(storeId);
 
   res.json({
     attributes: attributeList,
@@ -133,6 +138,7 @@ async function meta(req, res) {
     brands,
     tags,
     settings,
+    books,
     wholesale: {
       enabled: wholesale.enabled === true,
       badgeText: wholesale.badgeText,
@@ -268,6 +274,23 @@ function sanitizeAddons(input, existing) {
   return out;
 }
 
+// "print" is the default format, so a card that only holds it carries no book data.
+function hasBookContent(book) {
+  return Boolean(
+    (book.authors || []).length ||
+      book.publisher ||
+      book.isbn ||
+      book.edition ||
+      book.translator ||
+      book.editor ||
+      book.publicationYear ||
+      book.pages ||
+      book.language ||
+      book.binding ||
+      (book.formats || []).some((row) => row !== "print")
+  );
+}
+
 async function buildProduct(storeId, payload, existing) {
   const data = {
     title: String(payload.title || "").trim(),
@@ -308,10 +331,27 @@ async function buildProduct(storeId, payload, existing) {
     data.specs = await sanitizeProductSpecs(storeId, payload.categories || [], payload.specs);
   }
 
+  // Book details only travel while the module is live for this store; a locked
+  // store keeps whatever was stored before (turning the module off never erases).
+  if (payload.bookDetails !== undefined && (await bookState(storeId)).on) {
+    const clean = await sanitizeBookDetails(storeId, payload.bookDetails, existing && existing._id);
+    if (!clean.ok) {
+      const err = new Error(clean.message);
+      err.status = 400;
+      throw err;
+    }
+    data.bookDetails = clean.value;
+    if (clean.value && clean.value.formats.length) {
+      data.productType = productTypeForFormats(clean.value.formats, "physical");
+    }
+  }
+
   const product = existing || new Product({ store: storeId });
   Object.keys(data).forEach((k) => {
     if (data[k] !== undefined) product.set(k, data[k]);
   });
+  // an emptied Book card must not leave a ghost bookDetails behind
+  if (data.bookDetails && !hasBookContent(data.bookDetails)) product.bookDetails = undefined;
   // undefined = leave the stored override alone; null/blank = back to inherit
   if (payload.installment !== undefined) {
     product.set("installment", sanitizeProductPolicy(payload.installment) || undefined);
@@ -550,6 +590,22 @@ async function getOne(req, res) {
     .sort({ minQty: 1 })
     .lean();
 
+  // the Book card shows the picked people as chips, so send their names back
+  const book = product.bookDetails || null;
+  const authorIds = book && Array.isArray(book.authors) ? book.authors : [];
+  const authorRows = authorIds.length
+    ? await Author.find({ store: storeId, _id: { $in: authorIds } }).select("name nameBn slug").lean()
+    : [];
+  const authorById = new Map(authorRows.map((row) => [String(row._id), row]));
+  const bookAuthors = authorIds
+    .map((id) => authorById.get(String(id)))
+    .filter(Boolean)
+    .map((row) => ({ _id: row._id, name: row.name || row.nameBn, nameBn: row.nameBn || "", slug: row.slug || "" }));
+  const bookPublisher =
+    book && book.publisher
+      ? await Publisher.findOne({ store: storeId, _id: book.publisher }).select("name nameBn slug").lean()
+      : null;
+
   const termByVariation = new Map(variations.map((v) => [String(v._id), v.termName || ""]));
   const productTiers = [];
   const tiersByTerm = new Map();
@@ -580,6 +636,10 @@ async function getOne(req, res) {
     swatches,
     tags: productTags.map((t) => t.tag),
     categories: categoryIds,
+    bookAuthors,
+    bookPublisher: bookPublisher
+      ? { _id: bookPublisher._id, name: bookPublisher.name || bookPublisher.nameBn, nameBn: bookPublisher.nameBn || "", slug: bookPublisher.slug || "" }
+      : null,
     tierSets: [
       { term: null, tiers: productTiers },
       ...[...tiersByTerm.entries()].map(([term, tiers]) => ({ term, tiers })),

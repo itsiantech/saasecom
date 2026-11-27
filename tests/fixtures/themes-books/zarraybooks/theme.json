@@ -1,0 +1,12 @@
+{
+  "name": "zarraybooks",
+  "label": "Array modules + explicit support (test fixture)",
+  "description": "Keeps `modules` a plain list (the storefront gates on includes()) while declaring book surface levels separately.",
+  "tokens": {
+    "colorPrimary": "#4a148c"
+  },
+  "modules": ["builder", "books"],
+  "moduleSupport": {
+    "books": ["product", "pages"]
+  }
+}

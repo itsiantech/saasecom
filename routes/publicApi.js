@@ -82,6 +82,12 @@ router.get("/products/suggestions", catalog.suggestions);
 router.get("/products/:slug", catalog.getProduct);
 router.get("/products/:slug/reviews", shop.listReviews);
 router.post("/products/:slug/reviews", optionalAuth, shop.createReview);
+// book module (plan + owner switch); all four answer 404 while it is off
+router.get("/authors", catalog.listAuthors);
+router.get("/authors/:slug", catalog.getAuthor);
+router.get("/publishers", catalog.listPublishers);
+router.get("/publishers/:slug", catalog.getPublisher);
+router.get("/genres", catalog.listBookGenres);
 router.get("/hero-slides", catalog.listHeroSlides);
 router.get("/flash-sales", catalog.listFlashSales);
 // published theme + tokens for the storefront; ?preview=<token> serves the draft

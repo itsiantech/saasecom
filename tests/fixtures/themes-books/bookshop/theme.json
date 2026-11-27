@@ -1,0 +1,13 @@
+{
+  "name": "bookshop",
+  "label": "Bookshop (test fixture)",
+  "description": "Fixture theme that renders the book module on the product page and the author/publisher pages.",
+  "tokens": {
+    "colorPrimary": "#1b5e20",
+    "colorSurface": "#ffffff"
+  },
+  "modules": {
+    "books": ["product", "pages"],
+    "builder": true
+  }
+}

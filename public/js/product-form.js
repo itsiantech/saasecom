@@ -27,6 +27,7 @@
     specValues: {}, // { [specKey]: string | boolean-as-string | string[] }
     tiers: { __product__: [] }, // { [term|__product__]: [{ minQty, maxQty, price }] }
     tierTarget: "__product__",
+    book: { authors: [], publisher: null, formats: [] }, // Book / Ebook module card
     emi: {
       override: false,
       allowed: "",
@@ -898,6 +899,280 @@
     };
   }
 
+  /* ---------------- book details (Book / Ebook module) ---------------- */
+  const BOOK_FORMATS = ["print", "ebook", "audio"];
+  const BOOK_MAX_AUTHORS = 20;
+  const BOOK_OPTION_KEY = { authors: "authorOptions", publishers: "publisherOptions" };
+
+  function bookGate() {
+    return (state.meta && state.meta.books) || { on: false, plan: false, supported: false, levels: [] };
+  }
+
+  function setBookError(msg) {
+    const el = $("pfBookError");
+    if (el) el.textContent = msg || "";
+  }
+
+  // Client hint only — the server re-checks the digits and store uniqueness.
+  function isbnOk(raw) {
+    const v = String(raw || "").toUpperCase().replace(/[^0-9X]/g, "");
+    if (/^\d{13}$/.test(v)) {
+      let sum = 0;
+      for (let i = 0; i < 12; i++) sum += Number(v[i]) * (i % 2 ? 3 : 1);
+      return (10 - (sum % 10)) % 10 === Number(v[12]);
+    }
+    if (/^\d{9}[\dX]$/.test(v)) {
+      let sum = 0;
+      for (let i = 0; i < 9; i++) sum += Number(v[i]) * (10 - i);
+      sum += v[9] === "X" ? 10 : Number(v[9]);
+      return sum % 11 === 0;
+    }
+    return false;
+  }
+
+  function renderIsbnHint() {
+    const el = $("pfBookIsbnHint");
+    const input = $("pfBookIsbn");
+    if (!el || !input) return;
+    const v = input.value.trim();
+    if (!v) {
+      el.textContent = "";
+      el.className = "bk-hint";
+      return;
+    }
+    el.textContent = isbnOk(v) ? "✓ ISBN ঠিক আছে" : "ISBN 10 বা 13 হতে হবে (check digit মিলছে না)";
+    el.className = "bk-hint " + (isbnOk(v) ? "bk-isbn-ok" : "bk-isbn-bad");
+  }
+
+  // The module can be switched on/off from Settings while this form is open,
+  // so the card visibility always follows the newest meta.books.
+  function renderBook() {
+    const card = $("pfBookCard");
+    if (!card) return;
+    const gate = bookGate();
+    card.hidden = !gate.on;
+    const note = $("pfBookGate");
+    if (note) {
+      if (gate.on && !gate.supported) {
+        note.hidden = false;
+        note.className = "bk-card-note warn";
+        note.textContent =
+          "লেখক-প্রকাশক data save করা যাবে, কিন্তু theme (" +
+          (gate.theme || "—") +
+          ") এখন বইয়ের পেজ রেন্ডার করে না। Storefront-এ দেখাতে Style Settings থেকে book-support করা theme নিন।";
+      } else {
+        note.hidden = true;
+        note.textContent = "";
+      }
+    }
+    renderBookChips();
+    renderBookFormats();
+  }
+
+  function renderBookChips() {
+    const wrap = $("pfBookAuthors");
+    if (wrap) {
+      wrap.innerHTML = state.book.authors.length
+        ? state.book.authors
+            .map(
+              (a, i) =>
+                `<span class="bk-chip${i === 0 ? " main" : ""}" data-author="${esc(a.id)}" title="${
+                  i ? "প্রধান (main) লেখক করুন" : "প্রধান লেখক"
+                }">${i === 0 ? '<span class="bk-chip-order">★</span>' : ""}<span>${esc(
+                  a.name || "—"
+                )}</span><button type="button" data-unpick="${esc(a.id)}" aria-label="Remove author">×</button></span>`
+            )
+            .join("")
+        : '<span class="bk-chip empty">কোনো লেখক chosen নয়।</span>';
+      wrap.querySelectorAll("[data-unpick]").forEach((btn) =>
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          state.book.authors = state.book.authors.filter((a) => a.id !== btn.dataset.unpick);
+          markDirty();
+          renderBookChips();
+        })
+      );
+      wrap.querySelectorAll("[data-author]").forEach((chip) =>
+        chip.addEventListener("click", () => {
+          const id = chip.dataset.author;
+          const i = state.book.authors.findIndex((a) => a.id === id);
+          if (i <= 0) return;
+          const list = state.book.authors.slice();
+          list.unshift(list.splice(i, 1)[0]);
+          state.book.authors = list;
+          markDirty();
+          renderBookChips();
+        })
+      );
+    }
+    const pw = $("pfBookPublisherChips");
+    if (pw) {
+      const p = state.book.publisher;
+      pw.innerHTML = p
+        ? `<span class="bk-chip main"><span>${esc(p.name || "—")}</span><button type="button" id="pfBookPublisherClear" aria-label="Remove publisher">×</button></span>`
+        : '<span class="bk-chip empty">কোনো প্রকাশক chosen নয়।</span>';
+      const clr = $("pfBookPublisherClear");
+      if (clr)
+        clr.addEventListener("click", () => {
+          state.book.publisher = null;
+          markDirty();
+          renderBookChips();
+        });
+    }
+  }
+
+  function renderBookFormats() {
+    const wrap = $("pfBookFormats");
+    if (!wrap) return;
+    wrap.querySelectorAll("input").forEach((box) => {
+      box.checked = state.book.formats.indexOf(box.value) >= 0;
+    });
+    const note = $("pfBookEbookNote");
+    if (note) note.hidden = !state.book.formats.some((f) => f !== "print");
+  }
+
+  function hideBookSuggest(kind) {
+    const box = $(kind === "authors" ? "pfBookAuthorSuggest" : "pfBookPublisherSuggest");
+    if (box) box.hidden = true;
+  }
+
+  async function searchBookOptions(kind, term) {
+    const box = $(kind === "authors" ? "pfBookAuthorSuggest" : "pfBookPublisherSuggest");
+    if (!box) return;
+    box.hidden = false;
+    box.innerHTML = '<div class="bk-suggest-empty">খোঁজা হচ্ছে…</div>';
+    const params = new URLSearchParams({ limit: "20" });
+    if (term) params.set("search", term);
+    let rows = [];
+    try {
+      const data = await api("GET", "/api/books/" + kind + "/options?" + params.toString());
+      rows = data[BOOK_OPTION_KEY[kind]] || [];
+    } catch (err) {
+      box.innerHTML = `<div class="bk-suggest-empty">${esc(err.message)}</div>`;
+      return;
+    }
+    const picked =
+      kind === "authors" ? new Set(state.book.authors.map((a) => a.id)) : new Set([state.book.publisher ? state.book.publisher.id : ""]);
+    const list = rows.filter((r) => !picked.has(String(r._id)));
+    const exact = list.some((r) => String(r.name || r.nameBn || "").toLowerCase() === term.toLowerCase());
+    const createRow =
+      term && !exact
+        ? `<button type="button" class="bk-suggest-row create" data-create="${esc(term)}">+ Create “${esc(term)}”</button>`
+        : "";
+    box.innerHTML =
+      (list.length
+        ? list
+            .map(
+              (r) =>
+                `<button type="button" class="bk-suggest-row" data-pick="${esc(String(r._id))}" data-name="${esc(
+                  r.name || r.nameBn || ""
+                )}" data-namebn="${esc(r.nameBn || "")}"><span>${esc(r.name || r.nameBn || "—")}</span><small>${
+                  Number(r.bookCount) || 0
+                } books</small></button>`
+            )
+            .join("")
+        : '<div class="bk-suggest-empty">কোনো মিল নেই।</div>') + createRow;
+    box.querySelectorAll("[data-pick]").forEach((btn) => {
+      btn.addEventListener("mousedown", (e) => e.preventDefault());
+      btn.addEventListener("click", () => {
+        pickBookPerson(kind, {
+          id: btn.dataset.pick,
+          name: btn.dataset.name,
+          nameBn: btn.dataset.namebn,
+        });
+      });
+    });
+    box.querySelectorAll("[data-create]").forEach((btn) => {
+      btn.addEventListener("mousedown", (e) => e.preventDefault());
+      btn.addEventListener("click", () => createBookPerson(kind, btn.dataset.create));
+    });
+  }
+
+  function pickBookPerson(kind, person) {
+    if (kind === "authors") {
+      if (state.book.authors.length >= BOOK_MAX_AUTHORS) {
+        notify("একটি বইয়ে " + BOOK_MAX_AUTHORS + " জনের বেশি লেখক নয়", "err");
+        return;
+      }
+      if (!state.book.authors.some((a) => a.id === person.id)) {
+        state.book.authors.push({ id: person.id, name: person.name, nameBn: person.nameBn });
+      }
+    } else {
+      state.book.publisher = { id: person.id, name: person.name };
+    }
+    markDirty();
+    renderBookChips();
+    hideBookSuggest(kind);
+    const input = $(kind === "authors" ? "pfBookAuthorSearch" : "pfBookPublisherSearch");
+    if (input) input.value = "";
+  }
+
+  async function createBookPerson(kind, name) {
+    const clean = String(name || "").trim();
+    if (!clean) {
+      notify("আগে নাম লিখুন", "err");
+      return;
+    }
+    setBookError("");
+    try {
+      const data = await api("POST", "/api/books/" + kind, { name: clean });
+      const row = kind === "authors" ? data.author : data.publisher;
+      if (!row) throw new Error(kind === "authors" ? "লেখক তৈরি হয়নি" : "প্রকাশক তৈরি হয়নি");
+      if (window.bookModule) window.bookModule.clearCache();
+      pickBookPerson(kind, { id: String(row._id), name: row.name || row.nameBn || clean, nameBn: row.nameBn || "" });
+      notify((kind === "authors" ? "লেখক" : "প্রকাশক") + " যোগ হয়েছে", "ok");
+    } catch (err) {
+      setBookError(err.message);
+      const box = $(kind === "authors" ? "pfBookAuthorSuggest" : "pfBookPublisherSuggest");
+      if (box) box.innerHTML = `<div class="bk-suggest-empty">${esc(err.message)}</div>`;
+    }
+  }
+
+  function setBookState(book, authors, publisher) {
+    const src = book || {};
+    state.book = {
+      authors: (authors || []).map((a) => ({ id: String(a._id), name: a.name || a.nameBn || "", nameBn: a.nameBn || "" })),
+      publisher: publisher ? { id: String(publisher._id), name: publisher.name || publisher.nameBn || "" } : null,
+      formats: (Array.isArray(src.formats) ? src.formats : []).filter((f) => BOOK_FORMATS.indexOf(f) >= 0),
+    };
+    const set = (id, value) => {
+      const el = $(id);
+      if (el) el.value = value === null || value === undefined ? "" : String(value);
+    };
+    set("pfBookIsbn", src.isbn);
+    set("pfBookEdition", src.edition);
+    set("pfBookTranslator", src.translator);
+    set("pfBookEditor", src.editor);
+    set("pfBookYear", src.publicationYear);
+    set("pfBookPages", src.pages);
+    set("pfBookLanguage", src.language);
+    set("pfBookBinding", src.binding);
+    setBookError("");
+    renderBook();
+    renderIsbnHint();
+  }
+
+  // the card is only collected while the module is on (see collectPayload)
+  function readBookPayload() {
+    const val = (id) => {
+      const el = $(id);
+      return el ? el.value.trim() : "";
+    };
+    return {
+      authors: state.book.authors.map((a) => a.id),
+      publisher: state.book.publisher ? state.book.publisher.id : "",
+      translator: val("pfBookTranslator"),
+      editor: val("pfBookEditor"),
+      isbn: val("pfBookIsbn"),
+      edition: val("pfBookEdition"),
+      publicationYear: val("pfBookYear"),
+      pages: val("pfBookPages"),
+      language: val("pfBookLanguage"),
+      binding: val("pfBookBinding"),
+      formats: state.book.formats,
+    };
+  }
+
   /* ---------------- inline category create ---------------- */
   async function createCategoryInline(e) {
     e.preventDefault();
@@ -994,6 +1269,7 @@
       swatches,
       addons,
       specs: collectSpecs(),
+      ...(bookGate().on ? { bookDetails: readBookPayload() } : {}),
     };
   }
 
@@ -1059,6 +1335,7 @@
     state.specValues = {};
     state.tiers = { __product__: [] };
     state.tierTarget = "__product__";
+    setBookState(null, [], null);
     setEmiState(null);
 
     $("pfTitle").value = "";
@@ -1175,6 +1452,7 @@
       }));
     });
     state.tierTarget = "__product__";
+    setBookState(p.bookDetails || null, data.bookAuthors, data.bookPublisher);
 
     renderCategoryTree();
     renderTags();
@@ -1206,6 +1484,7 @@
     renderGallery();
     renderTiers();
     renderSpecs();
+    renderBook();
     state.ready = true;
   }
 
@@ -1242,6 +1521,7 @@
         __specs: state.specValues,
         __tiers: state.tiers,
         __tierTarget: state.tierTarget,
+        __book: state.book,
         __emi: state.emi,
         __editId: state.editId || "",
       }),
@@ -1257,6 +1537,15 @@
         state.specValues = values.__specs && typeof values.__specs === "object" ? values.__specs : {};
         state.tiers = values.__tiers || { __product__: [] };
         state.tierTarget = values.__tierTarget || "__product__";
+        if (values.__book) {
+          state.book = {
+            authors: Array.isArray(values.__book.authors) ? values.__book.authors : [],
+            publisher: values.__book.publisher || null,
+            formats: (Array.isArray(values.__book.formats) ? values.__book.formats : []).filter(
+              (f) => BOOK_FORMATS.indexOf(f) >= 0
+            ),
+          };
+        }
         if (values.__emi) state.emi = values.__emi;
         $("pfDesc").innerHTML = values.__desc || "";
         renderCategoryTree();
@@ -1269,6 +1558,7 @@
         renderTiers();
         renderVideoPreview();
         renderSpecs();
+        renderBook();
         renderEmi();
       },
     });
@@ -1339,6 +1629,64 @@
   });
   $("addTierBtn").addEventListener("click", addTierRow);
 
+  /* ---- book card ---- */
+  [
+    "pfBookIsbn", "pfBookEdition", "pfBookTranslator", "pfBookEditor",
+    "pfBookYear", "pfBookPages", "pfBookLanguage", "pfBookBinding",
+  ].forEach((id) => {
+    const el = $(id);
+    if (!el) return;
+    el.addEventListener("input", () => {
+      markDirty();
+      if (id === "pfBookIsbn") renderIsbnHint();
+    });
+    el.addEventListener("change", markDirty);
+  });
+
+  function bindBookSearch(kind, inputId, boxId) {
+    const input = $(inputId);
+    if (!input) return;
+    let timer = null;
+    input.addEventListener("input", () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => searchBookOptions(kind, input.value.trim()), 300);
+    });
+    input.addEventListener("focus", () => {
+      if (input.value.trim()) searchBookOptions(kind, input.value.trim());
+    });
+    input.addEventListener("keydown", (e) => {
+      if (e.key !== "Enter") return;
+      e.preventDefault();
+      clearTimeout(timer);
+      const box = $(boxId);
+      const first = box ? box.querySelector("[data-pick]") : null;
+      if (first && !box.hidden) first.click();
+      else if (input.value.trim()) createBookPerson(kind, input.value.trim());
+    });
+    input.addEventListener("blur", () => setTimeout(() => hideBookSuggest(kind), 140));
+  }
+  bindBookSearch("authors", "pfBookAuthorSearch", "pfBookAuthorSuggest");
+  bindBookSearch("publishers", "pfBookPublisherSearch", "pfBookPublisherSuggest");
+  $("pfBookAuthorNew").addEventListener("click", () => createBookPerson("authors", $("pfBookAuthorSearch").value.trim()));
+  $("pfBookPublisherNew").addEventListener("click", () => createBookPerson("publishers", $("pfBookPublisherSearch").value.trim()));
+
+  $("pfBookFormats").addEventListener("change", async (e) => {
+    const box = e.target;
+    if (!box || box.type !== "checkbox") return;
+    if (box.checked && box.value !== "print") {
+      const ok = await window.confirmDialog({
+        title: (box.value === "ebook" ? "Ebook" : "Audio book") + " format যোগ করবেন?",
+        text: "এই ফরম্যাট শুধু নিজের বা লেখক-প্রকাশকের লিখিত অনুমতি থাকা ফাইলের জন্য দিন। অবৈধ কপি থাকলে দোকান বন্ধ হতে পারে।",
+        okLabel: "হ্যাঁ, যোগ করুন",
+        okClass: "btn-gold",
+      });
+      if (!ok) box.checked = false;
+    }
+    state.book.formats = [...$("pfBookFormats").querySelectorAll("input:checked")].map((i) => i.value);
+    markDirty();
+    renderBookFormats();
+  });
+
   // Settings page e Product settings save hole live update
   window.addEventListener("settings:saved", (e) => {
     const s = (e.detail && e.detail.settings) || {};
@@ -1349,6 +1697,18 @@
     };
     if (state.meta) state.meta.settings = next;
     applySettings(next);
+    // the Book card follows the module gate, which lives in /api/books/state
+    if (!window.bookModule || !state.meta) return;
+    window.bookModule.clearCache();
+    window.bookModule
+      .state()
+      .then((s) => {
+        if (s) state.meta.books = s;
+        renderBook();
+      })
+      .catch(() => {
+        /* the next meta load will sort it out */
+      });
   });
   $("createCategoryBtn").addEventListener("click", () => { $("createCategoryForm").hidden = false; $("newCatName").focus(); });
   $("cancelCreateCat").addEventListener("click", () => { $("createCategoryForm").hidden = true; $("newCatName").value = ""; });

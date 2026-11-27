@@ -1,7 +1,10 @@
 const crypto = require("crypto");
 const Appearance = require("../models/Appearance");
+const Settings = require("../models/Settings");
 const User = require("../models/User");
 const { listThemes, findTheme, sanitizeTokens, mergeTokens } = require("../lib/themeCatalog");
+const { scopedKey } = require("../lib/settingsScope");
+const { ensureBooksRoot, clearBookCache } = require("../lib/bookModule");
 
 /* ------------------------------------------------------------------ *
  * Appearance: pick a theme + override its design tokens, preview the
@@ -46,6 +49,7 @@ function effective(name, overrides) {
     label: theme.label,
     tokens: mergeTokens(theme, clean),
     modules: theme.modules || [],
+    moduleSupport: theme.moduleSupport || {},
     overrides: clean,
   };
 }
@@ -54,6 +58,18 @@ function sameBlock(a, b) {
   const left = effective(a.theme, a.tokens);
   const right = effective(b.theme, b.tokens);
   return left.theme === right.theme && JSON.stringify(left.tokens) === JSON.stringify(right.tokens);
+}
+
+// A book-first theme (Book Theme) is pointless with the books module off, so
+// publishing it switches the store's module on and plants the Books root.
+// Switching the toggle back off afterwards stays the owner's call.
+async function enableBooksForTheme(storeId, themeName) {
+  const theme = findTheme(themeName);
+  if (!theme || !theme.bookFirst) return;
+  const key = scopedKey(storeId, "books_module_enabled");
+  await Settings.updateOne({ key }, { $set: { key, value: "true" } }, { upsert: true });
+  await ensureBooksRoot(storeId);
+  clearBookCache(storeId);
 }
 
 async function getAppearance(req, res, next) {
@@ -132,6 +148,8 @@ async function publishDraft(req, res, next) {
     doc.previewExpiresAt = null;
     await doc.save();
 
+    await enableBooksForTheme(req.store._id, doc.published.theme);
+
     res.json({
       published: { ...effective(doc.published.theme, doc.published.tokens), publishedAt: now, publishedBy: who },
     });
@@ -200,6 +218,7 @@ async function publicAppearance(req, res, next) {
         label: result.label,
         tokens: result.tokens,
         modules: result.modules,
+        moduleSupport: result.moduleSupport,
         preview: Boolean(preview),
       },
     });

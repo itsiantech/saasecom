@@ -1,0 +1,9 @@
+{
+  "name": "plainsort",
+  "label": "Plain shop (test fixture)",
+  "description": "Fixture theme with no book support — used to prove the theme gate.",
+  "tokens": {
+    "colorPrimary": "#37474f"
+  },
+  "modules": ["builder"]
+}

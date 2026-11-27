@@ -12,6 +12,7 @@ const iconSchema = new mongoose.Schema(
 const categorySchema = new mongoose.Schema(
   {
     name: { type: String, default: "", trim: true }, // NOT mandatory — UI shows "Untitled"
+    nameBn: { type: String, default: "", trim: true }, // optional Bengali label (system roots use it)
     slug: { type: String, default: "", trim: true, lowercase: true },
     parent: { type: mongoose.Schema.Types.ObjectId, ref: "Category", default: null }, // null = root
     // ancestors = ordered list of parent ids (root first). Lets us query a whole subtree with one index hit.
@@ -24,6 +25,9 @@ const categorySchema = new mongoose.Schema(
     deletedAt: { type: Date, default: null },
     // Remember the status before trashing so Restore brings it back exactly as it was.
     previousStatus: { type: String, enum: ["draft", "published", null], default: null },
+    // Marks the one system-owned category a module depends on ("book" = Books root).
+    // A plain category keeps "".
+    systemType: { type: String, enum: ["", "book"], default: "" },
     // Demo data flag - true if created from starter pack
     isDemo: { type: Boolean, default: false, index: true },
   },
@@ -38,6 +42,7 @@ categorySchema.plugin(require("../lib/tenantPlugin"));
 categorySchema.index({ store: 1, parent: 1, order: 1 });
 categorySchema.index({ store: 1, status: 1 });
 categorySchema.index({ store: 1, slug: 1 });
+categorySchema.index({ store: 1, systemType: 1 });
 categorySchema.index({ ancestors: 1 });
 
 module.exports = mongoose.model("Category", categorySchema);
