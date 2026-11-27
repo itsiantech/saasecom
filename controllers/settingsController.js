@@ -550,6 +550,7 @@ async function adminGet(req, res) {
   const favicons = await ShopFavicon.find({ store: { $in: stores.map((s) => s._id) } }).lean();
   const faviconMap = new Map(favicons.map((f) => [String(f.store), f.icon]));
 
+  res.set("Cache-Control", "no-store");
   res.json({
     ...payload,
     access: await featuresForStore(req.store),
@@ -980,6 +981,7 @@ async function adminSave(req, res) {
   const favicons = await ShopFavicon.find({ store: { $in: stores.map((s) => s._id) } }).lean();
   const faviconMap = new Map(favicons.map((f) => [String(f.store), f.icon]));
 
+  res.set("Cache-Control", "no-store");
   res.json({
     ok: true,
     ...payload,

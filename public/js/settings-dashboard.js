@@ -4994,50 +4994,56 @@
         })),
       };
 
-      const [res, intlRes] = await Promise.all([
-        api("/api/settings", { method: "PUT", body: JSON.stringify(payload) }),
-        intlPayload
-          ? api("/api/international/settings", { method: "PUT", body: JSON.stringify(intlPayload) })
-          : Promise.resolve(null),
-      ]);
-      if (!res) return;
-      if (intlPayload && !intlRes) return;
-
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.message || "Save hoyni");
-
-      let intlData = null;
-      if (intlRes) {
-        intlData = await intlRes.json().catch(() => ({}));
-        if (!intlRes.ok) throw new Error(intlData.message || "International settings save hoyni");
-      }
-
-      let wholesaleData = null;
-      if (wholesalePayload) {
-        const wholesaleRes = await api("/api/wholesale/settings", {
-          method: "PUT",
-          body: JSON.stringify(wholesalePayload),
-        });
-        if (!wholesaleRes) return;
-        wholesaleData = await wholesaleRes.json().catch(() => ({}));
-        if (!wholesaleRes.ok) {
-          throw new Error(wholesaleData.message || "Wholesale settings save hoyni");
+      // One click must save every section. The PUTs run together; if a
+      // secondary one fails we still apply what the server returned and say
+      // exactly which part did not stick, instead of silently aborting.
+      async function putSettings(url, body) {
+        let res;
+        try {
+          res = await api(url, { method: "PUT", body: JSON.stringify(body) });
+        } catch (err) {
+          return { error: err.message || "Network problem" };
         }
+        if (!res) return { error: "session shesh — abar login korun" };
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) return { error: data.message || "Save hoyni" };
+        return { data };
       }
 
+      const [mainSave, intlSave, wholesaleSave] = await Promise.all([
+        putSettings("/api/settings", payload),
+        intlPayload ? putSettings("/api/international/settings", intlPayload) : Promise.resolve(null),
+        wholesalePayload ? putSettings("/api/wholesale/settings", wholesalePayload) : Promise.resolve(null),
+      ]);
+      if (mainSave.error) throw new Error("Settings save hoyni — " + mainSave.error);
+
+      const problems = [];
+      if (intlSave && intlSave.error) problems.push("International: " + intlSave.error);
+      if (wholesaleSave && wholesaleSave.error) problems.push("Wholesale: " + wholesaleSave.error);
+
+      const data = mainSave.data || {};
       applyData(data);
-      if (intlData && intlData.settings) applyInternational(intlData.settings, true);
-      if (wholesaleData && wholesaleData.settings) applyWholesaleSettings(wholesaleData.settings);
+      if (intlSave && intlSave.data && intlSave.data.settings) applyInternational(intlSave.data.settings, true);
+      if (wholesaleSave && wholesaleSave.data && wholesaleSave.data.settings) {
+        applyWholesaleSettings(wholesaleSave.data.settings);
+      }
       renderAll();
-      state.dirty = false;
-      state.menuDirty = false;
-      setMenuBadge();
-      if (settingsGuard) settingsGuard.markClean();
-      toast(
-        state.internationalLoaded
-          ? "Settings saved"
-          : "Settings saved — international part load hoyni"
-      );
+      if (problems.length) {
+        // main settings are stored; keep dirty so the failed sections get resent
+        state.dirty = true;
+        setMenuBadge();
+        toast("Settings saved, kintu " + problems.join(" · "), "err");
+      } else {
+        state.dirty = false;
+        state.menuDirty = false;
+        setMenuBadge();
+        if (settingsGuard) settingsGuard.markClean();
+        toast(
+          state.internationalLoaded
+            ? "Settings saved"
+            : "Settings saved — international part load hoyni"
+        );
+      }
       // Add Product form er toggles live update
       window.dispatchEvent(new CustomEvent("settings:saved", { detail: { settings: data.settings } }));
     } catch (e) {
